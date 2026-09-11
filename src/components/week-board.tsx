@@ -181,7 +181,7 @@ export function WeekBoard() {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid grid-cols-[minmax(220px,1.4fr)_repeat(7,minmax(160px,1fr))] gap-3 overflow-x-auto pb-2">
+        <div className="grid grid-cols-2 gap-3 overflow-x-auto pb-2 sm:grid-cols-4">
           <SortableContext
             items={itemsByColumn.backlog.map((t) => t.id)}
             strategy={verticalListSortingStrategy}
