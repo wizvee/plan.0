@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { addDays, format } from "date-fns";
 import {
   DndContext,
   DragOverlay,
@@ -164,23 +165,23 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
   const activeTodo = activeId ? todos.find((t) => t.id === activeId) ?? null : null;
 
   return (
-    <div className="min-h-screen pr-14">
+    <div className="min-h-screen pb-14 sm:pb-0 sm:pr-14">
       <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-4 py-6 sm:px-6">
         <header className="flex flex-col gap-3">
           <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
-            <div>
+            <div className="hidden sm:block">
               <h1 className="text-[34px] font-bold leading-none tracking-tight">
                 {weekNumberLabel(monday)}
               </h1>
               <p className="mt-1.5 text-[15px] text-muted-foreground">{weekRangeLabel(monday)}</p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex w-full items-center justify-between gap-4 sm:w-auto">
               <WeekNav
                 onPrev={() => setMonday((m) => shiftWeeks(m, -1))}
                 onNext={() => setMonday((m) => shiftWeeks(m, 1))}
                 onToday={() => setMonday(mondayOf(new Date()))}
               />
-              <div className="flex items-center gap-2 border-l border-border pl-4">
+              <div className="flex items-center gap-2 sm:border-l sm:border-border sm:pl-4">
                 <span className="hidden text-sm text-muted-foreground sm:inline">{userEmail}</span>
                 <Button
                   variant="ghost"
@@ -193,24 +194,42 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
               </div>
             </div>
           </div>
-          <div className="flex gap-1.5 overflow-x-auto pb-1 sm:hidden">
-            {DAY_KEYS.map((day) => (
-              <Button
-                key={day}
-                type="button"
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "h-8 shrink-0 rounded-full px-3.5",
-                  mobileDay === day
-                    ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent"
-                )}
-                onClick={() => setMobileDay(day)}
-              >
-                {DAY_LABELS_KO[day]}
-              </Button>
-            ))}
+          <div className="sm:hidden">
+            <div className="flex items-center justify-between">
+              {DAY_KEYS.map((day, index) => {
+                const date = addDays(monday, index);
+                const isToday = toDateKey(date) === toDateKey(new Date());
+                const isSelected = mobileDay === day;
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => setMobileDay(day)}
+                    className="flex flex-col items-center gap-1.5 py-1"
+                  >
+                    <span className="text-[11px] font-medium text-muted-foreground">
+                      {DAY_LABELS_KO[day]}
+                    </span>
+                    <span
+                      className={cn(
+                        "flex size-8 items-center justify-center rounded-full text-[15px] font-semibold transition-colors",
+                        isToday
+                          ? "bg-primary text-primary-foreground"
+                          : isSelected
+                            ? "ring-2 ring-primary text-foreground"
+                            : "text-foreground"
+                      )}
+                    >
+                      {format(date, "d")}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-2.5 border-t border-border/70 pt-2.5 text-center text-[13px] text-muted-foreground">
+              {weekNumberLabel(monday)} · {format(addDays(monday, DAY_KEYS.indexOf(mobileDay)), "yyyy년 M월 d일")}{" "}
+              {DAY_LABELS_KO[mobileDay]}요일
+            </div>
           </div>
         </header>
 

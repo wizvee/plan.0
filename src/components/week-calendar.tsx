@@ -112,7 +112,7 @@ export function WeekCalendar({
 
   return (
     <div className="flex flex-col overflow-hidden rounded-[14px] bg-card shadow-[0_1px_1px_rgba(0,0,0,0.03)] ring-1 ring-border">
-      <div className="flex border-b border-border/70">
+      <div className="hidden border-b border-border/70 sm:flex">
         <div style={{ width: GUTTER_WIDTH }} className="shrink-0" />
         {DAY_KEYS.map((day) => {
           const date = addDays(monday, DAY_KEYS.indexOf(day));
@@ -121,8 +121,7 @@ export function WeekCalendar({
             <div
               key={day}
               className={cn(
-                "hidden flex-1 flex-col items-center justify-center gap-1 py-2 sm:flex",
-                mobileDay === day && "flex",
+                "flex flex-1 flex-col items-center justify-center gap-1 py-2",
                 isToday && "bg-accent/40"
               )}
             >

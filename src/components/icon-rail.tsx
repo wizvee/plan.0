@@ -17,7 +17,7 @@ interface IconRailProps {
 
 export function IconRail({ items }: IconRailProps) {
   return (
-    <div className="fixed inset-y-0 right-0 z-50 flex w-14 flex-col items-center gap-2 border-l border-border bg-card py-4">
+    <div className="fixed inset-x-0 bottom-0 z-50 flex h-14 items-center justify-center gap-8 border-t border-border bg-card sm:inset-x-auto sm:inset-y-0 sm:right-0 sm:bottom-auto sm:h-auto sm:w-14 sm:flex-col sm:justify-start sm:gap-2 sm:border-t-0 sm:border-l sm:py-4">
       {items.map(({ icon: Icon, label, active, onClick }) => (
         <button
           key={label}
