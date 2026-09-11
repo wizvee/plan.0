@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   DndContext,
   DragOverlay,
@@ -15,7 +16,8 @@ import {
 import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Plus } from "lucide-react";
 
-import { useLocalTodos } from "@/lib/storage";
+import { useSupabaseTodos } from "@/lib/supabase/todos";
+import { createClient } from "@/lib/supabase/client";
 import {
   dayDateKey,
   isToday as isTodayKey,
@@ -43,8 +45,15 @@ function nextPosition(items: Todo[]) {
   return items.length === 0 ? 0 : Math.max(...items.map((t) => t.position)) + 1;
 }
 
-export function WeekBoard() {
-  const [todos, setTodos] = useLocalTodos();
+interface WeekBoardProps {
+  userId: string;
+  userEmail: string;
+}
+
+export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
+  const router = useRouter();
+  const { todos, setTodos, addTodo, updateTodo, removeTodo, persistPositions } =
+    useSupabaseTodos(userId);
   const [monday, setMonday] = useState(() => mondayOf(new Date()));
   const [activeId, setActiveId] = useState<string | null>(null);
   const [mobileColumn, setMobileColumn] = useState<ColumnKey>(BACKLOG);
@@ -130,52 +139,52 @@ export function WeekBoard() {
     const column = columnOf(activeIdStr);
     if (!column) return;
 
-    setTodos((prev) => {
-      const columnItems = prev
-        .filter((t) =>
-          column === BACKLOG ? t.day === null : t.day === column && t.weekStart === weekKey
-        )
-        .sort((a, b) => a.position - b.position);
+    const columnItems = itemsByColumn[column];
+    const oldIndex = columnItems.findIndex((t) => t.id === activeIdStr);
+    const overIndex = columnItems.findIndex((t) => t.id === overIdStr);
+    const ordered =
+      oldIndex !== -1 && overIndex !== -1 && oldIndex !== overIndex
+        ? arrayMove(columnItems, oldIndex, overIndex)
+        : columnItems;
 
-      const oldIndex = columnItems.findIndex((t) => t.id === activeIdStr);
-      const overIndex = columnItems.findIndex((t) => t.id === overIdStr);
-      const ordered =
-        oldIndex !== -1 && overIndex !== -1 && oldIndex !== overIndex
-          ? arrayMove(columnItems, oldIndex, overIndex)
-          : columnItems;
+    const normalizedById = new Map(ordered.map((t, index) => [t.id, index]));
+    setTodos((prev) =>
+      prev.map((t) => (normalizedById.has(t.id) ? { ...t, position: normalizedById.get(t.id)! } : t))
+    );
 
-      const normalized = new Map(ordered.map((t, index) => [t.id, index]));
-      return prev.map((t) => (normalized.has(t.id) ? { ...t, position: normalized.get(t.id)! } : t));
-    });
+    void persistPositions(
+      ordered.map((t) => ({
+        id: t.id,
+        day: t.day,
+        weekStart: t.weekStart,
+        position: normalizedById.get(t.id)!,
+      }))
+    );
   }
 
-  function addTodo(content: string) {
-    const trimmed = content.trim();
-    if (!trimmed) return;
-    setTodos((prev) => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        content: trimmed,
-        day: null,
-        weekStart: null,
-        completed: false,
-        position: nextPosition(itemsByColumn.backlog),
-        createdAt: new Date().toISOString(),
-      },
-    ]);
+  function handleAdd(content: string) {
+    void addTodo(content, nextPosition(itemsByColumn.backlog));
   }
 
-  function toggleCompleted(id: string) {
-    setTodos((prev) => prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
+  function handleToggle(id: string) {
+    const current = todos.find((t) => t.id === id);
+    if (!current) return;
+    void updateTodo(id, { completed: !current.completed });
   }
 
-  function removeTodo(id: string) {
-    setTodos((prev) => prev.filter((t) => t.id !== id));
+  function handleRemove(id: string) {
+    void removeTodo(id);
   }
 
-  function updateContent(id: string, content: string) {
-    setTodos((prev) => prev.map((t) => (t.id === id ? { ...t, content } : t)));
+  function handleEdit(id: string, content: string) {
+    void updateTodo(id, { content });
+  }
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.replace("/login");
+    router.refresh();
   }
 
   const activeTodo = activeId ? todos.find((t) => t.id === activeId) ?? null : null;
@@ -190,11 +199,24 @@ export function WeekBoard() {
             </h1>
             <p className="mt-1.5 text-[15px] text-muted-foreground">{weekRangeLabel(monday)}</p>
           </div>
-          <WeekNav
-            onPrev={() => setMonday((m) => shiftWeeks(m, -1))}
-            onNext={() => setMonday((m) => shiftWeeks(m, 1))}
-            onToday={() => setMonday(mondayOf(new Date()))}
-          />
+          <div className="flex items-center gap-4">
+            <WeekNav
+              onPrev={() => setMonday((m) => shiftWeeks(m, -1))}
+              onNext={() => setMonday((m) => shiftWeeks(m, 1))}
+              onToday={() => setMonday(mondayOf(new Date()))}
+            />
+            <div className="flex items-center gap-2 border-l border-border pl-4">
+              <span className="hidden text-sm text-muted-foreground sm:inline">{userEmail}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2 text-[15px] font-medium text-muted-foreground hover:bg-accent"
+                onClick={handleSignOut}
+              >
+                로그아웃
+              </Button>
+            </div>
+          </div>
         </div>
         <div className="flex gap-1.5 overflow-x-auto pb-1 sm:hidden">
           <Button
@@ -248,10 +270,10 @@ export function WeekBoard() {
               id={BACKLOG}
               title="Todo List"
               items={itemsByColumn.backlog}
-              onToggle={toggleCompleted}
-              onRemove={removeTodo}
-              onEdit={updateContent}
-              onAdd={addTodo}
+              onToggle={handleToggle}
+              onRemove={handleRemove}
+              onEdit={handleEdit}
+              onAdd={handleAdd}
               className={cn(mobileColumn !== BACKLOG && "hidden", "sm:block")}
             />
           </SortableContext>
@@ -265,9 +287,9 @@ export function WeekBoard() {
                 id={day}
                 title={DAY_LABELS[day]}
                 items={itemsByColumn[day]}
-                onToggle={toggleCompleted}
-                onRemove={removeTodo}
-                onEdit={updateContent}
+                onToggle={handleToggle}
+                onRemove={handleRemove}
+                onEdit={handleEdit}
                 isToday={isTodayKey(dayDateKey(monday, index))}
                 className={cn(mobileColumn !== day && "hidden", "sm:block")}
               />
