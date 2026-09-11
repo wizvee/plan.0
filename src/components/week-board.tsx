@@ -14,7 +14,7 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { Plus } from "lucide-react";
+import { Check } from "lucide-react";
 
 import { useSupabaseTodos } from "@/lib/supabase/todos";
 import { createClient } from "@/lib/supabase/client";
@@ -28,16 +28,11 @@ import {
   weekRangeLabel,
 } from "@/lib/week";
 import { cn } from "@/lib/utils";
-import {
-  BACKLOG,
-  DAY_KEYS,
-  DAY_LABELS,
-  DAY_LABELS_KO,
-  type ColumnKey,
-  type Todo,
-} from "@/lib/types";
+import { BACKLOG, DAY_KEYS, DAY_LABELS, DAY_LABELS_KO, type DayKey, type ColumnKey, type Todo } from "@/lib/types";
 import { TodoColumn } from "@/components/todo-column";
 import { TodoCard } from "@/components/todo-card";
+import { TodoPanel } from "@/components/todo-panel";
+import { IconRail } from "@/components/icon-rail";
 import { WeekNav } from "@/components/week-nav";
 import { Button } from "@/components/ui/button";
 
@@ -56,7 +51,8 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
     useSupabaseTodos(userId);
   const [monday, setMonday] = useState(() => mondayOf(new Date()));
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [mobileColumn, setMobileColumn] = useState<ColumnKey>(BACKLOG);
+  const [mobileDay, setMobileDay] = useState<DayKey>("mon");
+  const [panelOpen, setPanelOpen] = useState(false);
 
   const weekKey = toDateKey(monday);
 
@@ -190,114 +186,114 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
   const activeTodo = activeId ? todos.find((t) => t.id === activeId) ?? null : null;
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-[1500px] flex-col gap-5 px-4 py-6 sm:px-6">
-      <header className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
-          <div>
-            <h1 className="text-[34px] font-bold leading-none tracking-tight">
-              {weekNumberLabel(monday)}
-            </h1>
-            <p className="mt-1.5 text-[15px] text-muted-foreground">{weekRangeLabel(monday)}</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <WeekNav
-              onPrev={() => setMonday((m) => shiftWeeks(m, -1))}
-              onNext={() => setMonday((m) => shiftWeeks(m, 1))}
-              onToday={() => setMonday(mondayOf(new Date()))}
-            />
-            <div className="flex items-center gap-2 border-l border-border pl-4">
-              <span className="hidden text-sm text-muted-foreground sm:inline">{userEmail}</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2 text-[15px] font-medium text-muted-foreground hover:bg-accent"
-                onClick={handleSignOut}
-              >
-                로그아웃
-              </Button>
+    <div className="min-h-screen pr-14">
+      <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-4 py-6 sm:px-6">
+        <header className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+            <div>
+              <h1 className="text-[34px] font-bold leading-none tracking-tight">
+                {weekNumberLabel(monday)}
+              </h1>
+              <p className="mt-1.5 text-[15px] text-muted-foreground">{weekRangeLabel(monday)}</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <WeekNav
+                onPrev={() => setMonday((m) => shiftWeeks(m, -1))}
+                onNext={() => setMonday((m) => shiftWeeks(m, 1))}
+                onToday={() => setMonday(mondayOf(new Date()))}
+              />
+              <div className="flex items-center gap-2 border-l border-border pl-4">
+                <span className="hidden text-sm text-muted-foreground sm:inline">{userEmail}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 text-[15px] font-medium text-muted-foreground hover:bg-accent"
+                  onClick={handleSignOut}
+                >
+                  로그아웃
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="flex gap-1.5 overflow-x-auto pb-1 sm:hidden">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className={cn(
-              "size-8 shrink-0 rounded-full",
-              mobileColumn === BACKLOG
-                ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
-                : "text-muted-foreground hover:bg-accent"
-            )}
-            onClick={() => setMobileColumn(BACKLOG)}
-            aria-label="Todo List 보기"
-          >
-            <Plus className="size-4" />
-          </Button>
-          {DAY_KEYS.map((day) => (
-            <Button
-              key={day}
-              type="button"
-              variant="ghost"
-              size="sm"
-              className={cn(
-                "h-8 shrink-0 rounded-full px-3.5",
-                mobileColumn === day
-                  ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent"
-              )}
-              onClick={() => setMobileColumn(day)}
-            >
-              {DAY_LABELS_KO[day]}
-            </Button>
-          ))}
-        </div>
-      </header>
+          <div className="flex gap-1.5 overflow-x-auto pb-1 sm:hidden">
+            {DAY_KEYS.map((day) => (
+              <Button
+                key={day}
+                type="button"
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  "h-8 shrink-0 rounded-full px-3.5",
+                  mobileDay === day
+                    ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent"
+                )}
+                onClick={() => setMobileDay(day)}
+              >
+                {DAY_LABELS_KO[day]}
+              </Button>
+            ))}
+          </div>
+        </header>
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCorners}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
-      >
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
-          <SortableContext
-            items={itemsByColumn.backlog.map((t) => t.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <TodoColumn
-              id={BACKLOG}
-              title="Todo List"
-              items={itemsByColumn.backlog}
-              onToggle={handleToggle}
-              onRemove={handleRemove}
-              onEdit={handleEdit}
-              onAdd={handleAdd}
-              className={cn(mobileColumn !== BACKLOG && "hidden", "sm:block")}
-            />
-          </SortableContext>
-          {DAY_KEYS.map((day, index) => (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-7">
+            {DAY_KEYS.map((day, index) => (
+              <SortableContext
+                key={day}
+                items={itemsByColumn[day].map((t) => t.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <TodoColumn
+                  id={day}
+                  title={DAY_LABELS[day]}
+                  items={itemsByColumn[day]}
+                  onToggle={handleToggle}
+                  onRemove={handleRemove}
+                  onEdit={handleEdit}
+                  isToday={isTodayKey(dayDateKey(monday, index))}
+                  className={cn(mobileDay !== day && "hidden", "sm:block")}
+                />
+              </SortableContext>
+            ))}
+          </div>
+
+          {panelOpen ? (
             <SortableContext
-              key={day}
-              items={itemsByColumn[day].map((t) => t.id)}
+              items={itemsByColumn.backlog.map((t) => t.id)}
               strategy={verticalListSortingStrategy}
             >
-              <TodoColumn
-                id={day}
-                title={DAY_LABELS[day]}
-                items={itemsByColumn[day]}
+              <TodoPanel
+                items={itemsByColumn.backlog}
                 onToggle={handleToggle}
                 onRemove={handleRemove}
                 onEdit={handleEdit}
-                isToday={isTodayKey(dayDateKey(monday, index))}
-                className={cn(mobileColumn !== day && "hidden", "sm:block")}
+                onAdd={handleAdd}
+                onClose={() => setPanelOpen(false)}
               />
             </SortableContext>
-          ))}
-        </div>
-        <DragOverlay>{activeTodo ? <TodoCard todo={activeTodo} overlay /> : null}</DragOverlay>
-      </DndContext>
+          ) : null}
+
+          <DragOverlay>{activeTodo ? <TodoCard todo={activeTodo} overlay /> : null}</DragOverlay>
+        </DndContext>
+      </div>
+
+      <IconRail
+        items={[
+          {
+            icon: Check,
+            label: "Todo List",
+            active: panelOpen,
+            onClick: () => setPanelOpen((open) => !open),
+          },
+        ]}
+      />
     </div>
   );
 }
