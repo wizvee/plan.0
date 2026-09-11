@@ -96,15 +96,15 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
 
 ## 아직 안 끝난 것 / 다음 할 일
 
-1. **Supabase 프로젝트 실제 연결** — 지금까지는 가짜 URL로 화면/로직만 확인했고, 실제 프로젝트로
-   테스트한 적 없음. 로컬에서 README.md의 "Supabase 설정" 단계를 따라가면 됩니다:
-   프로젝트 생성 → `supabase/schema.sql` 실행 → URL/anon key를 `.env.local`에 채우기.
-2. 가입 → 할 일 추가 → 새로고침/다른 브라우저에서 동기화되는지 **실제로 한 번 확인 필요**.
-3. **Vercel 배포** (PLANNING.md 7단계 마지막 항목, 아직 안 함). 배포 시 Vercel 환경변수에도
-   `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` 등록 필요.
-4. PLANNING.md의 "향후 확장 아이디어"(6번 항목, 지금은 범위 밖): 시간 단위 입력/표시,
+1. ~~Supabase 프로젝트 실제 연결~~ — **완료 (2026-09-11)**. 실제 프로젝트(`jzrpciwkhwanopqydzqw`, Seoul 리전)에
+   `schema.sql` 실행 완료, 가입 → 할 일 추가 → 새로고침 동기화까지 실제로 확인됨.
+   API 키는 legacy `anon` 대신 **publishable 키**(`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`)로 전환해서 사용 중
+   (legacy `anon`/`service_role`은 2026년 말 폐지 예정이라 새 키 체계로 바로 세팅함).
+2. ~~Vercel 배포~~ — **완료 (2026-09-11)**. 프로덕션: https://plan0.vercel.app
+   (Vercel 프로젝트 `wizvees-projects/plan.0`, GitHub 연동도 완료되어 이후 push 시 자동 배포됨)
+3. PLANNING.md의 "향후 확장 아이디어"(6번 항목, 지금은 범위 밖): 시간 단위 입력/표시,
    카테고리·우선순위 색상 태그(요일별 색상 자리를 이걸 위해 비워둠), 월간/분기 플래너 탭.
-5. 아이콘 레일은 체크 아이콘 하나뿐이라, 나중에 다른 메뉴(설정 등) 추가하기 쉽게 배열 구조로 만들어둠
+4. 아이콘 레일은 체크 아이콘 하나뿐이라, 나중에 다른 메뉴(설정 등) 추가하기 쉽게 배열 구조로 만들어둠
    (`icon-rail.tsx`의 `items` prop).
 
 ## `.env` / 키 노출 관련 (사용자 질문에 대한 답)
@@ -114,9 +114,11 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
   `cp .env.local.example .env.local` 한 뒤 값을 채우면 되고, 이 파일은 git이 무시합니다.
 - 다만 로컬 작업 중에도 실수로 `git add -A` 등으로 강제로 끌려오지 않는지 커밋 전에 `git status`로
   한 번 확인하는 습관은 필요합니다.
-- 참고로 Supabase의 `anon` 키는 원래 브라우저에 그대로 노출되는 게 정상인 키입니다(RLS로 보호).
-  민감한 건 **`service_role` 키**인데, 이 프로젝트는 어디서도 그 키를 쓰지 않습니다. 그래도 습관적으로
-  `.env`류는 커밋하지 않는 게 맞습니다.
+- 참고로 Supabase의 `publishable` 키(옛 `anon` 키)는 원래 브라우저에 그대로 노출되는 게 정상인 키입니다
+  (RLS로 보호). 민감한 건 **`secret` 키(옛 `service_role` 키)**인데, 이 프로젝트는 어디서도 그 키를 쓰지
+  않습니다. 그래도 습관적으로 `.env`류는 커밋하지 않는 게 맞습니다.
+  (`anon`/`service_role`은 legacy 키로 전환되어 2026년 말 폐지 예정 — 새 프로젝트는 기본적으로
+  publishable/secret 키 체계를 씁니다.)
 
 ## 새 세션에서 이어갈 때
 

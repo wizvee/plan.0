@@ -16,7 +16,9 @@
 1. [supabase.com](https://supabase.com) 에서 무료 프로젝트 생성
 2. 프로젝트의 **SQL Editor** 에서 [`supabase/schema.sql`](./supabase/schema.sql) 내용을 그대로 실행
    (`todos` 테이블 생성 + RLS 정책 + realtime 활성화)
-3. **Project Settings → API** 에서 `Project URL`과 `anon public` 키를 복사
+3. **Project Settings → API Keys** 에서 `Project URL`과 `publishable` 키(`sb_publishable_...`)를 복사
+   (예전에 쓰던 `anon` 키는 legacy로 전환됨 — 새 프로젝트는 기본적으로 publishable/secret 키 체계를 씁니다.
+   레거시 `anon`/`service_role` 키는 2026년 말 완전히 폐지될 예정이니 publishable 키를 쓰면 됩니다.)
 4. `.env.local.example`을 `.env.local`로 복사한 뒤 값 채우기:
 
    ```bash
@@ -25,10 +27,11 @@
 
    ```
    NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxx.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
    ```
 
-5. Vercel에 배포한다면 같은 두 값을 Vercel 프로젝트의 Environment Variables에도 등록
+5. Vercel에 배포한다면 같은 두 값(`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`)을
+   Vercel 프로젝트의 Environment Variables에도 등록
 
 앱 접속 후 화면의 "가입하기"로 계정을 만들면 바로 사용할 수 있습니다(개인용이므로 가입은 본인만 하면 됩니다).
 

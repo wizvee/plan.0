@@ -70,4 +70,4 @@ MVP 범위에는 포함하지 않지만 구조상 나중에 쉽게 얹을 수 �
 4. ✅ Todo 추가/수정/삭제 (로컬 상태 → Supabase로 교체 완료)
 5. ✅ 드래그 앤 드롭 구현
 6. ✅ Supabase 연동 (이메일/비밀번호 로그인 + 데이터 저장/실시간 동기화, RLS 적용) — 설정 방법은 [README.md](./README.md#supabase-설정-최초-1회) 참고
-7. Vercel 배포 (남은 단계)
+7. ✅ Vercel 배포 — https://plan0.vercel.app
