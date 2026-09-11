@@ -33,7 +33,7 @@ MVP 범위에는 포함하지 않지만 구조상 나중에 쉽게 얹을 수 �
 | 영역 | 선택 | 이유 |
 |---|---|---|
 | 프론트엔드 | Next.js + TypeScript | 무료 배포(Vercel)와 궁합이 가장 좋음 |
-| 스타일 | Tailwind CSS | 빠르게 깔끔한 UI 구성 |
+| 스타일 / UI 컴포넌트 | Tailwind CSS + shadcn/ui | 체크박스, 버튼, 카드, input 등 기본 컴포넌트를 shadcn/ui로 구성해 빠르고 깔끔하게 UI 완성 |
 | 드래그 앤 드롭 | dnd-kit | 활발히 유지보수되는 React DnD 라이브러리, 접근성 지원 |
 | 백엔드/DB | Supabase (Postgres + Auth) | 무료 티어로 DB + 로그인 인증까지 한 번에 해결 |
 | 인증 | Supabase Auth (이메일/비밀번호 또는 매직링크) | 1인용이라 최소한의 로그인만 필요 |
