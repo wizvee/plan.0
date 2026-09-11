@@ -23,7 +23,7 @@ export function TodoPanel({ items, onToggle, onRemove, onEdit, onAdd, onClose }:
   return (
     <>
       <div className="fixed inset-0 z-30 bg-black/20 sm:hidden" onClick={onClose} aria-hidden="true" />
-      <div className="fixed inset-x-0 bottom-14 z-40 flex h-[55vh] flex-col rounded-t-2xl border border-border bg-card sm:inset-x-auto sm:inset-y-0 sm:right-14 sm:bottom-auto sm:h-auto sm:w-[85vw] sm:max-w-[340px] sm:rounded-none sm:border-y-0 sm:border-r-0 sm:border-l">
+      <div className="fixed left-0 right-0 bottom-14 top-auto z-40 flex h-[55vh] flex-col rounded-t-2xl border-t border-r border-b border-l border-border bg-card sm:left-auto sm:right-14 sm:top-0 sm:bottom-0 sm:h-auto sm:w-[85vw] sm:max-w-[340px] sm:rounded-none sm:border-t-0 sm:border-r-0 sm:border-b-0">
         <div className="flex justify-center pt-2 sm:hidden">
           <span className="h-1.5 w-9 rounded-full bg-border" />
         </div>
