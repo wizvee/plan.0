@@ -20,6 +20,7 @@ import { useSupabaseTodos } from "@/lib/supabase/todos";
 import { createClient } from "@/lib/supabase/client";
 import { mondayOf, shiftWeeks, toDateKey, weekNumberLabel, weekRangeLabel } from "@/lib/week";
 import { cn } from "@/lib/utils";
+import { useTodayKey } from "@/lib/use-today";
 import { BACKLOG, DAY_KEYS, DAY_LABELS_KO, type DayKey, type Todo } from "@/lib/types";
 import { DEFAULT_DURATION_MINUTES, HOUR_HEIGHT, MINUTES_PER_DAY, clampMinutes, snapMinutes } from "@/lib/time";
 import { TodoCard } from "@/components/todo-card";
@@ -49,6 +50,7 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
   const [panelOpen, setPanelOpen] = useState(false);
 
   const weekKey = toDateKey(monday);
+  const todayKey = useTodayKey();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
@@ -198,7 +200,7 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
             <div className="flex items-center justify-between">
               {DAY_KEYS.map((day, index) => {
                 const date = addDays(monday, index);
-                const isToday = toDateKey(date) === toDateKey(new Date());
+                const isToday = toDateKey(date) === todayKey;
                 const isSelected = mobileDay === day;
                 return (
                   <button

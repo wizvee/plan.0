@@ -6,6 +6,7 @@ import { useDroppable } from "@dnd-kit/core";
 
 import { CalendarBlock } from "@/components/calendar-block";
 import { cn } from "@/lib/utils";
+import { useTodayKey } from "@/lib/use-today";
 import { DAY_KEYS, DAY_LABELS_KO, type DayKey, type Todo } from "@/lib/types";
 import {
   GUTTER_WIDTH,
@@ -28,12 +29,23 @@ interface WeekCalendarProps {
 }
 
 function CurrentTimeLine() {
-  const [minutes, setMinutes] = useState(() => nowMinutes());
+  // 서버(SSR)는 UTC로 렌더링될 수 있어서 초기값을 서버에서 계산하면 시간이 어긋난다.
+  // 클라이언트가 마운트된 뒤 브라우저의 로컬 시각으로만 계산한다.
+  const [minutes, setMinutes] = useState<number | null>(null);
 
   useEffect(() => {
-    const id = setInterval(() => setMinutes(nowMinutes()), 60_000);
-    return () => clearInterval(id);
+    function update() {
+      setMinutes(nowMinutes());
+    }
+    const immediate = setTimeout(update, 0);
+    const id = setInterval(update, 60_000);
+    return () => {
+      clearTimeout(immediate);
+      clearInterval(id);
+    };
   }, []);
+
+  if (minutes === null) return null;
 
   return (
     <div className="pointer-events-none absolute inset-x-0 z-[2]" style={{ top: minutesToPx(minutes) }}>
@@ -102,7 +114,7 @@ export function WeekCalendar({
   onResize,
 }: WeekCalendarProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const todayKey = format(new Date(), "yyyy-MM-dd");
+  const todayKey = useTodayKey();
 
   useEffect(() => {
     if (scrollRef.current) {
