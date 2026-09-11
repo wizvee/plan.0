@@ -13,11 +13,12 @@ interface TodoPanelProps {
   onToggle: (id: string) => void;
   onRemove: (id: string) => void;
   onEdit: (id: string, content: string) => void;
+  onMemoEdit: (id: string, memo: string) => void;
   onAdd: (content: string) => void;
   onClose: () => void;
 }
 
-export function TodoPanel({ items, onToggle, onRemove, onEdit, onAdd, onClose }: TodoPanelProps) {
+export function TodoPanel({ items, onToggle, onRemove, onEdit, onMemoEdit, onAdd, onClose }: TodoPanelProps) {
   const { setNodeRef, isOver } = useDroppable({ id: BACKLOG });
 
   return (
@@ -54,7 +55,14 @@ export function TodoPanel({ items, onToggle, onRemove, onEdit, onAdd, onClose }:
           )}
         >
           {items.map((todo) => (
-            <TodoCard key={todo.id} todo={todo} onToggle={onToggle} onRemove={onRemove} onEdit={onEdit} />
+            <TodoCard
+              key={todo.id}
+              todo={todo}
+              onToggle={onToggle}
+              onRemove={onRemove}
+              onEdit={onEdit}
+              onMemoEdit={onMemoEdit}
+            />
           ))}
           <AddTodoForm onAdd={onAdd} />
         </div>

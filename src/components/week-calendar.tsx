@@ -25,6 +25,7 @@ interface WeekCalendarProps {
   onToggle: (id: string) => void;
   onRemove: (id: string) => void;
   onEdit: (id: string, content: string) => void;
+  onMemoEdit: (id: string, memo: string) => void;
   onResize: (id: string, durationMinutes: number) => void;
 }
 
@@ -64,6 +65,7 @@ function DayGridColumn({
   onToggle,
   onRemove,
   onEdit,
+  onMemoEdit,
   onResize,
 }: {
   day: DayKey;
@@ -72,6 +74,7 @@ function DayGridColumn({
   onToggle: (id: string) => void;
   onRemove: (id: string) => void;
   onEdit: (id: string, content: string) => void;
+  onMemoEdit: (id: string, memo: string) => void;
   onResize: (id: string, durationMinutes: number) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `grid:${day}` });
@@ -97,6 +100,7 @@ function DayGridColumn({
           onToggle={onToggle}
           onRemove={onRemove}
           onEdit={onEdit}
+          onMemoEdit={onMemoEdit}
           onResize={onResize}
         />
       ))}
@@ -111,6 +115,7 @@ export function WeekCalendar({
   onToggle,
   onRemove,
   onEdit,
+  onMemoEdit,
   onResize,
 }: WeekCalendarProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -175,6 +180,7 @@ export function WeekCalendar({
                   onToggle={onToggle}
                   onRemove={onRemove}
                   onEdit={onEdit}
+                  onMemoEdit={onMemoEdit}
                   onResize={onResize}
                 />
               </div>

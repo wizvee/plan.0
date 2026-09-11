@@ -157,6 +157,10 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
     void updateTodo(id, { content });
   }
 
+  function handleMemoEdit(id: string, memo: string) {
+    void updateTodo(id, { memo: memo || null });
+  }
+
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -248,6 +252,7 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
             onToggle={handleToggle}
             onRemove={handleRemove}
             onEdit={handleEdit}
+            onMemoEdit={handleMemoEdit}
             onResize={handleResize}
           />
 
@@ -258,6 +263,7 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
                 onToggle={handleToggle}
                 onRemove={handleRemove}
                 onEdit={handleEdit}
+                onMemoEdit={handleMemoEdit}
                 onAdd={handleAdd}
                 onClose={() => setPanelOpen(false)}
               />
