@@ -13,13 +13,23 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { Plus } from "lucide-react";
 
 import { useLocalTodos } from "@/lib/storage";
 import { mondayOf, shiftWeeks, toDateKey, weekNumberLabel, weekRangeLabel } from "@/lib/week";
-import { BACKLOG, DAY_KEYS, DAY_LABELS, type ColumnKey, type Todo } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import {
+  BACKLOG,
+  DAY_KEYS,
+  DAY_LABELS,
+  DAY_LABELS_KO,
+  type ColumnKey,
+  type Todo,
+} from "@/lib/types";
 import { TodoColumn } from "@/components/todo-column";
 import { TodoCard } from "@/components/todo-card";
 import { WeekNav } from "@/components/week-nav";
+import { Button } from "@/components/ui/button";
 
 function nextPosition(items: Todo[]) {
   return items.length === 0 ? 0 : Math.max(...items.map((t) => t.position)) + 1;
@@ -29,6 +39,7 @@ export function WeekBoard() {
   const [todos, setTodos] = useLocalTodos();
   const [monday, setMonday] = useState(() => mondayOf(new Date()));
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [mobileColumn, setMobileColumn] = useState<ColumnKey>(BACKLOG);
 
   const weekKey = toDateKey(monday);
 
@@ -172,6 +183,30 @@ export function WeekBoard() {
           onNext={() => setMonday((m) => shiftWeeks(m, 1))}
           onToday={() => setMonday(mondayOf(new Date()))}
         />
+        <div className="flex gap-1 overflow-x-auto pb-1 sm:hidden">
+          <Button
+            type="button"
+            variant={mobileColumn === BACKLOG ? "default" : "outline"}
+            size="icon"
+            className="size-8 shrink-0"
+            onClick={() => setMobileColumn(BACKLOG)}
+            aria-label="Todo List 보기"
+          >
+            <Plus className="size-4" />
+          </Button>
+          {DAY_KEYS.map((day) => (
+            <Button
+              key={day}
+              type="button"
+              variant={mobileColumn === day ? "default" : "outline"}
+              size="sm"
+              className="h-8 shrink-0 px-3"
+              onClick={() => setMobileColumn(day)}
+            >
+              {DAY_LABELS_KO[day]}
+            </Button>
+          ))}
+        </div>
       </header>
 
       <DndContext
@@ -181,7 +216,7 @@ export function WeekBoard() {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid grid-cols-2 gap-3 overflow-x-auto pb-2 sm:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
           <SortableContext
             items={itemsByColumn.backlog.map((t) => t.id)}
             strategy={verticalListSortingStrategy}
@@ -194,6 +229,7 @@ export function WeekBoard() {
               onRemove={removeTodo}
               onEdit={updateContent}
               onAdd={addTodo}
+              className={cn(mobileColumn !== BACKLOG && "hidden", "sm:block")}
             />
           </SortableContext>
           {DAY_KEYS.map((day) => (
@@ -209,6 +245,7 @@ export function WeekBoard() {
                 onToggle={toggleCompleted}
                 onRemove={removeTodo}
                 onEdit={updateContent}
+                className={cn(mobileColumn !== day && "hidden", "sm:block")}
               />
             </SortableContext>
           ))}

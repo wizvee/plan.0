@@ -17,6 +17,7 @@ interface TodoColumnProps {
   onEdit: (id: string, content: string) => void;
   onAdd?: (content: string) => void;
   highlight?: boolean;
+  className?: string;
 }
 
 export function TodoColumn({
@@ -28,6 +29,7 @@ export function TodoColumn({
   onEdit,
   onAdd,
   highlight,
+  className,
 }: TodoColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id });
 
@@ -35,7 +37,8 @@ export function TodoColumn({
     <Card
       className={cn(
         "min-w-0 gap-2 py-3",
-        highlight && "border-primary/40"
+        highlight && "border-primary/40",
+        className
       )}
     >
       <CardHeader className="px-3">

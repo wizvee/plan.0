@@ -12,6 +12,16 @@ export const DAY_LABELS: Record<DayKey, string> = {
   sun: "Sun",
 };
 
+export const DAY_LABELS_KO: Record<DayKey, string> = {
+  mon: "월",
+  tue: "화",
+  wed: "수",
+  thu: "목",
+  fri: "금",
+  sat: "토",
+  sun: "일",
+};
+
 export const BACKLOG = "backlog" as const;
 
 export type ColumnKey = typeof BACKLOG | DayKey;
