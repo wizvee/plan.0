@@ -5,45 +5,45 @@
 
 :root {
   --radius: 0.875rem;
-  --background: #F2F2F7;
-  --foreground: #1C1C1E;
-  --card: #FFFFFF;
-  --card-foreground: #1C1C1E;
-  --popover: #FFFFFF;
-  --popover-foreground: #1C1C1E;
-  --primary: #007AFF;
-  --primary-foreground: #FFFFFF;
-  --secondary: #E5E5EA;
-  --secondary-foreground: #1C1C1E;
-  --muted: #E5E5EA;
-  --muted-foreground: #8E8E93;
-  --accent: #E8F1FF;
-  --accent-foreground: #007AFF;
-  --destructive: #FF3B30;
-  --border: rgba(60, 60, 67, 0.13);
-  --input: #C7C7CC;
-  --ring: #007AFF;
+  --background: #F6F4F0;
+  --foreground: #3B3632;
+  --card: #FFFEFB;
+  --card-foreground: #3B3632;
+  --popover: #FFFEFB;
+  --popover-foreground: #3B3632;
+  --primary: #5C7599;
+  --primary-foreground: #FBFAF8;
+  --secondary: #ECE8E2;
+  --secondary-foreground: #3B3632;
+  --muted: #ECE8E2;
+  --muted-foreground: #8B8377;
+  --accent: #E7ECF2;
+  --accent-foreground: #4D6584;
+  --destructive: #C1685C;
+  --border: rgba(59, 54, 50, 0.12);
+  --input: #DAD4CA;
+  --ring: #5C7599;
 }
 
 .dark {
-  --background: #000000;
-  --foreground: #FFFFFF;
-  --card: #1C1C1E;
-  --card-foreground: #FFFFFF;
-  --popover: #1C1C1E;
-  --popover-foreground: #FFFFFF;
-  --primary: #0A84FF;
-  --primary-foreground: #FFFFFF;
-  --secondary: #2C2C2E;
-  --secondary-foreground: #FFFFFF;
-  --muted: #2C2C2E;
-  --muted-foreground: #8E8E93;
-  --accent: #0A2A4D;
-  --accent-foreground: #4DA3FF;
-  --destructive: #FF453A;
-  --border: rgba(84, 84, 88, 0.6);
-  --input: #48484A;
-  --ring: #0A84FF;
+  --background: #1C1A17;
+  --foreground: #EAE5DD;
+  --card: #262320;
+  --card-foreground: #EAE5DD;
+  --popover: #262320;
+  --popover-foreground: #EAE5DD;
+  --primary: #90A6C7;
+  --primary-foreground: #1C1A17;
+  --secondary: #33302B;
+  --secondary-foreground: #EAE5DD;
+  --muted: #33302B;
+  --muted-foreground: #A39B8D;
+  --accent: #2B3542;
+  --accent-foreground: #9FB4D4;
+  --destructive: #D98A7E;
+  --border: rgba(234, 229, 221, 0.14);
+  --input: #4A453D;
+  --ring: #90A6C7;
 }
 
 @theme inline {
