@@ -50,18 +50,37 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
    `checkbox.tsx`, `todo-column.tsx` 등)에 그대로 적용함. **레이아웃이 바뀌어도 이 시각 스타일은 유지.**
 7. **Supabase 연동**: 이메일/비밀번호 로그인, `todos` 테이블 + RLS(본인 데이터만 접근) + Realtime 구독.
    드래그 중에는 로컬 상태만 바뀌고(반응성), **드롭할 때 한 번만 DB에 저장**하도록 최적화.
+8. **(2026-09-11 추가) 요일 칸 → 시간 단위 캘린더로 전환**: Google Calendar 주간 뷰 스크린샷을 레퍼런스로,
+   Mon~Sun 각 칸을 "할 일 리스트"가 아니라 **0~24시 시간축이 있는 캘린더 그리드**로 교체.
+   - 할 일을 Todo List(보관함)에서 특정 요일·시간 칸으로 드래그하면 그 위치의 시간으로 예약됨
+     (기본 소요시간 1시간, 15분 단위로 스냅).
+   - 예약된 항목은 소요 시간에 비례하는 높이의 블록으로 표시되고, **블록 자체를 드래그해서 다른
+     요일/시간으로 옮기거나**, **블록 하단 모서리를 마우스로 드래그해서 소요 시간(높이)을 조절**할 수 있음.
+   - 디자인은 여전히 애플 미리알림 톤 유지(색은 primary 파란색 하나만 사용, 요일별/카테고리별 색상은
+     아직 안 씀 — 6번 결정 그대로).
+   - dnd-kit의 `closestCorners`는 위아래로 아주 긴(24시간짜리) 드롭 영역과는 잘 안 맞아서(모서리 4개
+     기준 거리라 세로로 긴 영역이 불리해짐) `pointerWithin`으로 교체함. 이 부분 건드릴 일 있으면 참고.
+   - 기존에 요일에만 배정되고 시간이 없던 데이터(레거시)는 렌더링 시 오전 9시/1시간으로 기본값 처리
+     (`src/lib/time.ts`의 `DEFAULT_START_MINUTES`/`DEFAULT_DURATION_MINUTES`) — 실제 DB 값은
+     사용자가 옮기거나 리사이즈하기 전까진 비어 있음.
+   - 같은 시간대에 여러 할 일이 겹치는 경우 나란히 배치하는 처리는 아직 없음(겹치면 그냥 겹쳐 보임,
+     드래그로 옮기면 해결). 필요해지면 다음에 추가.
 
 ## 지금 구현된 것 (기능 목록)
 
-- Todo List(전역 보관함, 사이드 패널) + Mon~Sun 한 줄 그리드
-- 할 일 추가 / 클릭해서 수정 / 삭제 / 완료 체크(원형 체크박스, Reminders 스타일)
-- 드래그 앤 드롭: 요일 간 이동, 같은 칸 내 순서 변경, 패널 ↔ 요일 칸 이동 ([`@dnd-kit`](https://dndkit.com/))
-- 주차 이동 (`< 37주 >`, "이번 주" 바로가기, 오늘 날짜가 포함된 요일 칸에 파란 테두리 + "오늘" 배지)
+- Todo List(전역 보관함, 사이드 패널) + Mon~Sun **시간 단위 캘린더 그리드** (0~24시, 스크롤 가능)
+- 할 일 추가(보관함) / 클릭해서 텍스트 수정 / 삭제 / 완료 체크(원형 체크박스, Reminders 스타일)
+- 드래그 앤 드롭: 보관함 ↔ 요일·시간 칸 이동, 예약된 블록을 다른 요일/시간으로 이동,
+  보관함 내 순서 변경 ([`@dnd-kit`](https://dndkit.com/), 충돌 감지는 `pointerWithin`)
+- 예약된 할 일은 **소요 시간에 비례하는 높이의 블록**으로 표시(시간 범위 라벨 포함),
+  **블록 하단 모서리를 드래그해서 소요 시간을 리사이즈** 가능 (15분 단위 스냅)
+- 오늘 요일 칸에 현재 시각을 가리키는 빨간 라인 표시
+- 주차 이동 (`< 37주 >`, "이번 주" 바로가기, 오늘 날짜에 파란 원 표시)
 - 오른쪽 고정 아이콘 레일 + 체크 아이콘으로 여는 Todo List 슬라이드 패널 (Google Calendar 참고)
 - 모바일: 요일 탭으로 하나씩 보기, 패널은 거의 전체 화면 슬라이드오버
 - 로그인/가입(이메일·비밀번호), 로그아웃
 - Supabase 실시간 동기화 (다른 기기/탭에서 바뀐 내용 자동 반영)
-- 디자인: Apple 미리알림 스타일 (iOS 그룹 카드, 블루 단일 accent, 시스템 폰트)
+- 디자인: Apple 미리알림 스타일 (iOS 그룹 카드 느낌 유지, 블루 단일 accent, 시스템 폰트)
 
 ## 파일 맵
 
@@ -82,14 +101,16 @@ src/lib/supabase/server.ts      서버 컴포넌트용 Supabase 클라이언트
 src/lib/supabase/todos.ts       useSupabaseTodos 훅 — fetch + realtime 구독 + 낙관적 업데이트(add/update/remove/reorder)
 src/lib/types.ts                Todo 타입, 요일 키, 라벨
 src/lib/week.ts                 주차 계산(월요일 시작, ISO 주차, 오늘 여부 등)
+src/lib/time.ts                 시간 캘린더 계산(시간→px 변환, 스냅, 시간 라벨 포맷 등)
 src/lib/utils.ts                cn() 헬퍼 (shadcn 표준)
 
-src/components/week-board.tsx   메인 화면 전체 — 상태 관리, DnD 컨텍스트, 레이아웃 조립
-src/components/week-nav.tsx     주차 이동 버튼들
-src/components/todo-column.tsx  요일 1칸 (iOS 그룹 카드 스타일)
+src/components/week-board.tsx    메인 화면 전체 — 상태 관리, DnD 컨텍스트, 레이아웃 조립
+src/components/week-nav.tsx      주차 이동 버튼들
+src/components/week-calendar.tsx Mon~Sun 시간 단위 캘린더 그리드(요일 헤더 + 0~24시 스크롤 영역 + 현재 시각 라인)
+src/components/calendar-block.tsx 캘린더에 예약된 할 일 블록(드래그로 이동, 하단 핸들로 리사이즈)
 src/components/todo-panel.tsx   Todo List 슬라이드 패널 (자체 헤더 + 닫기 버튼)
 src/components/icon-rail.tsx    오른쪽 고정 아이콘 레일 (확장 가능한 구조)
-src/components/todo-card.tsx    할 일 한 줄(체크박스 + 텍스트 + 드래그 핸들 + 삭제)
+src/components/todo-card.tsx    Todo List 보관함 항목 한 줄(체크박스 + 텍스트 + 드래그 핸들 + 삭제, 시간 미배정 상태)
 src/components/add-todo-form.tsx  할 일 추가 입력 행
 src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/checkbox/input)
 ```
@@ -102,10 +123,16 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
    (legacy `anon`/`service_role`은 2026년 말 폐지 예정이라 새 키 체계로 바로 세팅함).
 2. ~~Vercel 배포~~ — **완료 (2026-09-11)**. 프로덕션: https://plan0.vercel.app
    (Vercel 프로젝트 `wizvees-projects/plan.0`, GitHub 연동도 완료되어 이후 push 시 자동 배포됨)
-3. PLANNING.md의 "향후 확장 아이디어"(6번 항목, 지금은 범위 밖): 시간 단위 입력/표시,
-   카테고리·우선순위 색상 태그(요일별 색상 자리를 이걸 위해 비워둠), 월간/분기 플래너 탭.
+3. ~~시간 단위 입력/표시~~ — **완료 (2026-09-11)**. 8번 결정 참고. PLANNING.md의 "향후 확장 아이디어" 중
+   나머지(카테고리·우선순위 색상 태그, 월간/분기 플래너 탭)는 여전히 범위 밖.
 4. 아이콘 레일은 체크 아이콘 하나뿐이라, 나중에 다른 메뉴(설정 등) 추가하기 쉽게 배열 구조로 만들어둠
    (`icon-rail.tsx`의 `items` prop).
+5. 같은 요일·시간대에 여러 할 일이 겹치는 경우 나란히 배치(사이드바이사이드 레이아웃)하는 처리는
+   아직 없음 — 겹치면 그냥 겹쳐서 보임(사용자가 드래그로 옮기면 해결). 기존에 시간 없이 요일에만
+   배정돼 있던 레거시 데이터도 전부 오전 9시 기본값으로 렌더링되면서 서로 겹칠 수 있음.
+6. Supabase 프로젝트에 이미 `schema.sql`을 실행해둔 상태라면, 이번에 추가된 `start_minutes`/
+   `duration_minutes` 컬럼을 쓰려면 **`supabase/schema.sql`을 SQL Editor에서 다시 한 번 실행**해야 함
+   (전체 스크립트가 재실행해도 안전하도록 `if not exists`로 작성돼 있음).
 
 ## `.env` / 키 노출 관련 (사용자 질문에 대한 답)
 

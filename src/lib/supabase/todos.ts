@@ -15,6 +15,8 @@ interface TodoRow {
   completed: boolean;
   position: number;
   created_at: string;
+  start_minutes: number | null;
+  duration_minutes: number | null;
 }
 
 function fromRow(row: TodoRow): Todo {
@@ -26,10 +28,14 @@ function fromRow(row: TodoRow): Todo {
     completed: row.completed,
     position: row.position,
     createdAt: row.created_at,
+    startMinutes: row.start_minutes,
+    durationMinutes: row.duration_minutes,
   };
 }
 
-type UpdatablePatch = Partial<Pick<Todo, "content" | "completed" | "day" | "weekStart" | "position">>;
+type UpdatablePatch = Partial<
+  Pick<Todo, "content" | "completed" | "day" | "weekStart" | "position" | "startMinutes" | "durationMinutes">
+>;
 
 export function useSupabaseTodos(userId: string) {
   const [supabase] = useState(() => createClient());
@@ -89,6 +95,8 @@ export function useSupabaseTodos(userId: string) {
           completed: false,
           position,
           createdAt: new Date().toISOString(),
+          startMinutes: null,
+          durationMinutes: null,
         },
       ]);
 
@@ -117,6 +125,8 @@ export function useSupabaseTodos(userId: string) {
       if (patch.day !== undefined) dbPatch.day = patch.day;
       if (patch.weekStart !== undefined) dbPatch.week_start = patch.weekStart;
       if (patch.position !== undefined) dbPatch.position = patch.position;
+      if (patch.startMinutes !== undefined) dbPatch.start_minutes = patch.startMinutes;
+      if (patch.durationMinutes !== undefined) dbPatch.duration_minutes = patch.durationMinutes;
 
       await supabase.from("todos").update(dbPatch).eq("id", id);
     },

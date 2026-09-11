@@ -12,6 +12,11 @@ create table if not exists public.todos (
   created_at timestamptz not null default now()
 );
 
+-- 위클리 뷰의 시간 단위 표시/드래그 리사이즈 기능을 위한 컬럼 (기존 프로젝트도 이 파일을
+-- 다시 실행하면 안전하게 추가됩니다). null이면 아직 시간이 지정되지 않은 항목입니다.
+alter table public.todos add column if not exists start_minutes integer;
+alter table public.todos add column if not exists duration_minutes integer;
+
 create index if not exists todos_user_id_idx on public.todos (user_id);
 
 alter table public.todos enable row level security;

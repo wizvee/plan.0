@@ -6,11 +6,10 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
-  closestCorners,
+  pointerWithin,
   useSensor,
   useSensors,
   type DragEndEvent,
-  type DragOverEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
@@ -18,19 +17,13 @@ import { Check } from "lucide-react";
 
 import { useSupabaseTodos } from "@/lib/supabase/todos";
 import { createClient } from "@/lib/supabase/client";
-import {
-  dayDateKey,
-  isToday as isTodayKey,
-  mondayOf,
-  shiftWeeks,
-  toDateKey,
-  weekNumberLabel,
-  weekRangeLabel,
-} from "@/lib/week";
+import { mondayOf, shiftWeeks, toDateKey, weekNumberLabel, weekRangeLabel } from "@/lib/week";
 import { cn } from "@/lib/utils";
-import { BACKLOG, DAY_KEYS, DAY_LABELS, DAY_LABELS_KO, type DayKey, type ColumnKey, type Todo } from "@/lib/types";
-import { TodoColumn } from "@/components/todo-column";
+import { BACKLOG, DAY_KEYS, DAY_LABELS_KO, type DayKey, type Todo } from "@/lib/types";
+import { DEFAULT_DURATION_MINUTES, HOUR_HEIGHT, MINUTES_PER_DAY, clampMinutes, snapMinutes } from "@/lib/time";
 import { TodoCard } from "@/components/todo-card";
+import { CalendarBlock } from "@/components/calendar-block";
+import { WeekCalendar } from "@/components/week-calendar";
 import { TodoPanel } from "@/components/todo-panel";
 import { IconRail } from "@/components/icon-rail";
 import { WeekNav } from "@/components/week-nav";
@@ -60,70 +53,23 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
   );
 
-  const itemsByColumn = useMemo(() => {
-    const grouped: Record<ColumnKey, Todo[]> = {
-      backlog: [],
-      mon: [],
-      tue: [],
-      wed: [],
-      thu: [],
-      fri: [],
-      sat: [],
-      sun: [],
-    };
+  const backlogItems = useMemo(
+    () => todos.filter((t) => t.day === null).sort((a, b) => a.position - b.position),
+    [todos]
+  );
+
+  const scheduledByDay = useMemo(() => {
+    const grouped: Record<DayKey, Todo[]> = { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] };
     for (const todo of todos) {
-      if (todo.day === null) {
-        grouped.backlog.push(todo);
-      } else if (todo.weekStart === weekKey) {
+      if (todo.day !== null && todo.weekStart === weekKey) {
         grouped[todo.day].push(todo);
       }
     }
-    (Object.keys(grouped) as ColumnKey[]).forEach((key) => {
-      grouped[key].sort((a, b) => a.position - b.position);
-    });
     return grouped;
   }, [todos, weekKey]);
 
-  function columnOf(id: string): ColumnKey | undefined {
-    if (id === BACKLOG || (DAY_KEYS as string[]).includes(id)) {
-      return id as ColumnKey;
-    }
-    const todo = todos.find((t) => t.id === id);
-    if (!todo) return undefined;
-    return todo.day === null ? BACKLOG : todo.day;
-  }
-
   function handleDragStart(event: DragStartEvent) {
     setActiveId(String(event.active.id));
-  }
-
-  function handleDragOver(event: DragOverEvent) {
-    const { active, over } = event;
-    if (!over) return;
-    const activeIdStr = String(active.id);
-    const overIdStr = String(over.id);
-    const fromColumn = columnOf(activeIdStr);
-    const toColumn = columnOf(overIdStr);
-    if (!fromColumn || !toColumn || fromColumn === toColumn) return;
-
-    setTodos((prev) => {
-      const activeTodo = prev.find((t) => t.id === activeIdStr);
-      if (!activeTodo) return prev;
-      const destItems = itemsByColumn[toColumn];
-      const overIndex = destItems.findIndex((t) => t.id === overIdStr);
-      const newPosition =
-        overIndex === -1 ? nextPosition(destItems) : destItems[overIndex].position - 0.5;
-      return prev.map((t) =>
-        t.id === activeIdStr
-          ? {
-              ...t,
-              day: toColumn === BACKLOG ? null : toColumn,
-              weekStart: toColumn === BACKLOG ? null : weekKey,
-              position: newPosition,
-            }
-          : t
-      );
-    });
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -132,16 +78,44 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
     if (!over) return;
     const activeIdStr = String(active.id);
     const overIdStr = String(over.id);
-    const column = columnOf(activeIdStr);
-    if (!column) return;
+    const todo = todos.find((t) => t.id === activeIdStr);
+    if (!todo) return;
 
-    const columnItems = itemsByColumn[column];
-    const oldIndex = columnItems.findIndex((t) => t.id === activeIdStr);
-    const overIndex = columnItems.findIndex((t) => t.id === overIdStr);
+    if (overIdStr.startsWith("grid:")) {
+      const day = overIdStr.slice("grid:".length) as DayKey;
+      const duration = todo.durationMinutes ?? DEFAULT_DURATION_MINUTES;
+      const gridTop = over.rect.top;
+      const itemTop = active.rect.current.translated?.top ?? gridTop;
+      const rawMinutes = ((itemTop - gridTop) / HOUR_HEIGHT) * 60;
+      const startMinutes = clampMinutes(snapMinutes(rawMinutes), 0, MINUTES_PER_DAY - duration);
+      const patch = { day, weekStart: weekKey, startMinutes, durationMinutes: duration };
+      setTodos((prev) => prev.map((t) => (t.id === activeIdStr ? { ...t, ...patch } : t)));
+      void updateTodo(activeIdStr, patch);
+      return;
+    }
+
+    const isOverBacklogItem = todos.some((t) => t.id === overIdStr && t.day === null);
+    if (overIdStr !== BACKLOG && !isOverBacklogItem) return;
+
+    if (todo.day !== null) {
+      const patch = {
+        day: null,
+        weekStart: null,
+        startMinutes: null,
+        durationMinutes: null,
+        position: nextPosition(backlogItems),
+      };
+      setTodos((prev) => prev.map((t) => (t.id === activeIdStr ? { ...t, ...patch } : t)));
+      void updateTodo(activeIdStr, patch);
+      return;
+    }
+
+    const oldIndex = backlogItems.findIndex((t) => t.id === activeIdStr);
+    const overIndex = backlogItems.findIndex((t) => t.id === overIdStr);
     const ordered =
       oldIndex !== -1 && overIndex !== -1 && oldIndex !== overIndex
-        ? arrayMove(columnItems, oldIndex, overIndex)
-        : columnItems;
+        ? arrayMove(backlogItems, oldIndex, overIndex)
+        : backlogItems;
 
     const normalizedById = new Map(ordered.map((t, index) => [t.id, index]));
     setTodos((prev) =>
@@ -159,7 +133,11 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
   }
 
   function handleAdd(content: string) {
-    void addTodo(content, nextPosition(itemsByColumn.backlog));
+    void addTodo(content, nextPosition(backlogItems));
+  }
+
+  function handleResize(id: string, durationMinutes: number) {
+    void updateTodo(id, { durationMinutes });
   }
 
   function handleToggle(id: string) {
@@ -238,39 +216,24 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
 
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCorners}
+          collisionDetection={pointerWithin}
           onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-7">
-            {DAY_KEYS.map((day, index) => (
-              <SortableContext
-                key={day}
-                items={itemsByColumn[day].map((t) => t.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <TodoColumn
-                  id={day}
-                  title={DAY_LABELS[day]}
-                  items={itemsByColumn[day]}
-                  onToggle={handleToggle}
-                  onRemove={handleRemove}
-                  onEdit={handleEdit}
-                  isToday={isTodayKey(dayDateKey(monday, index))}
-                  className={cn(mobileDay !== day && "hidden", "sm:block")}
-                />
-              </SortableContext>
-            ))}
-          </div>
+          <WeekCalendar
+            monday={monday}
+            mobileDay={mobileDay}
+            itemsByDay={scheduledByDay}
+            onToggle={handleToggle}
+            onRemove={handleRemove}
+            onEdit={handleEdit}
+            onResize={handleResize}
+          />
 
           {panelOpen ? (
-            <SortableContext
-              items={itemsByColumn.backlog.map((t) => t.id)}
-              strategy={verticalListSortingStrategy}
-            >
+            <SortableContext items={backlogItems.map((t) => t.id)} strategy={verticalListSortingStrategy}>
               <TodoPanel
-                items={itemsByColumn.backlog}
+                items={backlogItems}
                 onToggle={handleToggle}
                 onRemove={handleRemove}
                 onEdit={handleEdit}
@@ -280,7 +243,15 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
             </SortableContext>
           ) : null}
 
-          <DragOverlay>{activeTodo ? <TodoCard todo={activeTodo} overlay /> : null}</DragOverlay>
+          <DragOverlay>
+            {activeTodo ? (
+              activeTodo.day === null ? (
+                <TodoCard todo={activeTodo} overlay />
+              ) : (
+                <CalendarBlock todo={activeTodo} overlay />
+              )
+            ) : null}
+          </DragOverlay>
         </DndContext>
       </div>
 

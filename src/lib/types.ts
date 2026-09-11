@@ -36,4 +36,8 @@ export interface Todo {
   completed: boolean;
   position: number;
   createdAt: string;
+  /** day가 설정된 항목만 값이 있음. 자정 기준 분(0~1439) */
+  startMinutes: number | null;
+  /** day가 설정된 항목만 값이 있음. 분 단위 소요 시간 */
+  durationMinutes: number | null;
 }
