@@ -17,6 +17,8 @@ interface TodoRow {
   created_at: string;
   start_minutes: number | null;
   duration_minutes: number | null;
+  url: string | null;
+  memo: string | null;
 }
 
 function fromRow(row: TodoRow): Todo {
@@ -30,11 +32,16 @@ function fromRow(row: TodoRow): Todo {
     createdAt: row.created_at,
     startMinutes: row.start_minutes,
     durationMinutes: row.duration_minutes,
+    url: row.url,
+    memo: row.memo,
   };
 }
 
 type UpdatablePatch = Partial<
-  Pick<Todo, "content" | "completed" | "day" | "weekStart" | "position" | "startMinutes" | "durationMinutes">
+  Pick<
+    Todo,
+    "content" | "completed" | "day" | "weekStart" | "position" | "startMinutes" | "durationMinutes" | "url" | "memo"
+  >
 >;
 
 export function useSupabaseTodos(userId: string) {
@@ -97,6 +104,8 @@ export function useSupabaseTodos(userId: string) {
           createdAt: new Date().toISOString(),
           startMinutes: null,
           durationMinutes: null,
+          url: null,
+          memo: null,
         },
       ]);
 
@@ -127,6 +136,8 @@ export function useSupabaseTodos(userId: string) {
       if (patch.position !== undefined) dbPatch.position = patch.position;
       if (patch.startMinutes !== undefined) dbPatch.start_minutes = patch.startMinutes;
       if (patch.durationMinutes !== undefined) dbPatch.duration_minutes = patch.durationMinutes;
+      if (patch.url !== undefined) dbPatch.url = patch.url;
+      if (patch.memo !== undefined) dbPatch.memo = patch.memo;
 
       await supabase.from("todos").update(dbPatch).eq("id", id);
     },

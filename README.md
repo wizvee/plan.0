@@ -12,6 +12,7 @@
 - 주차 이동 (`< 37주 >` 형태 네비게이션, "이번 주" 바로가기)
 - UI: [shadcn/ui](https://ui.shadcn.com/) 기반, Apple 미리알림(Reminders) 스타일 + Tailwind CSS
 - 로그인(이메일/비밀번호) + Supabase 기반 다중 기기 실시간 동기화
+- 웹서핑 중 공유하기 → 애플 단축어로 링크를 Todo List에 스크랩 (`/api/clip`, 아래 참고)
 
 ## Supabase 설정 (최초 1회)
 
@@ -37,6 +38,27 @@
    Vercel 프로젝트의 Environment Variables에도 등록
 
 앱 접속 후 화면의 "가입하기"로 계정을 만들면 바로 사용할 수 있습니다(개인용이므로 가입은 본인만 하면 됩니다).
+
+## 공유하기 → 애플 단축어로 링크 스크랩 (선택)
+
+웹서핑하다 나중에 볼 링크를 애플 미리알림에 저장하던 것과 비슷하게, `/api/clip`로 POST하면
+Todo List 보관함에 새 항목이 생깁니다(제목 + 원본 링크 임베드 카드, 완료 체크 가능).
+
+1. `.env.local`(로컬)과 Vercel Environment Variables(배포)에 아래 세 값 추가:
+   - `SUPABASE_SECRET_KEY`: **Project Settings → API Keys**의 `secret` 키(예전 `service_role`).
+     이 API가 로그인 세션 없이도 본인 데이터에 쓸 수 있어야 해서 RLS를 우회하는 이 키가 필요합니다.
+   - `CLIP_API_SECRET`: 아무 긴 임의 문자열(예: `openssl rand -hex 32`로 생성). 단축어가 이 값을
+     `Authorization: Bearer <값>` 헤더로 보내야만 요청이 통과합니다.
+   - `CLIP_USER_ID`: Supabase **Authentication → Users**에서 본인 계정의 User UID.
+2. 애플 단축어 앱에서 새 단축어 생성, **"공유 시트에서 사용"** 켜기, 입력 타입을 URL로 설정.
+   - (선택) "웹페이지 세부 정보 가져오기 → 이름"으로 페이지 제목을 받아 `title`로 사용하면
+     링크 대신 실제 제목이 할 일 이름으로 들어갑니다.
+   - (선택) "텍스트 입력 요청"으로 메모를 물어봐서 `memo`로 같이 보낼 수 있습니다(메모는 저장만
+     되고 화면에는 아직 표시되지 않습니다).
+   - **"URL의 콘텐츠 가져오기"** 액션 추가: URL은 `https://your-app.vercel.app/api/clip`,
+     메서드 POST, 헤더 `Authorization: Bearer <CLIP_API_SECRET>`, 요청 본문은 JSON으로
+     `{ "title": 위에서 받은 이름, "url": 공유받은 URL, "memo": 위에서 받은 텍스트 }`.
+3. 사파리(또는 아무 앱)에서 링크를 공유 → 방금 만든 단축어 실행 → Todo List에 바로 뜹니다.
 
 ## 시작하기
 

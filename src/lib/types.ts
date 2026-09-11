@@ -40,4 +40,8 @@ export interface Todo {
   startMinutes: number | null;
   /** day가 설정된 항목만 값이 있음. 분 단위 소요 시간 */
   durationMinutes: number | null;
+  /** 스크랩(공유하기 → 단축어)으로 추가된 항목의 원본 링크 */
+  url: string | null;
+  /** 스크랩 메모. 지금은 저장만 하고 화면에는 표시하지 않음 */
+  memo: string | null;
 }

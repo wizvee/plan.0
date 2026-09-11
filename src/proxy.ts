@@ -28,8 +28,10 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isLoginPage = request.nextUrl.pathname.startsWith("/login");
+  // /api/* 라우트는 세션 쿠키가 아니라 자체 헤더 인증(예: /api/clip의 비밀키)을 쓰므로 여기서 제외.
+  const isApiRoute = request.nextUrl.pathname.startsWith("/api/");
 
-  if (!user && !isLoginPage) {
+  if (!user && !isLoginPage && !isApiRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

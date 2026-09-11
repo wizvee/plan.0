@@ -17,6 +17,10 @@ create table if not exists public.todos (
 alter table public.todos add column if not exists start_minutes integer;
 alter table public.todos add column if not exists duration_minutes integer;
 
+-- 공유하기(애플 단축어) 스크랩 기능용 컬럼. url/memo 둘 다 별도 필드이며 nullable.
+alter table public.todos add column if not exists url text;
+alter table public.todos add column if not exists memo text;
+
 create index if not exists todos_user_id_idx on public.todos (user_id);
 
 alter table public.todos enable row level security;

@@ -65,6 +65,49 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
      사용자가 옮기거나 리사이즈하기 전까진 비어 있음.
    - 같은 시간대에 여러 할 일이 겹치는 경우 나란히 배치하는 처리는 아직 없음(겹치면 그냥 겹쳐 보임,
      드래그로 옮기면 해결). 필요해지면 다음에 추가.
+9. **(2026-09-11 추가) 개인용 마감 + 디자인/버그 다듬기**:
+   - 개인용으로만 쓸 거라 로그인 페이지의 "가입하기" 전환 버튼을 주석 처리(코드는 남겨둠, 필요하면 주석만 해제).
+     완전히 막으려면 Supabase 대시보드 Authentication에서 새 가입 자체를 꺼두는 걸 추천함(아직 안 함).
+   - **색상 팔레트를 "Chalk"로 교체**: 쨍한 iOS 시스템 블루(`#007AFF`) 대신 채도를 낮춘 더스티 블루
+     (`#5C7599`), 차가운 회색 배경 대신 온기 있는 아이보리(`#F6F4F0`)로. `globals.css` 토큰만 바꾸면
+     전체에 반영되는 구조라 컴포넌트는 안 건드림. 다크 모드 토큰도 같이 바꿨지만, 앱에 시스템
+     다크모드를 실제로 켜주는 로직이 없어서(이전부터 그랬음) 지금은 라이트만 보임.
+   - **모바일 레이아웃을 iOS 캘린더 스타일로**: 오른쪽 고정 아이콘 레일은 모바일에서 하단 바로 이동
+     (데스크톱은 그대로). 요일 선택은 필 버튼 대신 요일+날짜 원형 스트립(오늘은 채워진 원, 선택한
+     날짜는 링)으로, 그 아래 "37주 · 2026년 9월 11일 금요일" 형태 요약 줄 추가. Todo List 패널은
+     모바일에서 화면 절반 정도 올라오는 바텀시트(그랩 핸들 포함)로, 데스크톱은 기존 오른쪽 슬라이드
+     패널 유지. 드래그 앤 드롭은 그대로 작동.
+   - **버그: 현재 시각 표시줄이 UTC로 계산되던 문제**. Vercel 서버가 UTC로 도는데 `new Date()`를
+     렌더링 도중 바로 계산해서 SSR 결과에 UTC 값이 박히던 게 원인(한국시간 밤 11시가 오후 2시로
+     보임 — 정확히 9시간 차이). `src/lib/use-today.ts`를 만들어서 "오늘/지금" 관련 계산은 전부
+     클라이언트 마운트 이후(`useEffect`)에만 하도록 고침. 앞으로 `new Date()`를 렌더링 중에 바로
+     쓰는 코드를 추가하면 같은 문제가 재발할 수 있음 — 항상 이 훅처럼 client-only로 계산할 것.
+   - **버그: 데스크톱 아이콘 레일이 오른쪽 위 구석에 작게 쪼그라듦**. `inset-x-0`/`inset-y-0` 같은
+     축 단위 유틸리티와 `right-0`/`bottom-auto` 같은 개별 방향 유틸리티를 섞어 써서 같은 속성끼리
+     충돌(Tailwind가 생성하는 CSS 순서상 나중 규칙이 이김). top/right/bottom/left를 각각 명시적으로만
+     지정하도록 정리. **교훈: 반응형 `fixed` 포지셔닝에서 `inset-*` 축 유틸리티와 개별 side
+     유틸리티를 같이 쓰지 말 것** — 항상 side별로만 쓰기.
+   - **캘린더 블록 radius 축소 + 인접 블록 사이 틈 추가**: 애플 캘린더 참고 이미지처럼 radius를
+     `9~10px`에서 `5px`로 줄이고, 블록 높이에서 `BLOCK_GAP`(2px)을 빼서 시작 위치(top)는 그대로 두고
+     붙어있는 일정끼리 살짝 틈이 보이도록 함(`src/lib/time.ts`의 `BLOCK_GAP`).
+10. **(2026-09-11 추가) 공유하기 → 애플 단축어 스크랩 기능**: 웹서핑하다 링크를 미리알림에 저장하던
+    것처럼, `/api/clip`(`src/app/api/clip/route.ts`)에 POST하면 Todo List 보관함에 새 항목이 생김.
+    - 로그인 세션이 아니라 **헤더에 담은 고정 비밀키**(`CLIP_API_SECRET`)로 인증 — 단축어가 Supabase
+      로그인 세션을 유지/갱신할 방법이 마땅치 않아서, 그 대신 이 API 전용의 좁은 권한 비밀키를 새로
+      만듦. 실제 DB insert는 서버에서만 쓰는 `secret` 키(`SUPABASE_SECRET_KEY`, `src/lib/supabase/admin.ts`)로
+      RLS를 우회해서 처리하고, `user_id`는 `CLIP_USER_ID` 환경변수에 고정값(1인용이라 하드코딩).
+    - `service_role`(secret) 키를 단축어 자체에 넣는 방식(더 강력하지만 유출 시 DB 전체가 위험)도
+      검토했으나, API 라우트를 하나 두고 그 라우트에만 이 좁은 권한 비밀키를 쓰는 쪽으로 결정 — 자세한
+      논의는 이 문서 위쪽 대화 참고할 것 없이, 요약하면 "휴대폰에 저장되는 키는 최대한 좁은 권한으로".
+    - `todos` 테이블에 `url`, `memo` 컬럼 추가(둘 다 nullable, 별도 필드 — 메모가 URL은 아님).
+    - `proxy.ts`가 로그인 세션 없는 요청을 `/login`으로 리다이렉트하던 게 `/api/*`에도 걸려서 API가
+      막혔음 — `/api/`로 시작하는 경로는 이 리다이렉트에서 제외하도록 고침(자체 헤더 인증을 쓰므로).
+    - 화면 표시: `url`이 있으면 텍스트 아래에 파비콘 + 도메인 임베드 카드(구글 파비콘 서비스 사용,
+      실패하면 링크 아이콘으로 대체)가 뜨고 누르면 새 탭으로 열림 (`TodoCard`의 `UrlChip`).
+      `memo`는 DB에는 저장되지만 **화면에는 아직 안 보여줌**(요청대로 일단 제외).
+    - 예약된 캘린더 블록(`CalendarBlock`)에는 이 임베드 카드를 아직 안 붙임 — 블록이 너무 작아서
+      나중에 필요해지면 그때 추가.
+    - 단축어 설정 방법은 README.md의 "공유하기 → 애플 단축어로 링크 스크랩" 참고.
 
 ## 지금 구현된 것 (기능 목록)
 
@@ -74,13 +117,15 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
   보관함 내 순서 변경 ([`@dnd-kit`](https://dndkit.com/), 충돌 감지는 `pointerWithin`)
 - 예약된 할 일은 **소요 시간에 비례하는 높이의 블록**으로 표시(시간 범위 라벨 포함),
   **블록 하단 모서리를 드래그해서 소요 시간을 리사이즈** 가능 (15분 단위 스냅)
-- 오늘 요일 칸에 현재 시각을 가리키는 빨간 라인 표시
-- 주차 이동 (`< 37주 >`, "이번 주" 바로가기, 오늘 날짜에 파란 원 표시)
-- 오른쪽 고정 아이콘 레일 + 체크 아이콘으로 여는 Todo List 슬라이드 패널 (Google Calendar 참고)
-- 모바일: 요일 탭으로 하나씩 보기, 패널은 거의 전체 화면 슬라이드오버
-- 로그인/가입(이메일·비밀번호), 로그아웃
+- 오늘 요일 칸에 현재 시각을 가리키는 빨간 라인 표시 (client-only 계산, `use-today.ts`)
+- 주차 이동 (`< 37주 >`, "이번 주" 바로가기, 오늘 날짜에 원형 표시)
+- 아이콘 레일(데스크톱은 오른쪽 고정, 모바일은 하단 고정) + 체크 아이콘으로 Todo List 열기
+  (데스크톱: 오른쪽 슬라이드 패널 / 모바일: 하단 바텀시트)
+- 모바일: iOS 캘린더 느낌의 요일+날짜 원형 스트립으로 하루씩 보기
+- 로그인(이메일·비밀번호), 로그아웃 — 가입 버튼은 개인용이라 주석 처리해둠
 - Supabase 실시간 동기화 (다른 기기/탭에서 바뀐 내용 자동 반영)
-- 디자인: Apple 미리알림 스타일 (iOS 그룹 카드 느낌 유지, 블루 단일 accent, 시스템 폰트)
+- 공유하기 → 애플 단축어로 링크 스크랩 (`/api/clip`) — Todo List에 제목 + URL 임베드 카드로 추가
+- 디자인: "Chalk" 팔레트 (뮤트 더스티 블루 + 아이보리 배경), iOS 그룹 카드 느낌 유지
 
 ## 파일 맵
 
@@ -89,28 +134,33 @@ PLANNING.md                    기획서 (컨셉/데이터 모델/스택 결정 
 README.md                      실행 방법 + Supabase 설정 단계별 가이드
 HANDOFF.md                     이 문서
 
-supabase/schema.sql            todos 테이블 + RLS 정책 + realtime publication (Supabase SQL Editor에서 1회 실행)
+supabase/schema.sql            todos 테이블 + RLS 정책 + realtime publication (Supabase SQL Editor에서 1회 실행,
+                                재실행해도 안전)
 .env.local.example             필요한 환경변수 템플릿 (진짜 키는 절대 커밋 안 함)
 
 src/app/page.tsx                서버 컴포넌트: 로그인 체크 후 WeekBoard 렌더 (userId/userEmail 전달)
-src/app/login/page.tsx          로그인/가입 폼
-src/proxy.ts                    (구 middleware.ts) 인증 안 된 요청을 /login으로 리다이렉트
+src/app/login/page.tsx          로그인 폼 (가입 전환 버튼은 주석 처리됨)
+src/app/api/clip/route.ts       공유하기 스크랩용 API — 비밀키 헤더 인증 → Todo List에 새 항목 insert
+src/proxy.ts                    (구 middleware.ts) 인증 안 된 요청을 /login으로 리다이렉트 (/api/*는 제외)
 
 src/lib/supabase/client.ts      브라우저용 Supabase 클라이언트
-src/lib/supabase/server.ts      서버 컴포넌트용 Supabase 클라이언트
+src/lib/supabase/server.ts      서버 컴포넌트용 Supabase 클라이언트 (로그인 세션 기반)
+src/lib/supabase/admin.ts       secret 키로 RLS 우회하는 서버 전용 클라이언트 (/api/clip 전용)
 src/lib/supabase/todos.ts       useSupabaseTodos 훅 — fetch + realtime 구독 + 낙관적 업데이트(add/update/remove/reorder)
 src/lib/types.ts                Todo 타입, 요일 키, 라벨
 src/lib/week.ts                 주차 계산(월요일 시작, ISO 주차, 오늘 여부 등)
-src/lib/time.ts                 시간 캘린더 계산(시간→px 변환, 스냅, 시간 라벨 포맷 등)
+src/lib/time.ts                 시간 캘린더 계산(시간→px 변환, 스냅, 시간 라벨 포맷, BLOCK_GAP 등)
+src/lib/use-today.ts            "오늘 날짜"를 client-only로 계산하는 훅 (SSR 시간대 버그 방지)
 src/lib/utils.ts                cn() 헬퍼 (shadcn 표준)
 
 src/components/week-board.tsx    메인 화면 전체 — 상태 관리, DnD 컨텍스트, 레이아웃 조립
 src/components/week-nav.tsx      주차 이동 버튼들
 src/components/week-calendar.tsx Mon~Sun 시간 단위 캘린더 그리드(요일 헤더 + 0~24시 스크롤 영역 + 현재 시각 라인)
 src/components/calendar-block.tsx 캘린더에 예약된 할 일 블록(드래그로 이동, 하단 핸들로 리사이즈)
-src/components/todo-panel.tsx   Todo List 슬라이드 패널 (자체 헤더 + 닫기 버튼)
-src/components/icon-rail.tsx    오른쪽 고정 아이콘 레일 (확장 가능한 구조)
-src/components/todo-card.tsx    Todo List 보관함 항목 한 줄(체크박스 + 텍스트 + 드래그 핸들 + 삭제, 시간 미배정 상태)
+src/components/todo-panel.tsx   Todo List 패널 (데스크톱: 오른쪽 슬라이드 / 모바일: 하단 바텀시트)
+src/components/icon-rail.tsx    아이콘 레일 (데스크톱 오른쪽 / 모바일 하단, 확장 가능한 구조)
+src/components/todo-card.tsx    Todo List 보관함 항목 한 줄(체크박스 + 텍스트 + 드래그 핸들 + 삭제 +
+                                 URL이 있으면 파비콘 임베드 카드, 시간 미배정 상태)
 src/components/add-todo-form.tsx  할 일 추가 입력 행
 src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/checkbox/input)
 ```
@@ -130,9 +180,14 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
 5. 같은 요일·시간대에 여러 할 일이 겹치는 경우 나란히 배치(사이드바이사이드 레이아웃)하는 처리는
    아직 없음 — 겹치면 그냥 겹쳐서 보임(사용자가 드래그로 옮기면 해결). 기존에 시간 없이 요일에만
    배정돼 있던 레거시 데이터도 전부 오전 9시 기본값으로 렌더링되면서 서로 겹칠 수 있음.
-6. Supabase 프로젝트에 이미 `schema.sql`을 실행해둔 상태라면, 이번에 추가된 `start_minutes`/
-   `duration_minutes` 컬럼을 쓰려면 **`supabase/schema.sql`을 SQL Editor에서 다시 한 번 실행**해야 함
-   (전체 스크립트가 재실행해도 안전하도록 `if not exists`로 작성돼 있음).
+6. Supabase 프로젝트에 이미 `schema.sql`을 실행해둔 상태라면, 새로 추가된 컬럼(`start_minutes`/
+   `duration_minutes`, 그리고 이번에 추가된 `url`/`memo`)을 쓰려면 **`supabase/schema.sql`을
+   SQL Editor에서 다시 한 번 실행**해야 함 (전체 스크립트가 재실행해도 안전하도록 작성돼 있음).
+7. `/api/clip` 기능을 실제로 쓰려면 `SUPABASE_SECRET_KEY`/`CLIP_API_SECRET`/`CLIP_USER_ID` 세
+   환경변수를 로컬(`.env.local`)과 Vercel 양쪽에 아직 등록 안 함 — README의 해당 섹션 참고해서
+   설정하고 애플 단축어까지 만들어야 실제로 동작함. 코드/스키마는 준비 완료 상태.
+8. 가입 버튼을 코드에서만 주석 처리했음 — 완전히 막으려면 Supabase 대시보드
+   Authentication → Sign In / Providers → Email에서 "Allow new users to sign up"을 꺼야 함(아직 안 함).
 
 ## `.env` / 키 노출 관련 (사용자 질문에 대한 답)
 
