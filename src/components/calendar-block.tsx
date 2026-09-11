@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
+  BLOCK_GAP,
   DEFAULT_DURATION_MINUTES,
   DEFAULT_START_MINUTES,
   HOUR_HEIGHT,
@@ -80,13 +81,13 @@ export function CalendarBlock({ todo, onToggle, onRemove, onEdit, onResize, over
     setPreviewDuration(null);
   }
 
-  const renderedHeight = Math.max(minutesToPx(duration), MIN_BLOCK_HEIGHT);
+  const renderedHeight = Math.max(minutesToPx(duration), MIN_BLOCK_HEIGHT) - BLOCK_GAP;
   const compact = renderedHeight <= 34;
 
   if (overlay) {
     return (
       <div
-        className="w-[200px] rounded-[10px] border-l-[3px] border-primary bg-accent px-2.5 py-1.5 shadow-lg"
+        className="w-[200px] rounded-[5px] border-l-[3px] border-primary bg-accent px-2.5 py-1.5 shadow-lg"
         style={{ height: renderedHeight }}
       >
         <p className="truncate text-[13px] font-medium text-accent-foreground">{todo.content}</p>
@@ -113,7 +114,7 @@ export function CalendarBlock({ todo, onToggle, onRemove, onEdit, onResize, over
       {...attributes}
       {...listeners}
       className={cn(
-        "group absolute z-[1] flex touch-none select-none flex-col justify-center overflow-hidden rounded-[9px] border-l-[3px] border-primary bg-accent px-2 py-1 shadow-[0_1px_1px_rgba(0,0,0,0.04)] transition-shadow hover:shadow-md",
+        "group absolute z-[1] flex touch-none select-none flex-col justify-center overflow-hidden rounded-[5px] border-l-[3px] border-primary bg-accent px-2 py-1 shadow-[0_1px_1px_rgba(0,0,0,0.04)] transition-shadow hover:shadow-md",
         isDragging && "z-20 opacity-40",
         todo.completed && "border-muted-foreground/60 bg-muted",
         compact && "flex-row items-center gap-1.5 py-0"
