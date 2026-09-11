@@ -21,22 +21,36 @@ create index if not exists todos_user_id_idx on public.todos (user_id);
 
 alter table public.todos enable row level security;
 
+-- drop + recreate so this script can be re-run safely (CREATE POLICY has no IF NOT EXISTS).
+drop policy if exists "Users can view their own todos" on public.todos;
 create policy "Users can view their own todos"
   on public.todos for select
   using (auth.uid() = user_id);
 
+drop policy if exists "Users can insert their own todos" on public.todos;
 create policy "Users can insert their own todos"
   on public.todos for insert
   with check (auth.uid() = user_id);
 
+drop policy if exists "Users can update their own todos" on public.todos;
 create policy "Users can update their own todos"
   on public.todos for update
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
+drop policy if exists "Users can delete their own todos" on public.todos;
 create policy "Users can delete their own todos"
   on public.todos for delete
   using (auth.uid() = user_id);
 
 -- Enables realtime sync (INSERT/UPDATE/DELETE events) across devices.
-alter publication supabase_realtime add table public.todos;
+-- Guarded because ALTER PUBLICATION ... ADD TABLE has no IF NOT EXISTS either.
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'todos'
+  ) then
+    alter publication supabase_realtime add table public.todos;
+  end if;
+end $$;
