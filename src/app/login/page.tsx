@@ -77,7 +77,8 @@ export default function LoginPage() {
             {loading ? "처리 중..." : mode === "signin" ? "로그인" : "가입하기"}
           </Button>
         </form>
-        <button
+        {/* 개인용으로만 쓸 계획이라 가입 버튼은 막아둠. 다시 열려면 아래 주석 해제. */}
+        {/* <button
           type="button"
           onClick={() => {
             setMode((m) => (m === "signin" ? "signup" : "signin"));
@@ -87,7 +88,7 @@ export default function LoginPage() {
           className="mt-4 w-full text-center text-sm text-primary"
         >
           {mode === "signin" ? "계정이 없으신가요? 가입하기" : "이미 계정이 있으신가요? 로그인"}
-        </button>
+        </button> */}
       </div>
     </div>
   );
