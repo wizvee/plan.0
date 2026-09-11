@@ -16,7 +16,15 @@ import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-ki
 import { Plus } from "lucide-react";
 
 import { useLocalTodos } from "@/lib/storage";
-import { mondayOf, shiftWeeks, toDateKey, weekNumberLabel, weekRangeLabel } from "@/lib/week";
+import {
+  dayDateKey,
+  isToday as isTodayKey,
+  mondayOf,
+  shiftWeeks,
+  toDateKey,
+  weekNumberLabel,
+  weekRangeLabel,
+} from "@/lib/week";
 import { cn } from "@/lib/utils";
 import {
   BACKLOG,
@@ -173,22 +181,32 @@ export function WeekBoard() {
   const activeTodo = activeId ? todos.find((t) => t.id === activeId) ?? null : null;
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-[1500px] flex-col gap-4 px-4 py-6 sm:px-6">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-lg font-semibold">주간 Todo Planner</h1>
-        <WeekNav
-          label={weekNumberLabel(monday)}
-          rangeLabel={weekRangeLabel(monday)}
-          onPrev={() => setMonday((m) => shiftWeeks(m, -1))}
-          onNext={() => setMonday((m) => shiftWeeks(m, 1))}
-          onToday={() => setMonday(mondayOf(new Date()))}
-        />
-        <div className="flex gap-1 overflow-x-auto pb-1 sm:hidden">
+    <div className="mx-auto flex min-h-screen w-full max-w-[1500px] flex-col gap-5 px-4 py-6 sm:px-6">
+      <header className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+          <div>
+            <h1 className="text-[34px] font-bold leading-none tracking-tight">
+              {weekNumberLabel(monday)}
+            </h1>
+            <p className="mt-1.5 text-[15px] text-muted-foreground">{weekRangeLabel(monday)}</p>
+          </div>
+          <WeekNav
+            onPrev={() => setMonday((m) => shiftWeeks(m, -1))}
+            onNext={() => setMonday((m) => shiftWeeks(m, 1))}
+            onToday={() => setMonday(mondayOf(new Date()))}
+          />
+        </div>
+        <div className="flex gap-1.5 overflow-x-auto pb-1 sm:hidden">
           <Button
             type="button"
-            variant={mobileColumn === BACKLOG ? "default" : "outline"}
+            variant="ghost"
             size="icon"
-            className="size-8 shrink-0"
+            className={cn(
+              "size-8 shrink-0 rounded-full",
+              mobileColumn === BACKLOG
+                ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+                : "text-muted-foreground hover:bg-accent"
+            )}
             onClick={() => setMobileColumn(BACKLOG)}
             aria-label="Todo List 보기"
           >
@@ -198,9 +216,14 @@ export function WeekBoard() {
             <Button
               key={day}
               type="button"
-              variant={mobileColumn === day ? "default" : "outline"}
+              variant="ghost"
               size="sm"
-              className="h-8 shrink-0 px-3"
+              className={cn(
+                "h-8 shrink-0 rounded-full px-3.5",
+                mobileColumn === day
+                  ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+                  : "text-muted-foreground hover:bg-accent"
+              )}
               onClick={() => setMobileColumn(day)}
             >
               {DAY_LABELS_KO[day]}
@@ -232,7 +255,7 @@ export function WeekBoard() {
               className={cn(mobileColumn !== BACKLOG && "hidden", "sm:block")}
             />
           </SortableContext>
-          {DAY_KEYS.map((day) => (
+          {DAY_KEYS.map((day, index) => (
             <SortableContext
               key={day}
               items={itemsByColumn[day].map((t) => t.id)}
@@ -245,6 +268,7 @@ export function WeekBoard() {
                 onToggle={toggleCompleted}
                 onRemove={removeTodo}
                 onEdit={updateContent}
+                isToday={isTodayKey(dayDateKey(monday, index))}
                 className={cn(mobileColumn !== day && "hidden", "sm:block")}
               />
             </SortableContext>

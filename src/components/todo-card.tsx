@@ -47,14 +47,14 @@ export function TodoCard({ todo, onToggle, onRemove, onEdit, overlay }: TodoCard
       ref={overlay ? undefined : setNodeRef}
       style={style}
       className={cn(
-        "group flex items-start gap-1.5 rounded-md border bg-card px-2 py-1.5 text-sm shadow-sm",
+        "group flex items-center gap-2.5 bg-card py-2.5",
         isDragging && "opacity-40",
-        overlay && "rotate-1 shadow-lg"
+        overlay && "rounded-[10px] px-3 shadow-lg ring-1 ring-border"
       )}
     >
       <button
         type="button"
-        className="mt-0.5 cursor-grab touch-none text-muted-foreground/50 hover:text-muted-foreground"
+        className="cursor-grab touch-none text-muted-foreground/40 hover:text-muted-foreground"
         aria-label="드래그 핸들"
         {...(overlay ? {} : { ...attributes, ...listeners })}
       >
@@ -63,7 +63,6 @@ export function TodoCard({ todo, onToggle, onRemove, onEdit, overlay }: TodoCard
       <Checkbox
         checked={todo.completed}
         onCheckedChange={() => onToggle?.(todo.id)}
-        className="mt-0.5"
         aria-label="완료 표시"
       />
       {editing ? (
@@ -79,14 +78,14 @@ export function TodoCard({ todo, onToggle, onRemove, onEdit, overlay }: TodoCard
               setEditing(false);
             }
           }}
-          className="h-7 flex-1 px-1 text-sm"
+          className="h-7 flex-1 border-0 bg-transparent px-0 text-[15px] shadow-none focus-visible:ring-0"
         />
       ) : (
         <span
           onClick={() => onEdit && setEditing(true)}
           className={cn(
-            "flex-1 cursor-text break-words leading-snug",
-            todo.completed && "text-muted-foreground line-through"
+            "flex-1 cursor-text break-words text-[15px] leading-snug",
+            todo.completed && "text-muted-foreground"
           )}
         >
           {todo.content}
@@ -97,7 +96,7 @@ export function TodoCard({ todo, onToggle, onRemove, onEdit, overlay }: TodoCard
           type="button"
           variant="ghost"
           size="icon"
-          className="size-6 opacity-0 group-hover:opacity-100"
+          className="size-6 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100"
           onClick={() => onRemove(todo.id)}
           aria-label="삭제"
         >

@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 
 export function AddTodoForm({ onAdd }: { onAdd: (content: string) => void }) {
   const [value, setValue] = useState("");
@@ -21,23 +20,22 @@ export function AddTodoForm({ onAdd }: { onAdd: (content: string) => void }) {
         e.preventDefault();
         submit();
       }}
-      className="flex items-center gap-1.5 pt-1"
+      className="flex items-center gap-2.5 py-2.5"
     >
+      <button
+        type="submit"
+        className="flex size-[21px] shrink-0 items-center justify-center text-muted-foreground disabled:opacity-40"
+        aria-label="추가"
+        disabled={!value.trim()}
+      >
+        <Plus className="size-[18px]" />
+      </button>
       <Input
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder="할 일 추가"
-        className="h-8 text-sm"
+        className="h-auto flex-1 border-0 bg-transparent px-0 text-[15px] text-muted-foreground shadow-none placeholder:text-muted-foreground focus-visible:ring-0 focus:text-foreground"
       />
-      <Button
-        type="submit"
-        size="icon"
-        variant="outline"
-        className="size-8 shrink-0"
-        aria-label="추가"
-      >
-        <Plus className="size-4" />
-      </Button>
     </form>
   );
 }

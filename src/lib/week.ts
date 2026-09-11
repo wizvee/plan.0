@@ -20,3 +20,11 @@ export function weekRangeLabel(monday: Date): string {
   const sunday = addDays(monday, 6);
   return `${format(monday, "M.d")} - ${format(sunday, "M.d")}`;
 }
+
+export function dayDateKey(monday: Date, dayIndex: number): string {
+  return toDateKey(addDays(monday, dayIndex));
+}
+
+export function isToday(dateKey: string): boolean {
+  return dateKey === toDateKey(new Date());
+}
