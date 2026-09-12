@@ -179,44 +179,34 @@ Todo ──드래그로 매핑── 위 세 종류 중 구체적인 컨테이�
   이미 색상을 아껴두기로 한 기존 결정(HANDOFF.md 6번 참고)과 안 겹치게, 색상 대신 작은 텍스트
   라벨/아이콘 방식을 우선 고려.
 
-#### 8.5.1 Project 상세 화면 스펙 (레퍼런스: Notion 프로젝트 페이지 캡처, 2026-09-12)
+#### 8.5.1 Project 상세 화면 스펙 (레퍼런스: Notion 프로젝트 페이지 캡처, 2026-09-12 — 확정)
 
-사용자가 첨부한 Notion 프로젝트 페이지 캡처를 레퍼런스로 **Project 상세 화면**을 스펙을 잡습니다.
-Area/Resource는 `Due date`/`Days left`가 없다는 것까지는 확정됐고, 세부 레이아웃은 8.5.1 끝의
-열린 질문 참고.
+사용자가 첨부한 Notion 프로젝트 페이지 캡처를 레퍼런스로 **Project 상세 화면**을 확정했고,
+Area/Resource 상세 화면도 같은 골격을 공유합니다.
 
-**구성 (위에서 아래 순서):**
+**Project 상세 화면 구성 (위에서 아래 순서):**
 
 1. **헤더**: 아이콘(이모지 1개, 레퍼런스의 🚀처럼) + 제목(프로젝트 이름)
-2. **요약 속성 줄** (헤더 바로 아래, 가로 나열): `Status`(진행중/완료) · `Due date` · `Progress`(이
-   프로젝트에 속한 할 일 완료 비율 %, 자동 계산 — 저장 안 함)
-   - 레퍼런스에 있던 **`Priority`는 제외** (확정 — 사용자 지시, "아직 필요 없음")
-3. **탭**: **Overview / Tasks / Notes** 3개만 (확정 — 레퍼런스의 `Ideas`, `Meeting Notes` 탭은 제외)
-   - **Overview 탭**: Properties 목록을 보여줌 — 레퍼런스처럼 라벨-값 형태의 세로 리스트
-   - **Tasks 탭**: 이 프로젝트에 매핑된 할 일 목록 (레퍼런스는 "Table view"였지만, 우리 앱은 기존
-     Todo 카드 스타일 리스트로 보여주는 걸 우선 고려 — 아래 열린 질문 참고)
-   - **Notes 탭**: 프로젝트 전체에 대한 자유 텍스트 메모 (개별 할 일의 메모와는 별개)
+2. **요약 속성 줄**: `Status`(진행중/완료) · `Due date` · `Progress`(이 프로젝트에 속한 할 일 완료
+   비율 %, 자동 계산 — 저장 안 함). **`Priority`는 제외.** `Progress`는 **Project 전용 개념**이고
+   요약 줄에만 표시합니다(Overview Properties에는 넣지 않음 — 중복 표시 안 함).
+3. **탭**: **Overview / Tasks / Notes** 3개만 (`Ideas`, `Meeting Notes`는 제외)
+   - **Overview 탭**: 라벨-값 형태의 세로 Properties 리스트 —
+     - `Start date` (프로젝트 시작일, `created_at`과 별개로 저장/표시)
+     - `Completion date` = 기존 데이터 모델의 `completed_at` (완료 전엔 "Empty"로 표시)
+     - `Days left` (`Due date` 기준 자동 계산)
+     - 레퍼런스의 `Type`, "12 more properties" 접기/펼치기, Properties 안의 별도 `Notes` 줄은 제외
+       (Notes는 3번 탭으로 이미 분리했고, 이 앱 필드 수가 적어 접기/펼치기도 불필요)
+   - **Tasks 탭**: 이 프로젝트에 매핑된 할 일 목록. **기존 앱의 Todo 카드 스타일 리스트**를 그대로
+     사용 (레퍼런스의 표(Table) 형태는 채택 안 함).
+   - **Notes 탭**: 프로젝트 전체에 대한 자유 텍스트 메모 (개별 할 일의 메모와는 별개).
 
-**Overview 탭의 Properties 후보** (레퍼런스에서 이 앱 개념에 맞게 추려본 초안):
+**Area/Resource 상세 화면**: 같은 헤더 + Overview/Tasks/Notes 탭 구조를 쓰되,
 
-| 레퍼런스 필드 | 이 앱에 적용한다면 | 상태 |
-|---|---|---|
-| Type (Business) | 해당 없음(개인용 앱이라 이런 분류 불필요해 보임) | 제외 제안 — 확인 필요 |
-| Start date | 프로젝트 시작일, `created_at`과 별개의 필드 | **확정** — 별도 저장 (8.4 `start_date`) |
-| Completion date | 완료 처리된 날짜(완료 전엔 비어있음) | 추가할지 확인 필요 (지금은 `completed_at`만 있음 — 같은 개념일 수 있음) |
-| Days left | `Due date` 기준 자동 계산 | **확정** — Project만 해당 (Area/Resource는 `Due date` 자체가 없음) |
-| Tasks progress | 요약 줄의 `Progress`와 같은 값 | 여기서도 중복 표시할지, 요약 줄에만 둘지 확인 필요 |
-| Notes | (본문 텍스트) | Notes를 별도 탭으로 뺐으니 이 property 줄은 빼는 게 자연스러워 보임 — 확인 필요 |
-| "12 more properties" (접기/펼치기) | — | 이 앱은 필드 수가 적어서 이번엔 불필요해 보임 — 확인 필요 |
-
-**열린 질문 (사용자 확인 필요):**
-
-1. `Completion date`는 지금 설계된 `completed_at`(완료 처리 시각)과 같은 걸로 봐도 될까요?
-2. Tasks 탭은 표(Table) 형태로 만들까요, 기존 앱의 Todo 카드 리스트 스타일을 그대로 쓸까요?
-3. Area/Resource 상세 화면도 Overview/Tasks/Notes 레이아웃을 쓰되, Overview에는 `Due date`/`Days left`
-   없이 `Start date` 정도만 보여주는 걸로 하면 될까요? (Due date 자체가 없다는 건 확정됐으니, 이제
-   Overview 탭 자체를 둘지 말지만 확인하면 됩니다)
-4. Tasks progress를 요약 줄과 Overview Properties 둘 다에 보여줄지, 요약 줄에만 보여줄지
+- 요약 속성 줄에는 `Due date`/`Progress`가 없습니다(둘 다 Project 전용 개념) — `Status` 정도만 남습니다.
+- Overview 탭 Properties에는 `Start date`만 있고, `Completion date`/`Days left`는 없습니다
+  (Area/Resource는 끝이 없는 개념이라 완료/마감 관련 필드 자체가 없음).
+- Tasks 탭, Notes 탭은 Project와 동일한 방식.
 
 ### 8.6 진행 순서 (제안, 아직 미착수)
 
