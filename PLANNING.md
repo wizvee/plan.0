@@ -74,3 +74,104 @@ MVP 범위에는 포함하지 않지만 구조상 나중에 쉽게 얹을 수 �
 5. ✅ 드래그 앤 드롭 구현
 6. ✅ Supabase 연동 (이메일/비밀번호 로그인 + 데이터 저장/실시간 동기화, RLS 적용) — 설정 방법은 [README.md](./README.md#supabase-설정-최초-1회) 참고
 7. ✅ Vercel 배포 — https://plan0.vercel.app
+
+## 8. PARA 확장 기획 (Area / Project / Resource) — (2026-09-12, 설계 중)
+
+> 아직 구현 전 단계입니다. 아래는 기획 초안이며, 표시된 "확정"/"가정" 여부를 구분해서 읽어주세요.
+
+### 8.1 목적
+
+지금까지의 "요일·시간 캘린더"는 **언제 할지**를 답하는 축입니다. 여기에 **무엇을 위해 하는지**를 답하는
+두 번째 축으로 [PARA](https://fortelabs.com/blog/para/) (Project / Area / Resource / Archive) 방법론을
+얹습니다. 두 축은 서로 독립적으로 동작합니다 — 어떤 할 일이 특정 프로젝트에 속해 있어도, 요일/시간
+캘린더 배치는 그것과 무관하게 계속 할 수 있고 그 반대도 마찬가지입니다. (확정)
+
+### 8.2 이 앱에서의 PARA 개념 정의
+
+- **Project(프로젝트)**: 끝이 있는 구체적 목표. 예: "이사 준비", "블로그 리뉴얼". 할 일을 담는 컨테이너
+  역할이 메인입니다. 상태는 `진행중` / `완료` 정도로 최소화 (확정, 세분화는 향후 확장).
+- **Area(영역)**: 끝이 없는 지속적 책임/관심 영역. 예: "건강", "재정", "가족". 여러 Project를 묶는
+  상위 분류이면서, Project를 거치지 않고 반복적인 유지 관리성 할 일을 직접 가질 수도 있습니다 (가정 —
+  아래 8.7 열린 질문 참고).
+- **Resource(리소스)**: 나중에 참고할 자료/주제 모음. 원칙적으로 "할 일(액션)"과는 분리된 존재입니다 —
+  제목 + URL + 메모로 구성된 참고 카드에 가깝습니다. 기존 `/api/clip` 스크랩 기능(현재는 Todo List로
+  들어감)과 개념적으로 겹치는 지점이 있어 향후 "Resource로 보내기" 같은 연결 기능도 고려할 수 있습니다
+  (가정, 이번 범위에는 미포함).
+- **Archive**: 이번 기획 범위에서 제외합니다. Project/Area는 "완료" 상태만 갖고, 별도의 보관함 화면은
+  나중에 필요해지면 추가합니다. (확정 — 사용자가 A/P/R 셋만 요청함)
+
+### 8.3 계층 구조 (가정 — 확인 필요)
+
+```
+Area (0..N)
+  └─ Project (0..N)      # Area 없이 "미분류" 상태로 존재하는 Project도 허용
+       └─ Todo (0..N)     # 할 일 1개는 Project 최대 1개에만 속함 (확정)
+  └─ Todo (0..N, optional) # Project를 거치지 않고 Area에 직접 속하는 할 일
+
+Resource (0..N)            # Project 또는 Area에 선택적으로 연결 가능한 독립 컬렉션 (할 일과는 무관)
+```
+
+- 할 일 1개 = 프로젝트 최대 1개라는 관계는 확정입니다.
+- 다만 "Project를 안 거치고 Area에 직접 속하는 할 일"을 허용할지, 아니면 할 일은 항상 Project를 통해서만
+  Area에 속하게 할지(즉 Area는 Project의 상위 묶음일 뿐 할 일과 직접 연결되지 않음)는 아직 확인 안 된
+  가정입니다. 이 부분 사용자 확인이 필요합니다.
+- Project가 Area 여러 개에 동시에 속할 수 있는지도 미확인 — 일단 "Project는 Area 0개 또는 1개"로 가정.
+
+### 8.4 데이터 모델 변경안 (초안)
+
+새 테이블:
+
+| 테이블 | 필드 | 설명 |
+|---|---|---|
+| `areas` | id, user_id, name, archived (bool), created_at | 영역 |
+| `projects` | id, user_id, area_id (nullable FK→areas), name, status (`active`\|`completed`), created_at, completed_at | 프로젝트 |
+| `resources` | id, user_id, project_id (nullable FK), area_id (nullable FK), title, url (nullable), memo (nullable), created_at | 참고 자료 |
+
+기존 `todos` 테이블에 컬럼 추가:
+
+| 필드 | 타입 | 설명 |
+|---|---|---|
+| `project_id` | uuid, nullable FK→projects | 소속 프로젝트 (없으면 미분류) |
+| `area_id` | uuid, nullable FK→areas | Project 없이 Area에 직접 속하는 경우 (8.3의 열린 질문에 따라 필요 없어질 수도 있음) |
+
+- `day`/`week_start_date`/`start_minutes`/`duration_minutes`는 그대로 둡니다 — PARA 축과 무관하게 유지 (확정).
+- `project_id`와 `area_id`가 동시에 채워지는 경우는 없도록 앱 레벨(또는 DB 제약)로 상호배타 처리 예정.
+
+### 8.5 화면/UX 설계 (초안)
+
+- **완전히 별도의 화면**으로 둡니다 (확정). 기존 아이콘 레일에 새 아이콘(예: 폴더 아이콘)을 추가해서
+  누르면 `/projects` 같은 새 라우트로 이동.
+- 이 화면 자체가 **좌우(또는 상하) 2분할** 구도를 가져야 드래그 앤 드롭이 성립합니다:
+  - 한쪽: 전체 할 일 보관함(기존 Todo List 전역 보관함과 같은 데이터 — 미배정 포함, 이미 특정
+    Project에 배정된 항목도 표시하되 배지로 구분)
+  - 다른 쪽: Area → Project 트리/카드 목록 (+ "미분류" 가상 그룹)
+  - 할 일 카드를 Project 카드 위로 드래그하면 그 Project로 매핑(`project_id` 설정), 다시 보관함
+    영역으로 드래그하면 매핑 해제.
+- Project를 클릭하면 상세 화면(그 프로젝트에 속한 할 일 목록, 완료/미완료 구분)으로 이동.
+- Area/Project/Resource 생성은 이름 입력 폼 하나로 최소화 (기존 "할 일 추가" 폼과 비슷한 패턴).
+- 메인 캘린더 화면의 할 일 카드에 프로젝트 배지를 보여줄지는 향후 판단 — 요일/우선순위용으로 이미
+  색상을 아껴두기로 한 기존 결정(HANDOFF.md 6번 참고)과 안 겹치게, 색상 대신 작은 텍스트 라벨/아이콘
+  방식을 우선 고려.
+
+### 8.6 진행 순서 (제안, 아직 미착수)
+
+1. 데이터 모델 확정 + `supabase/schema.sql`에 `areas`/`projects`/`resources` 테이블과 `todos` 컬럼 추가,
+   RLS 정책 작성
+2. `/projects` 라우트 + Area/Project 정적 목록 UI
+3. Area/Project/Resource 생성 폼
+4. 할 일 보관함 ↔ Project 카드 드래그 앤 드롭 매핑 (dnd-kit 재사용)
+5. Project 상세 화면 (담긴 할 일 목록)
+6. Resource 관리 UI (제목+URL+메모 리스트, Project/Area 연결은 선택)
+7. (선택, 이후) 메인 캘린더 화면에 프로젝트 배지 표시
+
+### 8.7 열린 질문 (사용자 확인 필요)
+
+1. 할 일이 Project 없이 Area에 직접 속할 수 있어야 하나요, 아니면 Area는 Project들을 묶는 용도로만
+   쓰고 할 일과는 항상 Project를 거쳐서만 연결되나요?
+2. Project가 여러 Area에 동시에 속할 수 있어야 하나요, 아니면 Project 1개는 Area 0~1개인가요?
+3. Project/Area의 "완료" 상태를 완료 처리하면 화면에서 어떻게 되나요 — 목록에서 사라지나요, 접혀서
+   따로 보이나요, 별도 "완료된 프로젝트" 탭이 필요한가요?
+4. Resource와 기존 `/api/clip` 스크랩 기능(현재 Todo List로 들어감)을 이번에 연결할까요, 아니면
+   Resource는 이번엔 완전히 별개의 신규 기능으로 두고 나중에 연결을 고민할까요?
+5. 메인 캘린더 화면의 할 일 카드에 소속 프로젝트를 표시할지(배지/라벨), 아니면 이번 범위는 `/projects`
+   화면 안에서만 프로젝트를 확인하는 걸로 충분한가요?
