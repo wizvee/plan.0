@@ -138,9 +138,15 @@ Todo ──드래그로 매핑── 위 세 종류 중 구체적인 컨테이�
 
 | 테이블 | 필드 | 설명 |
 |---|---|---|
-| `projects` | id, user_id, name, status (`active`\|`completed`), created_at, completed_at | 프로젝트 |
-| `areas` | id, user_id, name, archived (bool), created_at | 영역 |
-| `resources` | id, user_id, name, archived (bool), created_at | 리소스 |
+| `projects` | id, user_id, name, status (`active`\|`completed`), start_date, due_date (nullable), created_at, completed_at | 프로젝트 |
+| `areas` | id, user_id, name, archived (bool), created_at | 영역 — `due_date` 없음 (확정) |
+| `resources` | id, user_id, name, archived (bool), created_at | 리소스 — `due_date` 없음 (확정) |
+
+- `start_date`/`due_date`는 **Project 테이블에만** 있습니다 — Area/Resource는 끝(마감)이 없는
+  개념이라 `due_date`를 두지 않습니다 (확정).
+- `start_date`는 `created_at`(레코드 생성 시각)과 **별개의 필드**입니다 — 사용자가 직접 지정하는
+  "이 프로젝트를 실제로 시작한 날짜"이고, `created_at`은 그냥 "앱에서 이 프로젝트를 만든 시각"이라
+  다를 수 있습니다 (확정).
 
 기존 `todos` 테이블에 컬럼 추가:
 
@@ -175,8 +181,9 @@ Todo ──드래그로 매핑── 위 세 종류 중 구체적인 컨테이�
 
 #### 8.5.1 Project 상세 화면 스펙 (레퍼런스: Notion 프로젝트 페이지 캡처, 2026-09-12)
 
-사용자가 첨부한 Notion 프로젝트 페이지 캡처를 레퍼런스로 **Project 상세 화면**만 우선 스펙을 잡습니다.
-(Area/Resource 상세 화면도 같은 레이아웃을 쓸지는 8.5.1 끝의 열린 질문 참고 — 아직 미확정.)
+사용자가 첨부한 Notion 프로젝트 페이지 캡처를 레퍼런스로 **Project 상세 화면**을 스펙을 잡습니다.
+Area/Resource는 `Due date`/`Days left`가 없다는 것까지는 확정됐고, 세부 레이아웃은 8.5.1 끝의
+열린 질문 참고.
 
 **구성 (위에서 아래 순서):**
 
@@ -190,27 +197,26 @@ Todo ──드래그로 매핑── 위 세 종류 중 구체적인 컨테이�
      Todo 카드 스타일 리스트로 보여주는 걸 우선 고려 — 아래 열린 질문 참고)
    - **Notes 탭**: 프로젝트 전체에 대한 자유 텍스트 메모 (개별 할 일의 메모와는 별개)
 
-**Overview 탭의 Properties 후보** (레퍼런스에서 이 앱 개념에 맞게 추려본 초안 — 전부 확인 필요):
+**Overview 탭의 Properties 후보** (레퍼런스에서 이 앱 개념에 맞게 추려본 초안):
 
 | 레퍼런스 필드 | 이 앱에 적용한다면 | 상태 |
 |---|---|---|
 | Type (Business) | 해당 없음(개인용 앱이라 이런 분류 불필요해 보임) | 제외 제안 — 확인 필요 |
-| Start date | 프로젝트 시작일 | 추가할지 확인 필요 (지금 데이터 모델엔 없음, `created_at`으로 대체 가능) |
+| Start date | 프로젝트 시작일, `created_at`과 별개의 필드 | **확정** — 별도 저장 (8.4 `start_date`) |
 | Completion date | 완료 처리된 날짜(완료 전엔 비어있음) | 추가할지 확인 필요 (지금은 `completed_at`만 있음 — 같은 개념일 수 있음) |
-| Days left | `Due date` 기준 자동 계산 | `Due date` 자체를 추가하기로 하면 자연히 따라옴 |
+| Days left | `Due date` 기준 자동 계산 | **확정** — Project만 해당 (Area/Resource는 `Due date` 자체가 없음) |
 | Tasks progress | 요약 줄의 `Progress`와 같은 값 | 여기서도 중복 표시할지, 요약 줄에만 둘지 확인 필요 |
 | Notes | (본문 텍스트) | Notes를 별도 탭으로 뺐으니 이 property 줄은 빼는 게 자연스러워 보임 — 확인 필요 |
 | "12 more properties" (접기/펼치기) | — | 이 앱은 필드 수가 적어서 이번엔 불필요해 보임 — 확인 필요 |
 
 **열린 질문 (사용자 확인 필요):**
 
-1. `Due date`(목표 마감일)를 Project에 실제로 추가할까요? 지금 데이터 모델(8.4)엔 없는 개념입니다.
-2. `Start date`를 별도로 저장할까요, 아니면 `created_at`(만든 날짜)을 그대로 "시작일"로 보여줄까요?
-3. `Completion date`는 지금 설계된 `completed_at`(완료 처리 시각)과 같은 걸로 봐도 될까요?
-4. Tasks 탭은 표(Table) 형태로 만들까요, 기존 앱의 Todo 카드 리스트 스타일을 그대로 쓸까요?
-5. 이 Overview/Tasks/Notes 레이아웃을 **Area/Resource 상세 화면에도 그대로 쓸까요**, 아니면
-   Area는 "끝이 없는 일"이라 `Due date`/`Days left` 같은 속성이 안 맞으니 Area/Resource는 더 단순한
-   자체 레이아웃(예: Overview 없이 Tasks + Notes만)을 쓸까요?
+1. `Completion date`는 지금 설계된 `completed_at`(완료 처리 시각)과 같은 걸로 봐도 될까요?
+2. Tasks 탭은 표(Table) 형태로 만들까요, 기존 앱의 Todo 카드 리스트 스타일을 그대로 쓸까요?
+3. Area/Resource 상세 화면도 Overview/Tasks/Notes 레이아웃을 쓰되, Overview에는 `Due date`/`Days left`
+   없이 `Start date` 정도만 보여주는 걸로 하면 될까요? (Due date 자체가 없다는 건 확정됐으니, 이제
+   Overview 탭 자체를 둘지 말지만 확인하면 됩니다)
+4. Tasks progress를 요약 줄과 Overview Properties 둘 다에 보여줄지, 요약 줄에만 보여줄지
 
 ### 8.6 진행 순서 (제안, 아직 미착수)
 
