@@ -14,7 +14,7 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { Check } from "lucide-react";
+import { Check, LayoutGrid } from "lucide-react";
 
 import { useSupabaseTodos } from "@/lib/supabase/todos";
 import { createClient } from "@/lib/supabase/client";
@@ -289,6 +289,11 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
             label: "Todo List",
             active: panelOpen,
             onClick: () => setPanelOpen((open) => !open),
+          },
+          {
+            icon: LayoutGrid,
+            label: "PARA",
+            onClick: () => router.push("/para"),
           },
         ]}
       />

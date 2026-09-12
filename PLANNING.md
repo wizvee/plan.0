@@ -77,10 +77,9 @@ MVP 범위에는 포함하지 않지만 구조상 나중에 쉽게 얹을 수 �
 
 ## 8. PARA 확장 기획 (Project / Area / Resource) — (2026-09-12)
 
-> **개념(8.1~8.3)은 사용자 확인 완료.** 데이터 모델(8.4)/화면 설계(8.5)는 아직 초안 단계이고,
-> 이 프로젝트의 작업 방식 규칙(HANDOFF.md 참고)에 따라 **실제 코드 작업 전에 HTML 목업이나
-> Figma로 화면을 먼저 만들어 사용자 컨펌을 받아야** 착수합니다. 아래 8.4/8.5는 그 목업을 만들기
-> 위한 참고용 초안이지 확정된 설계가 아닙니다.
+> **구현 완료 (2026-09-12).** 개념(8.1~8.3) → HTML 목업 컨펌(왼쪽 아이콘 레일 + 오른쪽 기존
+> Todo List 재사용 구조로 확정) → 코드 반영까지 끝남. 자세한 구현 메모는 HANDOFF.md 11번 참고.
+> 아직 실제 Supabase 프로젝트에서 동작 확인은 안 됨 — HANDOFF.md "아직 안 끝난 것" 9번 참고.
 
 ### 8.1 목적
 
@@ -132,15 +131,18 @@ Todo ──드래그로 매핑── 위 세 종류 중 구체적인 컨테이�
   없습니다. 아무 데도 안 속하면 기존처럼 "미배정" 상태(Todo List 보관함에만 존재).
 - 요일/시간 캘린더 배치는 이 분류와 완전히 독립적인 축으로, 변경 없이 계속 별개로 동작합니다.
 
-### 8.4 데이터 모델 변경안 (초안 — 목업 컨펌 전까지 미확정)
+### 8.4 데이터 모델 (구현 완료 — `supabase/schema.sql`)
 
 새 테이블 (세 테이블은 같은 모양, 계층 관계 없음):
 
 | 테이블 | 필드 | 설명 |
 |---|---|---|
-| `projects` | id, user_id, name, status (`active`\|`completed`), start_date, due_date (nullable), created_at, completed_at | 프로젝트 |
-| `areas` | id, user_id, name, archived (bool), created_at | 영역 — `due_date` 없음 (확정) |
-| `resources` | id, user_id, name, archived (bool), created_at | 리소스 — `due_date` 없음 (확정) |
+| `projects` | id, user_id, name, status (`active`\|`completed`), start_date, due_date (nullable), notes (nullable), created_at, completed_at | 프로젝트 |
+| `areas` | id, user_id, name, archived (bool), notes (nullable), created_at | 영역 — `due_date` 없음 (확정) |
+| `resources` | id, user_id, name, archived (bool), notes (nullable), created_at | 리소스 — `due_date` 없음 (확정) |
+
+- `notes`는 구현 단계에서 추가 — 8.5.1의 Notes 탭 내용을 저장할 곳이 필요해서 세 테이블 모두에 넣음
+  (기획 초안에는 없었지만 Notes 탭이 자유 텍스트를 보여주려면 저장할 컬럼이 있어야 해서 자연스럽게 추가).
 
 - `start_date`/`due_date`는 **Project 테이블에만** 있습니다 — Area/Resource는 끝(마감)이 없는
   개념이라 `due_date`를 두지 않습니다 (확정).
@@ -161,23 +163,19 @@ Todo ──드래그로 매핑── 위 세 종류 중 구체적인 컨테이�
 - `day`/`week_start_date`/`start_minutes`/`duration_minutes`는 그대로 둡니다 — PARA 축과 무관하게
   유지 (확정).
 
-### 8.5 화면/UX 설계 (초안 — 다음 단계는 코드가 아니라 HTML/Figma 목업)
+### 8.5 화면/UX 설계 (구현 완료 — `/para`)
 
-- **완전히 별도의 화면**으로 둡니다 (확정). 기존 아이콘 레일에 새 아이콘(예: 폴더 아이콘)을 추가해서
-  누르면 `/para` 같은 새 라우트로 이동.
-- 화면 안에 **[Project] [Area] [Resource] 탭(또는 3열 컬럼)** + **할 일 보관함**을 함께 배치해서
-  드래그 앤 드롭이 한 화면에서 성립하도록 합니다:
-  - 할 일 보관함: 기존 Todo List 전역 보관함과 같은 데이터(미배정 포함, 이미 매핑된 항목도 어느
-    컨테이너에 속해 있는지 배지로 표시).
-  - 탭/컬럼별로 그 종류(Project든 Area든 Resource든)에 속한 컨테이너 카드 목록이 보임.
+- **완전히 별도의 화면**(`/para`)으로 구현. 메인 캘린더 화면 아이콘 레일에 아이콘 추가해서 이동.
+- (2026-09-12, 사용자 손그림 스케치로 수정) 상단 탭 대신 **왼쪽에 Project/Area/Resource 아이콘
+  레일**로 종류를 전환하고, 중앙에 그 종류의 컨테이너 카드 목록이 전체 폭으로 보임.
+- **오른쪽 "할 일 보관함"은 새로 만들지 않고 기존 `IconRail`/`TodoPanel`을 그대로 재사용** —
+  메인 캘린더 화면과 똑같은 아이콘/슬라이드 패널(사용자 지시: "오른쪽은 기존 투두리스트 유지").
+  이미 매핑된 항목은 어느 컨테이너에 속해 있는지 작은 배지로 표시(`TodoCard`의 `badge` prop).
   - 할 일 카드를 특정 컨테이너 카드 위로 드래그하면 그 컨테이너로 매핑(`project_id`/`area_id`/
     `resource_id` 중 해당 필드 설정, 나머지 둘은 자동으로 비움). 다시 보관함으로 드래그하면 매핑 해제.
-- 컨테이너(Project/Area/Resource)를 클릭하면 상세 화면(그 안에 매핑된 할 일 목록, 완료/미완료 구분)
-  으로 이동.
+- 컨테이너(Project/Area/Resource)를 클릭하면 상세 화면(`/para/[kind]/[id]`)으로 이동.
 - Project/Area/Resource 생성은 각각 이름 입력 폼 하나로 최소화 (기존 "할 일 추가" 폼과 비슷한 패턴).
-- 메인 캘린더 화면의 할 일 카드에 소속 컨테이너 배지를 보여줄지는 향후 판단 — 요일/우선순위용으로
-  이미 색상을 아껴두기로 한 기존 결정(HANDOFF.md 6번 참고)과 안 겹치게, 색상 대신 작은 텍스트
-  라벨/아이콘 방식을 우선 고려.
+- 메인 캘린더 화면의 할 일 카드/블록에는 이번엔 배지를 안 붙임 (범위 밖으로 남김 — 8.7 참고).
 
 #### 8.5.1 Project 상세 화면 스펙 (레퍼런스: Notion 프로젝트 페이지 캡처, 2026-09-12 — 확정)
 
@@ -208,23 +206,21 @@ Area/Resource 상세 화면도 같은 골격을 공유합니다.
   (Area/Resource는 끝이 없는 개념이라 완료/마감 관련 필드 자체가 없음).
 - Tasks 탭, Notes 탭은 Project와 동일한 방식.
 
-### 8.6 진행 순서 (제안, 아직 미착수)
+### 8.6 진행 순서 — 전부 완료 (2026-09-12)
 
-1. 데이터 모델 확정 + `supabase/schema.sql`에 `projects`/`areas`/`resources` 테이블과 `todos` 컬럼(3개
+1. ✅ 데이터 모델 + `supabase/schema.sql`에 `projects`/`areas`/`resources` 테이블과 `todos` 컬럼(3개
    nullable FK + CHECK 제약) 추가, RLS 정책 작성
-2. `/para` 라우트 + Project/Area/Resource 탭(또는 3열) 정적 목록 UI
-3. Project/Area/Resource 생성 폼
-4. 할 일 보관함 ↔ 컨테이너 카드 드래그 앤 드롭 매핑 (dnd-kit 재사용, 셋 중 하나로만 배타적으로 매핑)
-5. 컨테이너 상세 화면 (매핑된 할 일 목록)
-6. (선택, 이후) 메인 캘린더 화면에 소속 컨테이너 배지 표시
+2. ✅ `/para` 라우트 + 왼쪽 아이콘 레일 + Project/Area/Resource 목록 UI
+3. ✅ Project/Area/Resource 생성 폼
+4. ✅ 할 일 보관함 ↔ 컨테이너 카드 드래그 앤 드롭 매핑 (dnd-kit 재사용, 셋 중 하나로만 배타적으로 매핑)
+5. ✅ 컨테이너 상세 화면 (`/para/[kind]/[id]`, Overview/Tasks/Notes)
+6. ⬜ (선택, 범위 밖으로 보류) 메인 캘린더 화면에 소속 컨테이너 배지 표시
 
-### 8.7 열린 질문 (사용자 확인 필요)
+### 8.7 열린 질문 — 정리 (2026-09-12)
 
-1. Project/Area/Resource의 "완료"/"보관" 상태로 처리하면 화면에서 어떻게 되나요 — 목록에서 사라지나요,
-   접혀서 따로 보이나요, 별도 탭이 필요한가요?
-2. Resource와 기존 `/api/clip` 스크랩 기능(현재 Todo List로 들어감)을 이번에 연결할까요 — 예를 들어
-   스크랩된 링크가 특정 Resource로 바로 들어가게 할지, 아니면 이번엔 완전히 별개로 두고 나중에 고민할까요?
-3. 메인 캘린더 화면의 할 일 카드에 소속 컨테이너를 표시할지(배지/라벨), 아니면 이번 범위는 `/para`
-   화면 안에서만 확인하는 걸로 충분한가요?
-4. Project/Area/Resource 탭 UI는 3열을 한 화면에 동시에 보여줄지, 탭으로 하나씩 전환할지 — 모바일
-   화면 폭을 고려하면 탭 전환이 유력해 보이는데 맞을까요?
+1. **완료/보관 처리**: 목록에서 안 사라지고 상태 배지만 바뀜(필터링/접기 없음) — 다음 할 일로 남김
+   (HANDOFF.md "아직 안 끝난 것" 9번).
+2. **`/api/clip` ↔ Resource 연결**: 이번엔 안 함, 완전히 별개로 남겨둠 — 다음에 필요해지면 논의.
+3. **메인 캘린더 화면 배지**: 이번엔 안 붙임(8.6의 6번과 동일 — 범위 밖).
+4. **탭 vs 3열**: 사용자가 손그림 스케치로 준 **왼쪽 아이콘 레일** 방식으로 대체 확정 (8.5 참고,
+   탭/3열 둘 다 채택 안 함).

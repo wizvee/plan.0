@@ -19,6 +19,9 @@ interface TodoRow {
   duration_minutes: number | null;
   url: string | null;
   memo: string | null;
+  project_id: string | null;
+  area_id: string | null;
+  resource_id: string | null;
 }
 
 function fromRow(row: TodoRow): Todo {
@@ -34,13 +37,27 @@ function fromRow(row: TodoRow): Todo {
     durationMinutes: row.duration_minutes,
     url: row.url,
     memo: row.memo,
+    projectId: row.project_id,
+    areaId: row.area_id,
+    resourceId: row.resource_id,
   };
 }
 
 type UpdatablePatch = Partial<
   Pick<
     Todo,
-    "content" | "completed" | "day" | "weekStart" | "position" | "startMinutes" | "durationMinutes" | "url" | "memo"
+    | "content"
+    | "completed"
+    | "day"
+    | "weekStart"
+    | "position"
+    | "startMinutes"
+    | "durationMinutes"
+    | "url"
+    | "memo"
+    | "projectId"
+    | "areaId"
+    | "resourceId"
   >
 >;
 
@@ -106,6 +123,9 @@ export function useSupabaseTodos(userId: string) {
           durationMinutes: null,
           url: null,
           memo: null,
+          projectId: null,
+          areaId: null,
+          resourceId: null,
         },
       ]);
 
@@ -138,6 +158,9 @@ export function useSupabaseTodos(userId: string) {
       if (patch.durationMinutes !== undefined) dbPatch.duration_minutes = patch.durationMinutes;
       if (patch.url !== undefined) dbPatch.url = patch.url;
       if (patch.memo !== undefined) dbPatch.memo = patch.memo;
+      if (patch.projectId !== undefined) dbPatch.project_id = patch.projectId;
+      if (patch.areaId !== undefined) dbPatch.area_id = patch.areaId;
+      if (patch.resourceId !== undefined) dbPatch.resource_id = patch.resourceId;
 
       await supabase.from("todos").update(dbPatch).eq("id", id);
     },

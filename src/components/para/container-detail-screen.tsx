@@ -1,0 +1,221 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { format, differenceInCalendarDays } from "date-fns";
+import { ArrowLeft, Bookmark, Compass, Target } from "lucide-react";
+import { DndContext } from "@dnd-kit/core";
+
+import { useSupabaseTodos } from "@/lib/supabase/todos";
+import { useSupabaseAreas, useSupabaseProjects, useSupabaseResources } from "@/lib/supabase/containers";
+import { cn } from "@/lib/utils";
+import { PARA_KIND_LABELS, type ParaContainer, type ParaKind } from "@/lib/types";
+import { TodoCard } from "@/components/todo-card";
+
+const KIND_ICON: Record<ParaKind, typeof Target> = {
+  project: Target,
+  area: Compass,
+  resource: Bookmark,
+};
+
+function daysLeftLabel(dueDate: string): string {
+  const diff = differenceInCalendarDays(new Date(dueDate), new Date());
+  if (diff === 0) return "오늘 마감";
+  if (diff > 0) return `D-${diff}`;
+  return `D+${Math.abs(diff)}`;
+}
+
+function NotesTab({ initialNotes, onCommit }: { initialNotes: string; onCommit: (value: string) => void }) {
+  const [value, setValue] = useState(initialNotes);
+  return (
+    <textarea
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onBlur={() => onCommit(value)}
+      placeholder="메모 없음"
+      rows={8}
+      className="w-full resize-y rounded-2xl border border-border bg-card p-4 text-[14.5px] leading-relaxed outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+    />
+  );
+}
+
+interface ContainerDetailScreenProps {
+  kind: ParaKind;
+  id: string;
+  userId: string;
+}
+
+export function ContainerDetailScreen({ kind, id, userId }: ContainerDetailScreenProps) {
+  const router = useRouter();
+  const { todos, updateTodo, removeTodo } = useSupabaseTodos(userId);
+  const { projects, updateProject } = useSupabaseProjects(userId);
+  const { areas, updateArea } = useSupabaseAreas(userId);
+  const { resources, updateResource } = useSupabaseResources(userId);
+
+  const [tab, setTab] = useState<"overview" | "tasks" | "notes">("overview");
+
+  const project = kind === "project" ? projects.find((p) => p.id === id) : undefined;
+  const container =
+    kind === "project" ? project : kind === "area" ? areas.find((a) => a.id === id) : resources.find((r) => r.id === id);
+
+  if (!container) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-10 text-[15px] text-muted-foreground">불러오는 중...</div>
+    );
+  }
+
+  const mappedTodos = todos.filter((t) =>
+    kind === "project" ? t.projectId === id : kind === "area" ? t.areaId === id : t.resourceId === id
+  );
+  const doneCount = mappedTodos.filter((t) => t.completed).length;
+  const progress = mappedTodos.length ? Math.round((doneCount / mappedTodos.length) * 100) : 0;
+
+  const Icon = KIND_ICON[kind];
+  const paraContainer = container as ParaContainer;
+  const statusLabel =
+    kind === "project" ? (project!.status === "active" ? "진행중" : "완료") : paraContainer.archived ? "보관" : "활성";
+  const statusDone = kind === "project" ? project!.status === "completed" : paraContainer.archived;
+
+  function toggleStatus() {
+    if (kind === "project") {
+      const nextStatus = project!.status === "active" ? "completed" : "active";
+      void updateProject(id, {
+        status: nextStatus,
+        completedAt: nextStatus === "completed" ? new Date().toISOString() : null,
+      });
+    } else if (kind === "area") {
+      void updateArea(id, { archived: !paraContainer.archived });
+    } else {
+      void updateResource(id, { archived: !paraContainer.archived });
+    }
+  }
+
+  function commitNotes(value: string) {
+    if (value === (container!.notes ?? "")) return;
+    const patch = { notes: value.trim() || null };
+    if (kind === "project") void updateProject(id, patch);
+    else if (kind === "area") void updateArea(id, patch);
+    else void updateResource(id, patch);
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-[720px] px-4 py-6 sm:px-6">
+      <button
+        type="button"
+        onClick={() => router.push("/para")}
+        className="mb-4 flex items-center gap-1 text-[13px] font-medium text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="size-3.5" />
+        목록으로
+      </button>
+
+      <div className="mb-4 flex items-start gap-3">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+          <Icon className="size-5" />
+        </div>
+        <h1 className="mt-1.5 text-[22px] font-bold leading-tight tracking-tight">{container.name}</h1>
+      </div>
+
+      <div className="mb-5 flex flex-wrap items-center gap-6 rounded-2xl border border-border bg-card px-4 py-3.5">
+        <div className="flex flex-col gap-1">
+          <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Status</span>
+          <button
+            type="button"
+            onClick={toggleStatus}
+            className={cn(
+              "w-fit rounded-full px-2.5 py-0.5 text-[11.5px] font-bold",
+              statusDone ? "bg-secondary text-muted-foreground" : "bg-accent text-accent-foreground"
+            )}
+          >
+            {statusLabel}
+          </button>
+        </div>
+        {kind === "project" ? (
+          <>
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Due date</span>
+              <span className="text-[14.5px] font-semibold tabular-nums">{project!.dueDate ?? "미설정"}</span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Progress</span>
+              <span className="flex items-center gap-2">
+                <span className="h-[5px] w-[100px] overflow-hidden rounded-full bg-secondary">
+                  <span className="block h-full rounded-full bg-primary" style={{ width: `${progress}%` }} />
+                </span>
+                <span className="text-[14.5px] font-semibold tabular-nums">{progress}%</span>
+              </span>
+            </div>
+          </>
+        ) : null}
+      </div>
+
+      <div className="mb-4 flex gap-5 border-b border-border">
+        {(["overview", "tasks", "notes"] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTab(t)}
+            className={cn(
+              "relative pb-3 text-[14.5px] font-bold text-muted-foreground",
+              tab === t && "text-foreground after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:rounded-full after:bg-primary"
+            )}
+          >
+            {t === "overview" ? "Overview" : t === "tasks" ? "Tasks" : "Notes"}
+          </button>
+        ))}
+      </div>
+
+      {tab === "overview" ? (
+        <div className="flex flex-col">
+          <div className="flex items-center gap-4 border-b border-border py-3">
+            <span className="w-[130px] shrink-0 text-[14px] text-muted-foreground">Start date</span>
+            <span className="text-[14px] tabular-nums">
+              {format(new Date(kind === "project" ? project!.startDate : container.createdAt), "yyyy-MM-dd")}
+            </span>
+          </div>
+          {kind === "project" ? (
+            <>
+              <div className="flex items-center gap-4 border-b border-border py-3">
+                <span className="w-[130px] shrink-0 text-[14px] text-muted-foreground">Completion date</span>
+                <span className={cn("text-[14px] tabular-nums", !project!.completedAt && "text-muted-foreground")}>
+                  {project!.completedAt ? format(new Date(project!.completedAt), "yyyy-MM-dd") : "Empty"}
+                </span>
+              </div>
+              <div className="flex items-center gap-4 py-3">
+                <span className="w-[130px] shrink-0 text-[14px] text-muted-foreground">Days left</span>
+                <span className="text-[14px] tabular-nums">
+                  {project!.dueDate ? daysLeftLabel(project!.dueDate) : "—"}
+                </span>
+              </div>
+            </>
+          ) : null}
+        </div>
+      ) : null}
+
+      {tab === "tasks" ? (
+        <DndContext onDragEnd={() => {}}>
+          <div className="flex flex-col divide-y divide-border/70">
+            {mappedTodos.length === 0 ? (
+              <p className="py-6 text-[14px] text-muted-foreground">
+                아직 매핑된 할 일이 없습니다. PARA 목록에서 할 일을 이 {PARA_KIND_LABELS[kind]}로 드래그해보세요.
+              </p>
+            ) : (
+              mappedTodos.map((todo) => (
+                <TodoCard
+                  key={todo.id}
+                  todo={todo}
+                  onToggle={(tid) => void updateTodo(tid, { completed: !todo.completed })}
+                  onRemove={(tid) => void removeTodo(tid)}
+                  onEdit={(tid, content) => void updateTodo(tid, { content })}
+                  onMemoEdit={(tid, memo) => void updateTodo(tid, { memo: memo || null })}
+                />
+              ))
+            )}
+          </div>
+        </DndContext>
+      ) : null}
+
+      {tab === "notes" ? <NotesTab initialNotes={container.notes ?? ""} onCommit={commitNotes} /> : null}
+    </div>
+  );
+}

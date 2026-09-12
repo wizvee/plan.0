@@ -16,9 +16,11 @@ interface TodoPanelProps {
   onMemoEdit: (id: string, memo: string) => void;
   onAdd: (content: string) => void;
   onClose: () => void;
+  /** PARA 목록 화면에서 재사용할 때, 이미 매핑된 항목에 보여줄 배지 텍스트 */
+  getBadge?: (todo: Todo) => string | undefined;
 }
 
-export function TodoPanel({ items, onToggle, onRemove, onEdit, onMemoEdit, onAdd, onClose }: TodoPanelProps) {
+export function TodoPanel({ items, onToggle, onRemove, onEdit, onMemoEdit, onAdd, onClose, getBadge }: TodoPanelProps) {
   const { setNodeRef, isOver } = useDroppable({ id: BACKLOG });
 
   return (
@@ -62,6 +64,7 @@ export function TodoPanel({ items, onToggle, onRemove, onEdit, onMemoEdit, onAdd
               onRemove={onRemove}
               onEdit={onEdit}
               onMemoEdit={onMemoEdit}
+              badge={getBadge?.(todo)}
             />
           ))}
           <AddTodoForm onAdd={onAdd} />

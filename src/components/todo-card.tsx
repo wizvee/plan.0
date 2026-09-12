@@ -18,9 +18,11 @@ interface TodoCardProps {
   onEdit?: (id: string, content: string) => void;
   onMemoEdit?: (id: string, memo: string) => void;
   overlay?: boolean;
+  /** PARA 매핑 표시용 — 이 할 일이 속한 Project/Area/Resource 이름 */
+  badge?: string;
 }
 
-export function TodoCard({ todo, onToggle, onRemove, onEdit, onMemoEdit, overlay }: TodoCardProps) {
+export function TodoCard({ todo, onToggle, onRemove, onEdit, onMemoEdit, overlay, badge }: TodoCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -68,6 +70,11 @@ export function TodoCard({ todo, onToggle, onRemove, onEdit, onMemoEdit, overlay
             {todo.content}
           </span>
           {todo.url ? <UrlChip url={todo.url} /> : null}
+          {badge ? (
+            <span className="w-fit rounded-full bg-accent px-2 py-0.5 text-[11px] font-bold text-accent-foreground">
+              {badge}
+            </span>
+          ) : null}
         </div>
       </div>
       {detailOpen ? (

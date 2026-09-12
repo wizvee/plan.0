@@ -116,6 +116,35 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     - 예약된 캘린더 블록(`CalendarBlock`)에는 이 임베드 카드를 아직 안 붙임 — 블록이 너무 작아서
       나중에 필요해지면 그때 추가.
     - 단축어 설정 방법은 README.md의 "공유하기 → 애플 단축어로 링크 스크랩" 참고.
+11. **(2026-09-12 추가) PARA(Project/Area/Resource) 구현**: 기획서(PLANNING.md 8번) 확정 후 목업으로
+    사용자 컨펌 받고 코드로 옮김. 자세한 개념/설계는 PLANNING.md 8번 참고, 여기는 구현 메모만.
+    - **데이터 모델**: `projects`(status/start_date/due_date/notes/completed_at), `areas`,
+      `resources`(둘 다 archived/notes) 세 테이블을 계층 없이 독립적으로 추가. `todos`에
+      `project_id`/`area_id`/`resource_id` nullable FK 3개 추가하고
+      `CHECK (num_nonnulls(project_id, area_id, resource_id) <= 1)` 제약으로 "최대 1곳에만 매핑"을
+      DB 레벨에서 강제(`supabase/schema.sql`). **기존 Supabase 프로젝트에 이미 schema.sql을 실행해둔
+      상태라면 이 부분을 쓰려면 다시 한 번 실행해야 함.**
+    - **화면**: `/para` — 왼쪽 아이콘 레일(Project/Area/Resource, `para-board.tsx`)로 종류를 고르고
+      중앙에 그 종류의 카드 목록. 오른쪽 "할 일 보관함"은 기존 `IconRail`/`TodoPanel`을 그대로 재사용
+      (새로 안 만듦 — 사용자 지시). 보관함 항목을 카드로 드래그하면 매핑(`project:`/`area:`/`resource:`
+      접두사가 붙은 droppable id로 종류 구분), 다시 보관함으로 드래그하면 매핑 해제. 메인 캘린더 화면
+      아이콘 레일에도 `/para`로 가는 아이콘 추가.
+    - **상세 화면**: `/para/[kind]/[id]` (`container-detail-screen.tsx`) — 헤더+아이콘, 요약 줄
+      (Status·Due date·Progress는 Project만), Overview/Tasks/Notes 탭. Tasks 탭은 기존 `TodoCard`를
+      그대로 재사용. Notes는 탭을 벗어났다 돌아오면 저장된 값 기준으로 다시 불러옴(탭 전환 시
+      언마운트/리마운트되는 방식으로 구현 — 새로고침 없이도 항상 최신값에서 시작).
+    - **배지**: 이미 매핑된 할 일은 `TodoCard`에 소속 Project/Area/Resource 이름이 작은 배지로 보임
+      (`TodoCard`의 `badge` prop, `TodoPanel`의 `getBadge` prop으로 연결). 메인 캘린더 화면의
+      `TodoPanel`은 이 prop을 안 넘기므로 기존 화면엔 아무 변화 없음.
+    - **아직 이번 범위에 없는 것**: Project/Area/Resource 이름 수정 UI(생성만 가능, 이름 변경은 아직
+      화면에 없음 — 필요해지면 todo-detail-modal처럼 클릭해서 수정하는 방식 추가), 완료된
+      Project/보관된 Area·Resource를 목록에서 접거나 필터링하는 기능(지금은 계속 같이 보임), 이미
+      요일/시간에 배정된 할 일(캘린더에 이미 올라간 것)은 Todo List 보관함에 안 보여서 이 화면에서
+      드래그로 매핑할 수 없음(보관함=`day`가 없는 항목만 보여주는 기존 구조를 그대로 재사용했기 때문 —
+      "오른쪽은 기존 투두리스트 유지" 지시에 따른 결과, 필요해지면 다음에 논의).
+    - **테스트**: `tsc --noEmit`, `eslint`, `next build` 모두 통과 확인. 이 세션 환경에는 실제 Supabase
+      키가 없어서(`.env.local` 없음) 로그인부터 막혀 브라우저로 실제 동작(드래그 앤 드롭, 로그인 등)은
+      확인 못 함 — 로컬에서 Supabase 연결 후 실제로 한 번 테스트 필요.
 
 ## 지금 구현된 것 (기능 목록)
 
@@ -134,6 +163,8 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
 - Supabase 실시간 동기화 (다른 기기/탭에서 바뀐 내용 자동 반영)
 - 공유하기 → 애플 단축어로 링크 스크랩 (`/api/clip`) — Todo List에 제목 + URL 임베드 카드로 추가
 - 디자인: "Chalk" 팔레트 (뮤트 더스티 블루 + 아이보리 배경), iOS 그룹 카드 느낌 유지
+- PARA(Project/Area/Resource, `/para`) — 할 일을 요일/시간과는 독립적으로 프로젝트·영역·리소스 중
+  하나에 드래그로 매핑. 상세 화면(`/para/[kind]/[id]`)에 Overview/Tasks/Notes 탭 (8번 결정 참고)
 
 ## 파일 맵
 
@@ -142,20 +173,23 @@ PLANNING.md                    기획서 (컨셉/데이터 모델/스택 결정 
 README.md                      실행 방법 + Supabase 설정 단계별 가이드
 HANDOFF.md                     이 문서
 
-supabase/schema.sql            todos 테이블 + RLS 정책 + realtime publication (Supabase SQL Editor에서 1회 실행,
+supabase/schema.sql            todos + projects/areas/resources 테이블 + RLS 정책 + realtime publication (Supabase SQL Editor에서 1회 실행,
                                 재실행해도 안전)
 .env.local.example             필요한 환경변수 템플릿 (진짜 키는 절대 커밋 안 함)
 
 src/app/page.tsx                서버 컴포넌트: 로그인 체크 후 WeekBoard 렌더 (userId/userEmail 전달)
 src/app/login/page.tsx          로그인 폼 (가입 전환 버튼은 주석 처리됨)
 src/app/api/clip/route.ts       공유하기 스크랩용 API — 비밀키 헤더 인증 → Todo List에 새 항목 insert
+src/app/para/page.tsx           서버 컴포넌트: 로그인 체크 후 ParaBoard 렌더
+src/app/para/[kind]/[id]/page.tsx 서버 컴포넌트: kind 검증 + 로그인 체크 후 ContainerDetailScreen 렌더
 src/proxy.ts                    (구 middleware.ts) 인증 안 된 요청을 /login으로 리다이렉트 (/api/*는 제외)
 
 src/lib/supabase/client.ts      브라우저용 Supabase 클라이언트
 src/lib/supabase/server.ts      서버 컴포넌트용 Supabase 클라이언트 (로그인 세션 기반)
 src/lib/supabase/admin.ts       secret 키로 RLS 우회하는 서버 전용 클라이언트 (/api/clip 전용)
 src/lib/supabase/todos.ts       useSupabaseTodos 훅 — fetch + realtime 구독 + 낙관적 업데이트(add/update/remove/reorder)
-src/lib/types.ts                Todo 타입, 요일 키, 라벨
+src/lib/supabase/containers.ts  useSupabaseProjects/Areas/Resources 훅 — projects/areas/resources 테이블 CRUD + realtime
+src/lib/types.ts                Todo/Project/Area/Resource 타입, ParaKind, 요일 키, 라벨
 src/lib/week.ts                 주차 계산(월요일 시작, ISO 주차, 오늘 여부 등)
 src/lib/time.ts                 시간 캘린더 계산(시간→px 변환, 스냅, 시간 라벨 포맷, BLOCK_GAP 등)
 src/lib/use-today.ts            "오늘 날짜"를 client-only로 계산하는 훅 (SSR 시간대 버그 방지)
@@ -170,6 +204,10 @@ src/components/icon-rail.tsx    아이콘 레일 (데스크톱 오른쪽 / 모�
 src/components/todo-card.tsx    Todo List 보관함 항목 한 줄(체크박스 + 텍스트 + 드래그 핸들 + 삭제 +
                                  URL이 있으면 파비콘 임베드 카드, 시간 미배정 상태)
 src/components/add-todo-form.tsx  할 일 추가 입력 행
+src/components/para-board.tsx   PARA 목록 화면 — 왼쪽 아이콘 레일 + 컨테이너 카드 목록 + 재사용된 TodoPanel/IconRail
+src/components/para/container-card.tsx        Project/Area/Resource 카드 (droppable, 클릭 시 상세로 이동)
+src/components/para/add-container-form.tsx    Project/Area/Resource 생성 입력 행
+src/components/para/container-detail-screen.tsx  상세 화면 (헤더 + 요약 줄 + Overview/Tasks/Notes 탭)
 src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/checkbox/input)
 ```
 
@@ -196,6 +234,10 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
    설정하고 애플 단축어까지 만들어야 실제로 동작함. 코드/스키마는 준비 완료 상태.
 8. 가입 버튼을 코드에서만 주석 처리했음 — 완전히 막으려면 Supabase 대시보드
    Authentication → Sign In / Providers → Email에서 "Allow new users to sign up"을 꺼야 함(아직 안 함).
+9. **(2026-09-12 추가) PARA 기능 — 실제 Supabase 프로젝트에서 아직 테스트 안 됨.** 11번 결정 참고.
+   `supabase/schema.sql`을 다시 실행해서 `projects`/`areas`/`resources` 테이블을 만든 뒤, 로컬에서
+   Project/Area 생성 → 할 일 드래그해서 매핑 → 상세 화면 Overview/Tasks/Notes까지 한 번 실제로
+   확인 필요. Project/Area/Resource 이름 수정 UI, 완료·보관 항목 필터링도 다음 할 일로 남아있음.
 
 ## `.env` / 키 노출 관련 (사용자 질문에 대한 답)
 
