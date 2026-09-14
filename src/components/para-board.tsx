@@ -6,7 +6,6 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
-  pointerWithin,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -17,6 +16,7 @@ import { Bookmark, Compass, Target } from "lucide-react";
 
 import { useSupabaseTodos } from "@/lib/supabase/todos";
 import { useSupabaseAreas, useSupabaseProjects, useSupabaseResources } from "@/lib/supabase/containers";
+import { preferSpecificTargetCollision } from "@/lib/dnd";
 import { cn } from "@/lib/utils";
 import { BACKLOG, PARA_KIND_LABELS, PARA_KINDS, type ParaKind, type Todo } from "@/lib/types";
 import { TodoCard } from "@/components/todo-card";
@@ -166,7 +166,7 @@ export function ParaBoard({ userId }: { userId: string }) {
 
         <DndContext
           sensors={sensors}
-          collisionDetection={pointerWithin}
+          collisionDetection={preferSpecificTargetCollision}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >

@@ -8,7 +8,6 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
-  pointerWithin,
   useDroppable,
   useSensor,
   useSensors,
@@ -19,6 +18,7 @@ import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-ki
 
 import { useSupabaseTodos } from "@/lib/supabase/todos";
 import { useSupabaseAreas, useSupabaseProjects, useSupabaseResources } from "@/lib/supabase/containers";
+import { preferSpecificTargetCollision } from "@/lib/dnd";
 import { cn } from "@/lib/utils";
 import { BACKLOG, PARA_KIND_LABELS, type ParaContainer, type ParaKind, type Todo } from "@/lib/types";
 import { TodoCard } from "@/components/todo-card";
@@ -192,7 +192,12 @@ export function ContainerDetailScreen({ kind, id, userId }: ContainerDetailScree
   const activeTodo = activeId ? todos.find((t) => t.id === activeId) ?? null : null;
 
   return (
-    <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={preferSpecificTargetCollision}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
       <div className="min-h-screen pb-14 sm:pb-0 sm:pr-14">
         <div
           ref={setNodeRef}
