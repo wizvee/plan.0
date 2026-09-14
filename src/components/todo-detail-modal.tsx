@@ -1,21 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trash2, X } from "lucide-react";
+import { StickyNote, Trash2, X } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { UrlChip } from "@/components/url-chip";
-import type { Todo } from "@/lib/types";
+import type { Todo, TodoKind } from "@/lib/types";
 
 interface TodoDetailModalProps {
   todo: Todo;
   onEdit: (id: string, content: string) => void;
   onMemoEdit: (id: string, memo: string) => void;
   onRemove: (id: string) => void;
+  onConvert?: (id: string, kind: TodoKind) => void;
   onClose: () => void;
 }
 
-export function TodoDetailModal({ todo, onEdit, onMemoEdit, onRemove, onClose }: TodoDetailModalProps) {
+export function TodoDetailModal({ todo, onEdit, onMemoEdit, onRemove, onConvert, onClose }: TodoDetailModalProps) {
   const [title, setTitle] = useState(todo.content);
   const [memo, setMemo] = useState(todo.memo ?? "");
 
@@ -83,6 +84,16 @@ export function TodoDetailModal({ todo, onEdit, onMemoEdit, onRemove, onClose }:
             <UrlChip url={todo.url} />
           </>
         ) : null}
+        {onConvert ? (
+          <button
+            type="button"
+            onClick={() => onConvert(todo.id, todo.kind === "note" ? "task" : "note")}
+            className="mt-5 flex items-center justify-center gap-1.5 self-center rounded-full px-3 py-1.5 text-[13px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            <StickyNote className="size-3.5" />
+            {todo.kind === "note" ? "할 일로 전환" : "노트로 전환"}
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={() => {
@@ -90,7 +101,7 @@ export function TodoDetailModal({ todo, onEdit, onMemoEdit, onRemove, onClose }:
             onClose();
           }}
           aria-label="삭제"
-          className="mt-5 flex size-11 items-center justify-center self-center rounded-full text-destructive hover:bg-destructive/10"
+          className="mt-2 flex size-11 items-center justify-center self-center rounded-full text-destructive hover:bg-destructive/10"
         >
           <Trash2 className="size-5" />
         </button>

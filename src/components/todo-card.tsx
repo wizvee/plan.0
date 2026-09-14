@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical } from "lucide-react";
+import { GripVertical, StickyNote } from "lucide-react";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { UrlChip } from "@/components/url-chip";
 import { TodoDetailModal } from "@/components/todo-detail-modal";
 import { cn } from "@/lib/utils";
-import type { Todo } from "@/lib/types";
+import type { Todo, TodoKind } from "@/lib/types";
 
 interface TodoCardProps {
   todo: Todo;
@@ -17,12 +17,13 @@ interface TodoCardProps {
   onRemove?: (id: string) => void;
   onEdit?: (id: string, content: string) => void;
   onMemoEdit?: (id: string, memo: string) => void;
+  onConvert?: (id: string, kind: TodoKind) => void;
   overlay?: boolean;
   /** PARA 매핑 표시용 — 이 할 일이 속한 Project/Area/Resource 이름 */
   badge?: string;
 }
 
-export function TodoCard({ todo, onToggle, onRemove, onEdit, onMemoEdit, overlay, badge }: TodoCardProps) {
+export function TodoCard({ todo, onToggle, onRemove, onEdit, onMemoEdit, onConvert, overlay, badge }: TodoCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -53,12 +54,16 @@ export function TodoCard({ todo, onToggle, onRemove, onEdit, onMemoEdit, overlay
         >
           <GripVertical className="size-4" />
         </button>
-        <Checkbox
-          checked={todo.completed}
-          onCheckedChange={() => onToggle?.(todo.id)}
-          aria-label="완료 표시"
-          className="mt-0.5"
-        />
+        {todo.kind === "note" ? (
+          <StickyNote className="mt-0.5 size-[18px] shrink-0 text-muted-foreground/60" aria-hidden="true" />
+        ) : (
+          <Checkbox
+            checked={todo.completed}
+            onCheckedChange={() => onToggle?.(todo.id)}
+            aria-label="완료 표시"
+            className="mt-0.5"
+          />
+        )}
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <span
             onClick={() => onEdit && setDetailOpen(true)}
@@ -83,6 +88,7 @@ export function TodoCard({ todo, onToggle, onRemove, onEdit, onMemoEdit, overlay
           onEdit={(id, content) => onEdit?.(id, content)}
           onMemoEdit={(id, memo) => onMemoEdit?.(id, memo)}
           onRemove={(id) => onRemove?.(id)}
+          onConvert={(id, kind) => onConvert?.(id, kind)}
           onClose={() => setDetailOpen(false)}
         />
       ) : null}

@@ -118,8 +118,9 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     - 단축어 설정 방법은 README.md의 "공유하기 → 애플 단축어로 링크 스크랩" 참고.
 11. **(2026-09-12 추가) PARA(Project/Area/Resource) 구현**: 기획서(PLANNING.md 8번) 확정 후 목업으로
     사용자 컨펌 받고 코드로 옮김. 자세한 개념/설계는 PLANNING.md 8번 참고, 여기는 구현 메모만.
-    - **데이터 모델**: `projects`(status/start_date/due_date/notes/completed_at), `areas`,
-      `resources`(둘 다 archived/notes) 세 테이블을 계층 없이 독립적으로 추가. `todos`에
+    - **데이터 모델**: `projects`(status/start_date/due_date/completed_at), `areas`,
+      `resources`(둘 다 archived) 세 테이블을 계층 없이 독립적으로 추가 (자유 텍스트 `notes` 컬럼은
+      13번 결정으로 완전히 대체돼서 제거됨). `todos`에
       `project_id`/`area_id`/`resource_id` nullable FK 3개 추가하고
       `CHECK (num_nonnulls(project_id, area_id, resource_id) <= 1)` 제약으로 "최대 1곳에만 매핑"을
       DB 레벨에서 강제(`supabase/schema.sql`). **기존 Supabase 프로젝트에 이미 schema.sql을 실행해둔
@@ -131,8 +132,8 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
       아이콘 레일에도 `/para`로 가는 아이콘 추가.
     - **상세 화면**: `/para/[kind]/[id]` (`container-detail-screen.tsx`) — 헤더+아이콘, 요약 줄
       (Status·Due date·Progress는 Project만), Overview/Tasks/Notes 탭. Tasks 탭은 기존 `TodoCard`를
-      그대로 재사용. Notes는 탭을 벗어났다 돌아오면 저장된 값 기준으로 다시 불러옴(탭 전환 시
-      언마운트/리마운트되는 방식으로 구현 — 새로고침 없이도 항상 최신값에서 시작).
+      그대로 재사용. (Notes 탭은 처음엔 자유 텍스트 메모 하나였는데 13번 결정으로 여러 개의 노트
+      리스트로 완전히 바뀜.)
     - **배지**: 이미 매핑된 할 일은 `TodoCard`에 소속 Project/Area/Resource 이름이 작은 배지로 보임
       (`TodoCard`의 `badge` prop, `TodoPanel`의 `getBadge` prop으로 연결). 메인 캘린더 화면의
       `TodoPanel`은 이 prop을 안 넘기므로 기존 화면엔 아무 변화 없음.
@@ -145,13 +146,48 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     - **테스트**: `tsc --noEmit`, `eslint`, `next build` 모두 통과 확인. 이 세션 환경에는 실제 Supabase
       키가 없어서(`.env.local` 없음) 로그인부터 막혀 브라우저로 실제 동작(드래그 앤 드롭, 로그인 등)은
       확인 못 함 — 로컬에서 Supabase 연결 후 실제로 한 번 테스트 필요.
+12. **(2026-09-12 추가) PARA 배포 후 다듬기 — 아이콘 레일 통합 + 드래그 버그 수정**:
+    - **공유 아이콘 레일**: 캘린더 화면과 PARA 화면(목록·상세)이 각자 다른 아이콘 레일을 가지고 있던 걸
+      `AppNavRail`(`src/components/app-nav-rail.tsx`) 하나로 통합 — Todo List 토글 + PARA + 캘린더 이동
+      3개 아이콘을 모든 화면에서 동일하게 보여줌. PARA 화면 상단의 "← 캘린더로" 텍스트 링크는 이
+      아이콘으로 대체돼서 제거됨. PARA 아이콘은 이미 PARA 화면에 있어도 계속 보임(활성 표시만 됨) —
+      사용자가 "PARA 메뉴도 파라 화면에서 빼지 말고 계속 있었으면 좋겠어"라고 명시적으로 요청함.
+    - **버그: PARA 화면에서 할 일을 드래그해도 매핑이 안 됨**. 원인은 "할 일 보관함" 패널 자체가
+      BACKLOG라는 별도의 드롭 영역을 갖고 있는데, 화면에서 실제 매핑 대상(리소스/프로젝트 카드,
+      상세 화면 전체 등)과 겹치면 dnd-kit의 `pointerWithin`이 둘 중 아무거나 집을 수 있어서, 이미
+      보관함에 있는 항목을 다시 보관함에 놓은 것처럼 처리돼 아무 일도 안 일어난 것처럼 보였음.
+      `src/lib/dnd.ts`의 `preferSpecificTargetCollision`으로 — 겹칠 때 BACKLOG가 아닌 쪽을 우선하도록
+      고침. 캘린더/PARA 목록/PARA 상세 세 화면의 `DndContext` 모두 이걸 씀. **비슷한 겹침이 생기는
+      새 드롭 영역을 추가할 때는 항상 이 collision detection을 재사용할 것.**
+13. **(2026-09-14 추가) 할 일(Task) / 노트(Note) 구분 추가**:
+    - **컨셉**: Todo List(Inbox)에 있는 항목은 이제 두 종류 — 체크박스가 있는 **할 일(task)**과, 체크박스
+      없이 텍스트만 있는 **노트(note)**. 같은 `todos` 테이블에 `kind`('task'\|'note') 컬럼만 추가해서
+      구분(전환 기능을 고려한 선택 — "할 일→노트 전환"은 이 필드 하나만 바꾸면 됨). PARA 매핑 구조
+      (`project_id`/`area_id`/`resource_id`)는 task/note 공통으로 그대로 재사용.
+    - **가시성 규칙**: 노트는 **어디에도 매핑 안 됐을 때만** Inbox(Todo List)에 보이고, Project/Area/
+      Resource 중 하나로 매핑되는 순간 Inbox에서 사라지고 그 컨테이너의 Notes 탭에서만 보임(그
+      컨테이너로 "이동"한 것처럼 취급). 반대로 할 일(task)은 기존과 동일하게 매핑 여부와 무관하게
+      계속 Inbox에 보임(배지만 붙음) — `src/lib/types.ts`의 `isInboxVisible()` 참고.
+    - **Notes 탭 전면 개편**: 컨테이너당 자유 텍스트 메모 하나였던 걸 완전히 대체해서, 이제 `kind='note'`
+      이면서 그 컨테이너에 매핑된 항목들의 리스트로 바뀜(Tasks 탭과 같은 스타일, 체크박스만 없음).
+      `projects`/`areas`/`resources`의 `notes` 컬럼은 더 이상 안 쓰여서 스키마에서 제거함
+      (`supabase/schema.sql`에 `drop column if exists notes` 추가 — 다시 실행 필요).
+    - **노트 추가 위치**: Inbox의 "할 일 추가" 입력창에 할일/노트 전환 토글을 추가해서 Inbox에서도
+      바로 노트를 만들 수 있음(`add-todo-form.tsx`). 컨테이너 상세화면 Notes 탭에도 별도 "새 노트 추가"
+      입력창이 있어서, 여기서 만들면 처음부터 그 컨테이너에 매핑된 상태로 생성됨(`addNote`에 매핑 전달).
+    - **전환**: 할 일 카드를 클릭하면 뜨는 상세 팝업(`TodoDetailModal`)에 "노트로 전환"/"할 일로 전환"
+      버튼 추가. 할 일→노트 전환 시 요일/시간 배정과 완료 상태를 전부 초기화함(노트는 캘린더 배정이나
+      완료라는 개념이 없어서).
 
 ## 지금 구현된 것 (기능 목록)
 
 - Todo List(전역 보관함, 사이드 패널) + Mon~Sun **시간 단위 캘린더 그리드** (0~24시, 스크롤 가능)
+- 할 일(체크박스 있음) / 노트(체크박스 없음, 참고용) 두 종류 — 보관함에서 서로 전환 가능, 노트는
+  PARA에 매핑되면 보관함에서 사라짐 (13번 결정 참고)
 - 할 일 추가(보관함) / 클릭해서 텍스트 수정 / 삭제 / 완료 체크(원형 체크박스, Reminders 스타일)
 - 드래그 앤 드롭: 보관함 ↔ 요일·시간 칸 이동, 예약된 블록을 다른 요일/시간으로 이동,
-  보관함 내 순서 변경 ([`@dnd-kit`](https://dndkit.com/), 충돌 감지는 `pointerWithin`)
+  보관함 내 순서 변경 ([`@dnd-kit`](https://dndkit.com/), 충돌 감지는 `src/lib/dnd.ts`의
+  `preferSpecificTargetCollision` — 보관함 패널과 다른 드롭 영역이 겹쳐도 실제 대상을 우선함)
 - 예약된 할 일은 **소요 시간에 비례하는 높이의 블록**으로 표시(시간 범위 라벨 포함),
   **블록 하단 모서리를 드래그해서 소요 시간을 리사이즈** 가능 (15분 단위 스냅)
 - 오늘 요일 칸에 현재 시각을 가리키는 빨간 라인 표시 (client-only 계산, `use-today.ts`)
@@ -163,8 +199,9 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
 - Supabase 실시간 동기화 (다른 기기/탭에서 바뀐 내용 자동 반영)
 - 공유하기 → 애플 단축어로 링크 스크랩 (`/api/clip`) — Todo List에 제목 + URL 임베드 카드로 추가
 - 디자인: "Chalk" 팔레트 (뮤트 더스티 블루 + 아이보리 배경), iOS 그룹 카드 느낌 유지
-- PARA(Project/Area/Resource, `/para`) — 할 일을 요일/시간과는 독립적으로 프로젝트·영역·리소스 중
-  하나에 드래그로 매핑. 상세 화면(`/para/[kind]/[id]`)에 Overview/Tasks/Notes 탭 (8번 결정 참고)
+- PARA(Project/Area/Resource, `/para`) — 할 일/노트를 요일/시간과는 독립적으로 프로젝트·영역·리소스
+  중 하나에 드래그로 매핑. 상세 화면(`/para/[kind]/[id]`)에 Overview/Tasks/Notes 탭 (8번 결정 참고).
+  캘린더 화면과 아이콘 레일 하나(`AppNavRail`)를 공유 (12번 결정 참고)
 
 ## 파일 맵
 
@@ -189,7 +226,8 @@ src/lib/supabase/server.ts      서버 컴포넌트용 Supabase 클라이언트 
 src/lib/supabase/admin.ts       secret 키로 RLS 우회하는 서버 전용 클라이언트 (/api/clip 전용)
 src/lib/supabase/todos.ts       useSupabaseTodos 훅 — fetch + realtime 구독 + 낙관적 업데이트(add/update/remove/reorder)
 src/lib/supabase/containers.ts  useSupabaseProjects/Areas/Resources 훅 — projects/areas/resources 테이블 CRUD + realtime
-src/lib/types.ts                Todo/Project/Area/Resource 타입, ParaKind, 요일 키, 라벨
+src/lib/types.ts                Todo/Project/Area/Resource 타입, TodoKind, ParaKind, isInboxVisible(), 요일 키, 라벨
+src/lib/dnd.ts                  preferSpecificTargetCollision — 보관함 패널과 다른 드롭 영역이 겹칠 때 충돌 우선순위
 src/lib/week.ts                 주차 계산(월요일 시작, ISO 주차, 오늘 여부 등)
 src/lib/time.ts                 시간 캘린더 계산(시간→px 변환, 스냅, 시간 라벨 포맷, BLOCK_GAP 등)
 src/lib/use-today.ts            "오늘 날짜"를 client-only로 계산하는 훅 (SSR 시간대 버그 방지)
@@ -200,13 +238,15 @@ src/components/week-nav.tsx      주차 이동 버튼들
 src/components/week-calendar.tsx Mon~Sun 시간 단위 캘린더 그리드(요일 헤더 + 0~24시 스크롤 영역 + 현재 시각 라인)
 src/components/calendar-block.tsx 캘린더에 예약된 할 일 블록(드래그로 이동, 하단 핸들로 리사이즈)
 src/components/todo-panel.tsx   Todo List 패널 (데스크톱: 오른쪽 슬라이드 / 모바일: 하단 바텀시트)
-src/components/icon-rail.tsx    아이콘 레일 (데스크톱 오른쪽 / 모바일 하단, 확장 가능한 구조)
-src/components/todo-card.tsx    Todo List 보관함 항목 한 줄(체크박스 + 텍스트 + 드래그 핸들 + 삭제 +
-                                 URL이 있으면 파비콘 임베드 카드, 시간 미배정 상태)
-src/components/add-todo-form.tsx  할 일 추가 입력 행
-src/components/para-board.tsx   PARA 목록 화면 — 왼쪽 아이콘 레일 + 컨테이너 카드 목록 + 재사용된 TodoPanel/IconRail
+src/components/icon-rail.tsx    아이콘 레일 저수준 컴포넌트 (items 배열 받아서 렌더만 함)
+src/components/app-nav-rail.tsx 캘린더/PARA 화면이 공유하는 아이콘 레일 (Todo List·PARA·캘린더 3개 고정 항목)
+src/components/todo-card.tsx    할 일/노트 한 줄(할 일=체크박스, 노트=아이콘만 + 텍스트 + 드래그 핸들 +
+                                 삭제 + URL이 있으면 파비콘 임베드 카드 + 전환 버튼)
+src/components/todo-detail-modal.tsx  할 일/노트 상세 팝업 (제목/메모 수정, 할일↔노트 전환, 삭제)
+src/components/add-todo-form.tsx  할 일/노트 추가 입력 행 (토글로 종류 선택)
+src/components/para-board.tsx   PARA 목록 화면 — 왼쪽 아이콘 레일 + 컨테이너 카드 목록 + 재사용된 TodoPanel
 src/components/para/container-card.tsx        Project/Area/Resource 카드 (droppable, 클릭 시 상세로 이동)
-src/components/para/add-container-form.tsx    Project/Area/Resource 생성 입력 행
+src/components/para/add-container-form.tsx    Project/Area/Resource 생성 입력 행 (Notes 탭의 "새 노트 추가"에도 재사용)
 src/components/para/container-detail-screen.tsx  상세 화면 (헤더 + 요약 줄 + Overview/Tasks/Notes 탭)
 src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/checkbox/input)
 ```
@@ -234,10 +274,11 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
    설정하고 애플 단축어까지 만들어야 실제로 동작함. 코드/스키마는 준비 완료 상태.
 8. 가입 버튼을 코드에서만 주석 처리했음 — 완전히 막으려면 Supabase 대시보드
    Authentication → Sign In / Providers → Email에서 "Allow new users to sign up"을 꺼야 함(아직 안 함).
-9. **(2026-09-12 추가) PARA 기능 — 실제 Supabase 프로젝트에서 아직 테스트 안 됨.** 11번 결정 참고.
-   `supabase/schema.sql`을 다시 실행해서 `projects`/`areas`/`resources` 테이블을 만든 뒤, 로컬에서
-   Project/Area 생성 → 할 일 드래그해서 매핑 → 상세 화면 Overview/Tasks/Notes까지 한 번 실제로
-   확인 필요. Project/Area/Resource 이름 수정 UI, 완료·보관 항목 필터링도 다음 할 일로 남아있음.
+9. **(2026-09-14 갱신) PARA 기능 — 사용자가 실제 Supabase 프로젝트에서 테스트해서 드래그 버그
+   발견 → 12번 결정으로 수정 완료.** 13번 결정(할 일/노트 구분)까지 반영했으니, `supabase/schema.sql`을
+   다시 한 번 실행(`todos.kind` 컬럼 + `projects`/`areas`/`resources`의 `notes` 컬럼 제거)해야
+   최신 상태로 동작함. Project/Area/Resource **이름 수정 UI**(지금은 생성만 가능), 완료·보관 항목을
+   목록에서 접거나 필터링하는 기능은 여전히 다음 할 일로 남아있음.
 
 ## `.env` / 키 노출 관련 (사용자 질문에 대한 답)
 

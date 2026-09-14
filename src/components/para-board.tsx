@@ -18,7 +18,7 @@ import { useSupabaseTodos } from "@/lib/supabase/todos";
 import { useSupabaseAreas, useSupabaseProjects, useSupabaseResources } from "@/lib/supabase/containers";
 import { preferSpecificTargetCollision } from "@/lib/dnd";
 import { cn } from "@/lib/utils";
-import { BACKLOG, PARA_KIND_LABELS, PARA_KINDS, type ParaKind, type Todo } from "@/lib/types";
+import { BACKLOG, PARA_KIND_LABELS, PARA_KINDS, isInboxVisible, type ParaKind, type Todo, type TodoKind } from "@/lib/types";
 import { TodoCard } from "@/components/todo-card";
 import { TodoPanel } from "@/components/todo-panel";
 import { AppNavRail } from "@/components/app-nav-rail";
@@ -37,7 +37,7 @@ function nextPosition(items: Todo[]) {
 
 export function ParaBoard({ userId }: { userId: string }) {
   const router = useRouter();
-  const { todos, setTodos, addTodo, updateTodo, removeTodo, persistPositions } = useSupabaseTodos(userId);
+  const { todos, setTodos, addTodo, addNote, updateTodo, removeTodo, persistPositions } = useSupabaseTodos(userId);
   const { projects, addProject } = useSupabaseProjects(userId);
   const { areas, addArea } = useSupabaseAreas(userId);
   const { resources, addResource } = useSupabaseResources(userId);
@@ -49,7 +49,7 @@ export function ParaBoard({ userId }: { userId: string }) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
   const backlogItems = useMemo(
-    () => todos.filter((t) => t.day === null).sort((a, b) => a.position - b.position),
+    () => todos.filter(isInboxVisible).sort((a, b) => a.position - b.position),
     [todos]
   );
 
@@ -91,7 +91,7 @@ export function ParaBoard({ userId }: { userId: string }) {
       return;
     }
 
-    const isOverBacklogItem = todos.some((t) => t.id === overIdStr && t.day === null);
+    const isOverBacklogItem = todos.some((t) => t.id === overIdStr && isInboxVisible(t));
     if (overIdStr !== BACKLOG && !isOverBacklogItem) return;
 
     if (todo.projectId || todo.areaId || todo.resourceId) {
@@ -123,6 +123,26 @@ export function ParaBoard({ userId }: { userId: string }) {
     else void addResource(name);
   }
 
+  function handleAdd(content: string, kind: TodoKind) {
+    if (kind === "note") void addNote(content, nextPosition(backlogItems));
+    else void addTodo(content, nextPosition(backlogItems));
+  }
+
+  function handleConvert(id: string, kind: TodoKind) {
+    if (kind === "note") {
+      void updateTodo(id, {
+        kind,
+        day: null,
+        weekStart: null,
+        startMinutes: null,
+        durationMinutes: null,
+        completed: false,
+      });
+    } else {
+      void updateTodo(id, { kind });
+    }
+  }
+
   const activeTodo = activeId ? todos.find((t) => t.id === activeId) ?? null : null;
 
   const containerRows =
@@ -133,8 +153,10 @@ export function ParaBoard({ userId }: { userId: string }) {
           statusLabel: p.status === "active" ? "진행중" : "완료",
           statusDone: p.status === "completed",
           progress: (() => {
-            const mapped = todos.filter((t) => t.projectId === p.id);
-            return mapped.length ? Math.round((mapped.filter((t) => t.completed).length / mapped.length) * 100) : 0;
+            const mappedTasks = todos.filter((t) => t.projectId === p.id && t.kind === "task");
+            return mappedTasks.length
+              ? Math.round((mappedTasks.filter((t) => t.completed).length / mappedTasks.length) * 100)
+              : 0;
           })(),
           count: todos.filter((t) => t.projectId === p.id).length,
         }))
@@ -231,7 +253,8 @@ export function ParaBoard({ userId }: { userId: string }) {
                 onRemove={(id) => void removeTodo(id)}
                 onEdit={(id, content) => void updateTodo(id, { content })}
                 onMemoEdit={(id, memo) => void updateTodo(id, { memo: memo || null })}
-                onAdd={(content) => void addTodo(content, nextPosition(backlogItems))}
+                onConvert={handleConvert}
+                onAdd={handleAdd}
                 onClose={() => setPanelOpen(false)}
                 getBadge={badgeFor}
               />

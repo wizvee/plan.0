@@ -13,7 +13,6 @@ interface ProjectRow {
   status: "active" | "completed";
   start_date: string;
   due_date: string | null;
-  notes: string | null;
   created_at: string;
   completed_at: string | null;
 }
@@ -25,13 +24,12 @@ function projectFromRow(row: ProjectRow): Project {
     status: row.status,
     startDate: row.start_date,
     dueDate: row.due_date,
-    notes: row.notes,
     createdAt: row.created_at,
     completedAt: row.completed_at,
   };
 }
 
-type ProjectPatch = Partial<Pick<Project, "name" | "status" | "startDate" | "dueDate" | "notes" | "completedAt">>;
+type ProjectPatch = Partial<Pick<Project, "name" | "status" | "startDate" | "dueDate" | "completedAt">>;
 
 export function useSupabaseProjects(userId: string) {
   const [supabase] = useState(() => createClient());
@@ -90,7 +88,6 @@ export function useSupabaseProjects(userId: string) {
           status: "active",
           startDate: today,
           dueDate: null,
-          notes: null,
           createdAt: new Date().toISOString(),
           completedAt: null,
         },
@@ -120,7 +117,6 @@ export function useSupabaseProjects(userId: string) {
       if (patch.status !== undefined) dbPatch.status = patch.status;
       if (patch.startDate !== undefined) dbPatch.start_date = patch.startDate;
       if (patch.dueDate !== undefined) dbPatch.due_date = patch.dueDate;
-      if (patch.notes !== undefined) dbPatch.notes = patch.notes;
       if (patch.completedAt !== undefined) dbPatch.completed_at = patch.completedAt;
 
       await supabase.from("projects").update(dbPatch).eq("id", id);
@@ -144,7 +140,6 @@ interface ContainerRow {
   user_id: string;
   name: string;
   archived: boolean;
-  notes: string | null;
   created_at: string;
 }
 
@@ -153,12 +148,11 @@ function containerFromRow(row: ContainerRow): ParaContainer {
     id: row.id,
     name: row.name,
     archived: row.archived,
-    notes: row.notes,
     createdAt: row.created_at,
   };
 }
 
-type ContainerPatch = Partial<Pick<ParaContainer, "name" | "archived" | "notes">>;
+type ContainerPatch = Partial<Pick<ParaContainer, "name" | "archived">>;
 
 function useSupabaseContainerTable(table: "areas" | "resources", userId: string) {
   const [supabase] = useState(() => createClient());
@@ -210,7 +204,7 @@ function useSupabaseContainerTable(table: "areas" | "resources", userId: string)
       const optimisticId = crypto.randomUUID();
       setItems((prev) => [
         ...prev,
-        { id: optimisticId, name: trimmed, archived: false, notes: null, createdAt: new Date().toISOString() },
+        { id: optimisticId, name: trimmed, archived: false, createdAt: new Date().toISOString() },
       ]);
 
       const { data, error } = await supabase

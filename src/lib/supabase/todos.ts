@@ -4,12 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/client";
-import type { DayKey, Todo } from "@/lib/types";
+import type { DayKey, Todo, TodoKind } from "@/lib/types";
 
 interface TodoRow {
   id: string;
   user_id: string;
   content: string;
+  kind: TodoKind;
   day: DayKey | null;
   week_start: string | null;
   completed: boolean;
@@ -28,6 +29,7 @@ function fromRow(row: TodoRow): Todo {
   return {
     id: row.id,
     content: row.content,
+    kind: row.kind,
     day: row.day,
     weekStart: row.week_start,
     completed: row.completed,
@@ -47,6 +49,7 @@ type UpdatablePatch = Partial<
   Pick<
     Todo,
     | "content"
+    | "kind"
     | "completed"
     | "day"
     | "weekStart"
@@ -60,6 +63,12 @@ type UpdatablePatch = Partial<
     | "resourceId"
   >
 >;
+
+interface NewItemMapping {
+  projectId?: string | null;
+  areaId?: string | null;
+  resourceId?: string | null;
+}
 
 export function useSupabaseTodos(userId: string) {
   const [supabase] = useState(() => createClient());
@@ -103,8 +112,8 @@ export function useSupabaseTodos(userId: string) {
     };
   }, [supabase, userId]);
 
-  const addTodo = useCallback(
-    async (content: string, position: number) => {
+  const addItem = useCallback(
+    async (content: string, position: number, kind: TodoKind, mapping?: NewItemMapping) => {
       const trimmed = content.trim();
       if (!trimmed) return;
 
@@ -114,6 +123,7 @@ export function useSupabaseTodos(userId: string) {
         {
           id: optimisticId,
           content: trimmed,
+          kind,
           day: null,
           weekStart: null,
           completed: false,
@@ -123,15 +133,23 @@ export function useSupabaseTodos(userId: string) {
           durationMinutes: null,
           url: null,
           memo: null,
-          projectId: null,
-          areaId: null,
-          resourceId: null,
+          projectId: mapping?.projectId ?? null,
+          areaId: mapping?.areaId ?? null,
+          resourceId: mapping?.resourceId ?? null,
         },
       ]);
 
       const { data, error } = await supabase
         .from("todos")
-        .insert({ user_id: userId, content: trimmed, position })
+        .insert({
+          user_id: userId,
+          content: trimmed,
+          position,
+          kind,
+          project_id: mapping?.projectId ?? null,
+          area_id: mapping?.areaId ?? null,
+          resource_id: mapping?.resourceId ?? null,
+        })
         .select()
         .single();
 
@@ -144,12 +162,20 @@ export function useSupabaseTodos(userId: string) {
     [supabase, userId]
   );
 
+  const addTodo = useCallback((content: string, position: number) => addItem(content, position, "task"), [addItem]);
+
+  const addNote = useCallback(
+    (content: string, position: number, mapping?: NewItemMapping) => addItem(content, position, "note", mapping),
+    [addItem]
+  );
+
   const updateTodo = useCallback(
     async (id: string, patch: UpdatablePatch) => {
       setTodos((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
 
       const dbPatch: Record<string, unknown> = {};
       if (patch.content !== undefined) dbPatch.content = patch.content;
+      if (patch.kind !== undefined) dbPatch.kind = patch.kind;
       if (patch.completed !== undefined) dbPatch.completed = patch.completed;
       if (patch.day !== undefined) dbPatch.day = patch.day;
       if (patch.weekStart !== undefined) dbPatch.week_start = patch.weekStart;
@@ -186,5 +212,5 @@ export function useSupabaseTodos(userId: string) {
     [supabase]
   );
 
-  return { todos, setTodos, loading, addTodo, updateTodo, removeTodo, persistPositions };
+  return { todos, setTodos, loading, addTodo, addNote, updateTodo, removeTodo, persistPositions };
 }

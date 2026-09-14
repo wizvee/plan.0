@@ -20,7 +20,7 @@ import { mondayOf, shiftWeeks, toDateKey, weekNumberLabel, weekRangeLabel } from
 import { preferSpecificTargetCollision } from "@/lib/dnd";
 import { cn } from "@/lib/utils";
 import { useTodayKey } from "@/lib/use-today";
-import { BACKLOG, DAY_KEYS, DAY_LABELS_KO, type DayKey, type Todo } from "@/lib/types";
+import { BACKLOG, DAY_KEYS, DAY_LABELS_KO, isInboxVisible, type DayKey, type Todo, type TodoKind } from "@/lib/types";
 import { DEFAULT_DURATION_MINUTES, HOUR_HEIGHT, MINUTES_PER_DAY, clampMinutes, snapMinutes } from "@/lib/time";
 import { TodoCard } from "@/components/todo-card";
 import { CalendarBlock } from "@/components/calendar-block";
@@ -41,7 +41,7 @@ interface WeekBoardProps {
 
 export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
   const router = useRouter();
-  const { todos, setTodos, addTodo, updateTodo, removeTodo, persistPositions } =
+  const { todos, setTodos, addTodo, addNote, updateTodo, removeTodo, persistPositions } =
     useSupabaseTodos(userId);
   const [monday, setMonday] = useState(() => mondayOf(new Date()));
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -56,7 +56,7 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
   );
 
   const backlogItems = useMemo(
-    () => todos.filter((t) => t.day === null).sort((a, b) => a.position - b.position),
+    () => todos.filter(isInboxVisible).sort((a, b) => a.position - b.position),
     [todos]
   );
 
@@ -96,7 +96,7 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
       return;
     }
 
-    const isOverBacklogItem = todos.some((t) => t.id === overIdStr && t.day === null);
+    const isOverBacklogItem = todos.some((t) => t.id === overIdStr && isInboxVisible(t));
     if (overIdStr !== BACKLOG && !isOverBacklogItem) return;
 
     if (todo.day !== null) {
@@ -134,8 +134,24 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
     );
   }
 
-  function handleAdd(content: string) {
-    void addTodo(content, nextPosition(backlogItems));
+  function handleAdd(content: string, kind: TodoKind) {
+    if (kind === "note") void addNote(content, nextPosition(backlogItems));
+    else void addTodo(content, nextPosition(backlogItems));
+  }
+
+  function handleConvert(id: string, kind: TodoKind) {
+    if (kind === "note") {
+      void updateTodo(id, {
+        kind,
+        day: null,
+        weekStart: null,
+        startMinutes: null,
+        durationMinutes: null,
+        completed: false,
+      });
+    } else {
+      void updateTodo(id, { kind });
+    }
   }
 
   function handleResize(id: string, durationMinutes: number) {
@@ -263,6 +279,7 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
                 onRemove={handleRemove}
                 onEdit={handleEdit}
                 onMemoEdit={handleMemoEdit}
+                onConvert={handleConvert}
                 onAdd={handleAdd}
                 onClose={() => setPanelOpen(false)}
               />

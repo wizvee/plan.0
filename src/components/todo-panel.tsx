@@ -6,7 +6,7 @@ import { X } from "lucide-react";
 import { TodoCard } from "@/components/todo-card";
 import { AddTodoForm } from "@/components/add-todo-form";
 import { cn } from "@/lib/utils";
-import { BACKLOG, type Todo } from "@/lib/types";
+import { BACKLOG, type Todo, type TodoKind } from "@/lib/types";
 
 interface TodoPanelProps {
   items: Todo[];
@@ -14,13 +14,24 @@ interface TodoPanelProps {
   onRemove: (id: string) => void;
   onEdit: (id: string, content: string) => void;
   onMemoEdit: (id: string, memo: string) => void;
-  onAdd: (content: string) => void;
+  onConvert?: (id: string, kind: TodoKind) => void;
+  onAdd: (content: string, kind: TodoKind) => void;
   onClose: () => void;
   /** PARA 목록 화면에서 재사용할 때, 이미 매핑된 항목에 보여줄 배지 텍스트 */
   getBadge?: (todo: Todo) => string | undefined;
 }
 
-export function TodoPanel({ items, onToggle, onRemove, onEdit, onMemoEdit, onAdd, onClose, getBadge }: TodoPanelProps) {
+export function TodoPanel({
+  items,
+  onToggle,
+  onRemove,
+  onEdit,
+  onMemoEdit,
+  onConvert,
+  onAdd,
+  onClose,
+  getBadge,
+}: TodoPanelProps) {
   const { setNodeRef, isOver } = useDroppable({ id: BACKLOG });
 
   return (
@@ -64,6 +75,7 @@ export function TodoPanel({ items, onToggle, onRemove, onEdit, onMemoEdit, onAdd
               onRemove={onRemove}
               onEdit={onEdit}
               onMemoEdit={onMemoEdit}
+              onConvert={onConvert}
               badge={getBadge?.(todo)}
             />
           ))}

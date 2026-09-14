@@ -20,10 +20,19 @@ import { useSupabaseTodos } from "@/lib/supabase/todos";
 import { useSupabaseAreas, useSupabaseProjects, useSupabaseResources } from "@/lib/supabase/containers";
 import { preferSpecificTargetCollision } from "@/lib/dnd";
 import { cn } from "@/lib/utils";
-import { BACKLOG, PARA_KIND_LABELS, type ParaContainer, type ParaKind, type Todo } from "@/lib/types";
+import {
+  BACKLOG,
+  PARA_KIND_LABELS,
+  isInboxVisible,
+  type ParaContainer,
+  type ParaKind,
+  type Todo,
+  type TodoKind,
+} from "@/lib/types";
 import { TodoCard } from "@/components/todo-card";
 import { TodoPanel } from "@/components/todo-panel";
 import { AppNavRail } from "@/components/app-nav-rail";
+import { AddContainerForm } from "@/components/para/add-container-form";
 
 const KIND_ICON: Record<ParaKind, typeof Target> = {
   project: Target,
@@ -42,20 +51,6 @@ function nextPosition(items: Todo[]) {
   return items.length === 0 ? 0 : Math.max(...items.map((t) => t.position)) + 1;
 }
 
-function NotesTab({ initialNotes, onCommit }: { initialNotes: string; onCommit: (value: string) => void }) {
-  const [value, setValue] = useState(initialNotes);
-  return (
-    <textarea
-      value={value}
-      onChange={(e) => setValue(e.target.value)}
-      onBlur={() => onCommit(value)}
-      placeholder="메모 없음"
-      rows={8}
-      className="w-full resize-y rounded-2xl border border-border bg-card p-4 text-[14.5px] leading-relaxed outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-    />
-  );
-}
-
 interface ContainerDetailScreenProps {
   kind: ParaKind;
   id: string;
@@ -64,7 +59,7 @@ interface ContainerDetailScreenProps {
 
 export function ContainerDetailScreen({ kind, id, userId }: ContainerDetailScreenProps) {
   const router = useRouter();
-  const { todos, setTodos, addTodo, updateTodo, removeTodo, persistPositions } = useSupabaseTodos(userId);
+  const { todos, setTodos, addTodo, addNote, updateTodo, removeTodo, persistPositions } = useSupabaseTodos(userId);
   const { projects, updateProject } = useSupabaseProjects(userId);
   const { areas, updateArea } = useSupabaseAreas(userId);
   const { resources, updateResource } = useSupabaseResources(userId);
@@ -78,9 +73,15 @@ export function ContainerDetailScreen({ kind, id, userId }: ContainerDetailScree
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
   const backlogItems = useMemo(
-    () => todos.filter((t) => t.day === null).sort((a, b) => a.position - b.position),
+    () => todos.filter(isInboxVisible).sort((a, b) => a.position - b.position),
     [todos]
   );
+
+  const containerMapping = {
+    projectId: kind === "project" ? id : null,
+    areaId: kind === "area" ? id : null,
+    resourceId: kind === "resource" ? id : null,
+  };
 
   const nameById = useMemo(() => {
     const map = new Map<string, string>();
@@ -113,17 +114,12 @@ export function ContainerDetailScreen({ kind, id, userId }: ContainerDetailScree
     if (!todo) return;
 
     if (overIdStr === dropId) {
-      const patch = {
-        projectId: kind === "project" ? id : null,
-        areaId: kind === "area" ? id : null,
-        resourceId: kind === "resource" ? id : null,
-      };
-      setTodos((prev) => prev.map((t) => (t.id === activeIdStr ? { ...t, ...patch } : t)));
-      void updateTodo(activeIdStr, patch);
+      setTodos((prev) => prev.map((t) => (t.id === activeIdStr ? { ...t, ...containerMapping } : t)));
+      void updateTodo(activeIdStr, containerMapping);
       return;
     }
 
-    const isOverBacklogItem = todos.some((t) => t.id === overIdStr && t.day === null);
+    const isOverBacklogItem = todos.some((t) => t.id === overIdStr && isInboxVisible(t));
     if (overIdStr !== BACKLOG && !isOverBacklogItem) return;
 
     if (todo.projectId || todo.areaId || todo.resourceId) {
@@ -155,11 +151,13 @@ export function ContainerDetailScreen({ kind, id, userId }: ContainerDetailScree
     );
   }
 
-  const mappedTodos = todos.filter((t) =>
+  const mappedHere = todos.filter((t) =>
     kind === "project" ? t.projectId === id : kind === "area" ? t.areaId === id : t.resourceId === id
   );
-  const doneCount = mappedTodos.filter((t) => t.completed).length;
-  const progress = mappedTodos.length ? Math.round((doneCount / mappedTodos.length) * 100) : 0;
+  const mappedTasks = mappedHere.filter((t) => t.kind === "task");
+  const mappedNotes = mappedHere.filter((t) => t.kind === "note");
+  const doneCount = mappedTasks.filter((t) => t.completed).length;
+  const progress = mappedTasks.length ? Math.round((doneCount / mappedTasks.length) * 100) : 0;
 
   const Icon = KIND_ICON[kind];
   const paraContainer = container as ParaContainer;
@@ -181,12 +179,19 @@ export function ContainerDetailScreen({ kind, id, userId }: ContainerDetailScree
     }
   }
 
-  function commitNotes(value: string) {
-    if (value === (container!.notes ?? "")) return;
-    const patch = { notes: value.trim() || null };
-    if (kind === "project") void updateProject(id, patch);
-    else if (kind === "area") void updateArea(id, patch);
-    else void updateResource(id, patch);
+  function handleConvert(tid: string, newKind: TodoKind) {
+    if (newKind === "note") {
+      void updateTodo(tid, {
+        kind: newKind,
+        day: null,
+        weekStart: null,
+        startMinutes: null,
+        durationMinutes: null,
+        completed: false,
+      });
+    } else {
+      void updateTodo(tid, { kind: newKind });
+    }
   }
 
   const activeTodo = activeId ? todos.find((t) => t.id === activeId) ?? null : null;
@@ -301,13 +306,13 @@ export function ContainerDetailScreen({ kind, id, userId }: ContainerDetailScree
 
           {tab === "tasks" ? (
             <div className="flex flex-col divide-y divide-border/70">
-              {mappedTodos.length === 0 ? (
+              {mappedTasks.length === 0 ? (
                 <p className="py-6 text-[14px] text-muted-foreground">
                   아직 매핑된 할 일이 없습니다. 오른쪽(모바일은 하단) &ldquo;할 일 보관함&rdquo;을 열어서 이{" "}
                   {PARA_KIND_LABELS[kind]}로 드래그해보세요.
                 </p>
               ) : (
-                mappedTodos.map((todo) => (
+                mappedTasks.map((todo) => (
                   <TodoCard
                     key={todo.id}
                     todo={todo}
@@ -315,13 +320,31 @@ export function ContainerDetailScreen({ kind, id, userId }: ContainerDetailScree
                     onRemove={(tid) => void removeTodo(tid)}
                     onEdit={(tid, content) => void updateTodo(tid, { content })}
                     onMemoEdit={(tid, memo) => void updateTodo(tid, { memo: memo || null })}
+                    onConvert={handleConvert}
                   />
                 ))
               )}
             </div>
           ) : null}
 
-          {tab === "notes" ? <NotesTab initialNotes={container.notes ?? ""} onCommit={commitNotes} /> : null}
+          {tab === "notes" ? (
+            <div className="flex flex-col gap-2.5">
+              {mappedNotes.map((note) => (
+                <TodoCard
+                  key={note.id}
+                  todo={note}
+                  onRemove={(tid) => void removeTodo(tid)}
+                  onEdit={(tid, content) => void updateTodo(tid, { content })}
+                  onMemoEdit={(tid, memo) => void updateTodo(tid, { memo: memo || null })}
+                  onConvert={handleConvert}
+                />
+              ))}
+              <AddContainerForm
+                placeholder="새 노트 추가"
+                onAdd={(content) => void addNote(content, nextPosition(mappedNotes), containerMapping)}
+              />
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -336,7 +359,12 @@ export function ContainerDetailScreen({ kind, id, userId }: ContainerDetailScree
             onRemove={(tid) => void removeTodo(tid)}
             onEdit={(tid, content) => void updateTodo(tid, { content })}
             onMemoEdit={(tid, memo) => void updateTodo(tid, { memo: memo || null })}
-            onAdd={(content) => void addTodo(content, nextPosition(backlogItems))}
+            onConvert={handleConvert}
+            onAdd={(content, itemKind) =>
+              itemKind === "note"
+                ? void addNote(content, nextPosition(backlogItems))
+                : void addTodo(content, nextPosition(backlogItems))
+            }
             onClose={() => setPanelOpen(false)}
             getBadge={badgeFor}
           />

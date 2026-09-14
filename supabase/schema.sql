@@ -21,6 +21,10 @@ alter table public.todos add column if not exists duration_minutes integer;
 alter table public.todos add column if not exists url text;
 alter table public.todos add column if not exists memo text;
 
+-- 할 일(task) / 노트(note) 구분. 노트는 체크박스·완료 개념이 없는 참고용 항목으로, 같은 todos
+-- 테이블에 종류만 다르게 저장한다 (전환 기능이 필드 하나만 바꾸면 되도록).
+alter table public.todos add column if not exists kind text not null default 'task' check (kind in ('task', 'note'));
+
 -- PARA (Project / Area / Resource) — 계층 없이 완전히 독립된 3개의 컨테이너 테이블.
 -- 할 일 하나는 이 셋 중 최대 1곳에만 매핑됨 (아래 todos_para_single_mapping 제약으로 강제).
 create table if not exists public.projects (
@@ -30,7 +34,6 @@ create table if not exists public.projects (
   status text not null default 'active' check (status in ('active', 'completed')),
   start_date date not null default current_date,
   due_date date,
-  notes text,
   created_at timestamptz not null default now(),
   completed_at timestamptz
 );
@@ -40,7 +43,6 @@ create table if not exists public.areas (
   user_id uuid not null references auth.users (id) on delete cascade,
   name text not null,
   archived boolean not null default false,
-  notes text,
   created_at timestamptz not null default now()
 );
 
@@ -49,9 +51,14 @@ create table if not exists public.resources (
   user_id uuid not null references auth.users (id) on delete cascade,
   name text not null,
   archived boolean not null default false,
-  notes text,
   created_at timestamptz not null default now()
 );
+
+-- Notes 탭이 컨테이너당 자유 텍스트 메모 1개가 아니라 todos.kind='note' 여러 개의 리스트로
+-- 완전히 대체됨 — 이 컬럼은 더 이상 쓰지 않는다.
+alter table public.projects drop column if exists notes;
+alter table public.areas drop column if exists notes;
+alter table public.resources drop column if exists notes;
 
 alter table public.todos add column if not exists project_id uuid references public.projects (id) on delete set null;
 alter table public.todos add column if not exists area_id uuid references public.areas (id) on delete set null;
