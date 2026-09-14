@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { format, differenceInCalendarDays } from "date-fns";
-import { ArrowLeft, Bookmark, Check, Compass, Target } from "lucide-react";
+import { ArrowLeft, Bookmark, Compass, Target } from "lucide-react";
 import {
   DndContext,
   DragOverlay,
@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 import { BACKLOG, PARA_KIND_LABELS, type ParaContainer, type ParaKind, type Todo } from "@/lib/types";
 import { TodoCard } from "@/components/todo-card";
 import { TodoPanel } from "@/components/todo-panel";
-import { IconRail } from "@/components/icon-rail";
+import { AppNavRail } from "@/components/app-nav-rail";
 
 const KIND_ICON: Record<ParaKind, typeof Target> = {
   project: Target,
@@ -340,16 +340,7 @@ export function ContainerDetailScreen({ kind, id, userId }: ContainerDetailScree
 
       <DragOverlay>{activeTodo ? <TodoCard todo={activeTodo} overlay /> : null}</DragOverlay>
 
-      <IconRail
-        items={[
-          {
-            icon: Check,
-            label: "Todo List",
-            active: panelOpen,
-            onClick: () => setPanelOpen((open) => !open),
-          },
-        ]}
-      />
+      <AppNavRail activePage="para" panelOpen={panelOpen} onTogglePanel={() => setPanelOpen((open) => !open)} />
     </DndContext>
   );
 }

@@ -13,7 +13,7 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { ArrowLeft, Bookmark, Check, Compass, Target } from "lucide-react";
+import { Bookmark, Compass, Target } from "lucide-react";
 
 import { useSupabaseTodos } from "@/lib/supabase/todos";
 import { useSupabaseAreas, useSupabaseProjects, useSupabaseResources } from "@/lib/supabase/containers";
@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 import { BACKLOG, PARA_KIND_LABELS, PARA_KINDS, type ParaKind, type Todo } from "@/lib/types";
 import { TodoCard } from "@/components/todo-card";
 import { TodoPanel } from "@/components/todo-panel";
-import { IconRail } from "@/components/icon-rail";
+import { AppNavRail } from "@/components/app-nav-rail";
 import { ContainerCard } from "@/components/para/container-card";
 import { AddContainerForm } from "@/components/para/add-container-form";
 
@@ -160,14 +160,6 @@ export function ParaBoard({ userId }: { userId: string }) {
     <div className="min-h-screen pb-14 sm:pb-0 sm:pr-14">
       <div className="mx-auto flex w-full max-w-[1040px] flex-col gap-5 px-4 py-6 sm:px-6">
         <header className="flex flex-col gap-1">
-          <button
-            type="button"
-            onClick={() => router.push("/")}
-            className="flex w-fit items-center gap-1 text-[13px] font-medium text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="size-3.5" />
-            캘린더로
-          </button>
           <h1 className="text-[26px] font-bold tracking-tight">PARA</h1>
           <p className="text-[14px] text-muted-foreground">할 일을 프로젝트·영역·리소스 중 하나에 매핑합니다</p>
         </header>
@@ -250,16 +242,7 @@ export function ParaBoard({ userId }: { userId: string }) {
         </DndContext>
       </div>
 
-      <IconRail
-        items={[
-          {
-            icon: Check,
-            label: "Todo List",
-            active: panelOpen,
-            onClick: () => setPanelOpen((open) => !open),
-          },
-        ]}
-      />
+      <AppNavRail activePage="para" panelOpen={panelOpen} onTogglePanel={() => setPanelOpen((open) => !open)} />
     </div>
   );
 }

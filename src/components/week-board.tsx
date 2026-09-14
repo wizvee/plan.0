@@ -14,7 +14,6 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { Check, LayoutGrid } from "lucide-react";
 
 import { useSupabaseTodos } from "@/lib/supabase/todos";
 import { createClient } from "@/lib/supabase/client";
@@ -27,7 +26,7 @@ import { TodoCard } from "@/components/todo-card";
 import { CalendarBlock } from "@/components/calendar-block";
 import { WeekCalendar } from "@/components/week-calendar";
 import { TodoPanel } from "@/components/todo-panel";
-import { IconRail } from "@/components/icon-rail";
+import { AppNavRail } from "@/components/app-nav-rail";
 import { WeekNav } from "@/components/week-nav";
 import { Button } from "@/components/ui/button";
 
@@ -282,21 +281,7 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
         </DndContext>
       </div>
 
-      <IconRail
-        items={[
-          {
-            icon: Check,
-            label: "Todo List",
-            active: panelOpen,
-            onClick: () => setPanelOpen((open) => !open),
-          },
-          {
-            icon: LayoutGrid,
-            label: "PARA",
-            onClick: () => router.push("/para"),
-          },
-        ]}
-      />
+      <AppNavRail activePage="calendar" panelOpen={panelOpen} onTogglePanel={() => setPanelOpen((open) => !open)} />
     </div>
   );
 }
