@@ -158,7 +158,12 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail }: Container
   const mappedHere = todos.filter((t) =>
     kind === "project" ? t.projectId === id : kind === "area" ? t.areaId === id : t.resourceId === id
   );
-  const mappedTasks = mappedHere.filter((t) => t.kind === "task");
+  const mappedTasks = mappedHere
+    .filter((t) => t.kind === "task")
+    .sort((a, b) => {
+      if (a.completed !== b.completed) return a.completed ? 1 : -1;
+      return a.createdAt.localeCompare(b.createdAt);
+    });
   const mappedNotes = mappedHere.filter((t) => t.kind === "note");
   const doneCount = mappedTasks.filter((t) => t.completed).length;
   const progress = mappedTasks.length ? Math.round((doneCount / mappedTasks.length) * 100) : 0;
