@@ -85,7 +85,8 @@ function DayGridColumn({
       className={cn(
         "relative border-border/60 transition-colors",
         day !== "mon" && "border-l",
-        isOver && "bg-accent/25"
+        isToday && "bg-accent/20",
+        isOver && "bg-accent/35"
       )}
       style={{ height: HOURS_IN_DAY * HOUR_HEIGHT }}
     >

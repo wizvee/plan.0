@@ -16,6 +16,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
 
+import { createClient } from "@/lib/supabase/client";
 import { useSupabaseTodos } from "@/lib/supabase/todos";
 import { useSupabaseAreas, useSupabaseProjects, useSupabaseResources } from "@/lib/supabase/containers";
 import { preferSpecificTargetCollision } from "@/lib/dnd";
@@ -30,7 +31,7 @@ import {
   type TodoKind,
 } from "@/lib/types";
 import { TodoCard } from "@/components/todo-card";
-import { TodoPanel } from "@/components/todo-panel";
+import { AppSidebar } from "@/components/app-sidebar";
 import { AppNavRail } from "@/components/app-nav-rail";
 import { AddContainerForm } from "@/components/para/add-container-form";
 
@@ -55,9 +56,10 @@ interface ContainerDetailScreenProps {
   kind: ParaKind;
   id: string;
   userId: string;
+  userEmail: string;
 }
 
-export function ContainerDetailScreen({ kind, id, userId }: ContainerDetailScreenProps) {
+export function ContainerDetailScreen({ kind, id, userId, userEmail }: ContainerDetailScreenProps) {
   const router = useRouter();
   const { todos, setTodos, addTodo, addNote, updateTodo, removeTodo, persistPositions } = useSupabaseTodos(userId);
   const { projects, updateProject } = useSupabaseProjects(userId);
@@ -165,6 +167,13 @@ export function ContainerDetailScreen({ kind, id, userId }: ContainerDetailScree
     kind === "project" ? (project!.status === "active" ? "진행중" : "완료") : paraContainer.archived ? "보관" : "활성";
   const statusDone = kind === "project" ? project!.status === "completed" : paraContainer.archived;
 
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.replace("/login");
+    router.refresh();
+  }
+
   function toggleStatus() {
     if (kind === "project") {
       const nextStatus = project!.status === "active" ? "completed" : "active";
@@ -203,11 +212,11 @@ export function ContainerDetailScreen({ kind, id, userId }: ContainerDetailScree
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="min-h-screen pb-14 sm:pb-0 sm:pr-14">
+      <div className="min-h-screen pb-14 sm:pb-0 sm:pl-[260px]">
         <div
           ref={setNodeRef}
           className={cn(
-            "mx-auto w-full max-w-[720px] rounded-2xl px-4 py-6 transition-shadow sm:px-6",
+            "mx-auto w-full max-w-[720px] rounded-lg px-4 py-6 transition-shadow sm:px-6",
             isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background"
           )}
         >
@@ -227,14 +236,14 @@ export function ContainerDetailScreen({ kind, id, userId }: ContainerDetailScree
             <h1 className="mt-1.5 text-[22px] font-bold leading-tight tracking-tight">{container.name}</h1>
           </div>
 
-          <div className="mb-5 flex flex-wrap items-center gap-6 rounded-2xl border border-border bg-card px-4 py-3.5">
+          <div className="mb-5 flex flex-wrap items-center gap-6 rounded-lg border border-border bg-card px-4 py-3.5">
             <div className="flex flex-col gap-1">
               <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Status</span>
               <button
                 type="button"
                 onClick={toggleStatus}
                 className={cn(
-                  "w-fit rounded-full px-2.5 py-0.5 text-[11.5px] font-bold",
+                  "w-fit rounded-sm px-2 py-0.5 text-[11.5px] font-bold",
                   statusDone ? "bg-secondary text-muted-foreground" : "bg-accent text-accent-foreground"
                 )}
               >
@@ -348,28 +357,30 @@ export function ContainerDetailScreen({ kind, id, userId }: ContainerDetailScree
         </div>
       </div>
 
-      {panelOpen ? (
-        <SortableContext items={backlogItems.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-          <TodoPanel
-            items={backlogItems}
-            onToggle={(tid) => {
-              const current = todos.find((t) => t.id === tid);
-              if (current) void updateTodo(tid, { completed: !current.completed });
-            }}
-            onRemove={(tid) => void removeTodo(tid)}
-            onEdit={(tid, content) => void updateTodo(tid, { content })}
-            onMemoEdit={(tid, memo) => void updateTodo(tid, { memo: memo || null })}
-            onConvert={handleConvert}
-            onAdd={(content, itemKind) =>
-              itemKind === "note"
-                ? void addNote(content, nextPosition(backlogItems))
-                : void addTodo(content, nextPosition(backlogItems))
-            }
-            onClose={() => setPanelOpen(false)}
-            getBadge={badgeFor}
-          />
-        </SortableContext>
-      ) : null}
+      <SortableContext items={backlogItems.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+        <AppSidebar
+          activePage="para"
+          userEmail={userEmail}
+          onSignOut={handleSignOut}
+          panelOpen={panelOpen}
+          onClosePanel={() => setPanelOpen(false)}
+          items={backlogItems}
+          onToggle={(tid) => {
+            const current = todos.find((t) => t.id === tid);
+            if (current) void updateTodo(tid, { completed: !current.completed });
+          }}
+          onRemove={(tid) => void removeTodo(tid)}
+          onEdit={(tid, content) => void updateTodo(tid, { content })}
+          onMemoEdit={(tid, memo) => void updateTodo(tid, { memo: memo || null })}
+          onConvert={handleConvert}
+          onAdd={(content, itemKind) =>
+            itemKind === "note"
+              ? void addNote(content, nextPosition(backlogItems))
+              : void addTodo(content, nextPosition(backlogItems))
+          }
+          getBadge={badgeFor}
+        />
+      </SortableContext>
 
       <DragOverlay>{activeTodo ? <TodoCard todo={activeTodo} overlay /> : null}</DragOverlay>
 

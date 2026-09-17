@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { UrlChip } from "@/components/url-chip";
 import { TodoDetailModal } from "@/components/todo-detail-modal";
 import { cn } from "@/lib/utils";
+import { CATEGORY_COLOR_VAR, getParaCategory } from "@/lib/category";
 import type { Todo, TodoKind } from "@/lib/types";
 
 interface TodoCardProps {
@@ -25,6 +26,7 @@ interface TodoCardProps {
 
 export function TodoCard({ todo, onToggle, onRemove, onEdit, onMemoEdit, onConvert, overlay, badge }: TodoCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
+  const category = !badge ? getParaCategory(todo) : null;
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: todo.id,
@@ -65,14 +67,23 @@ export function TodoCard({ todo, onToggle, onRemove, onEdit, onMemoEdit, onConve
           />
         )}
         <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <span
-            onClick={() => onEdit && setDetailOpen(true)}
-            className={cn(
-              "min-w-0 flex-1 cursor-pointer break-words text-[15px] leading-snug",
-              todo.completed && "text-muted-foreground"
-            )}
-          >
-            {todo.content}
+          <span className="flex min-w-0 items-start gap-1.5">
+            <span
+              onClick={() => onEdit && setDetailOpen(true)}
+              className={cn(
+                "min-w-0 flex-1 cursor-pointer break-words text-[15px] leading-snug",
+                todo.completed && "text-muted-foreground"
+              )}
+            >
+              {todo.content}
+            </span>
+            {category ? (
+              <span
+                className="mt-1.5 size-[7px] shrink-0 rounded-full"
+                style={{ backgroundColor: `var(${CATEGORY_COLOR_VAR[category]})` }}
+                aria-hidden="true"
+              />
+            ) : null}
           </span>
           {todo.url ? <UrlChip url={todo.url} /> : null}
           {badge ? (

@@ -25,7 +25,7 @@ import { DEFAULT_DURATION_MINUTES, HOUR_HEIGHT, MINUTES_PER_DAY, clampMinutes, s
 import { TodoCard } from "@/components/todo-card";
 import { CalendarBlock } from "@/components/calendar-block";
 import { WeekCalendar } from "@/components/week-calendar";
-import { TodoPanel } from "@/components/todo-panel";
+import { AppSidebar } from "@/components/app-sidebar";
 import { AppNavRail } from "@/components/app-nav-rail";
 import { WeekNav } from "@/components/week-nav";
 import { Button } from "@/components/ui/button";
@@ -186,7 +186,7 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
   const activeTodo = activeId ? todos.find((t) => t.id === activeId) ?? null : null;
 
   return (
-    <div className="min-h-screen pb-14 sm:pb-0 sm:pr-14">
+    <div className="min-h-screen pb-14 sm:pb-0 sm:pl-[260px]">
       <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-4 py-6 sm:px-6">
         <header className="flex flex-col gap-3">
           <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
@@ -202,17 +202,14 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
                 onNext={() => setMonday((m) => shiftWeeks(m, 1))}
                 onToday={() => setMonday(mondayOf(new Date()))}
               />
-              <div className="flex items-center gap-2 sm:border-l sm:border-border sm:pl-4">
-                <span className="hidden text-sm text-muted-foreground sm:inline">{userEmail}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 px-2 text-[15px] font-medium text-muted-foreground hover:bg-accent"
-                  onClick={handleSignOut}
-                >
-                  로그아웃
-                </Button>
-              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2 text-[15px] font-medium text-muted-foreground hover:bg-accent sm:hidden"
+                onClick={handleSignOut}
+              >
+                로그아웃
+              </Button>
             </div>
           </div>
           <div className="sm:hidden">
@@ -271,20 +268,24 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
             onResize={handleResize}
           />
 
-          {panelOpen ? (
-            <SortableContext items={backlogItems.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-              <TodoPanel
-                items={backlogItems}
-                onToggle={handleToggle}
-                onRemove={handleRemove}
-                onEdit={handleEdit}
-                onMemoEdit={handleMemoEdit}
-                onConvert={handleConvert}
-                onAdd={handleAdd}
-                onClose={() => setPanelOpen(false)}
-              />
-            </SortableContext>
-          ) : null}
+          <SortableContext items={backlogItems.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+            <AppSidebar
+              activePage="calendar"
+              userEmail={userEmail}
+              onSignOut={handleSignOut}
+              panelOpen={panelOpen}
+              onClosePanel={() => setPanelOpen(false)}
+              items={backlogItems}
+              onToggle={handleToggle}
+              onRemove={handleRemove}
+              onEdit={handleEdit}
+              onMemoEdit={handleMemoEdit}
+              onConvert={handleConvert}
+              onAdd={handleAdd}
+              monday={monday}
+              onSelectWeek={(date) => setMonday(mondayOf(date))}
+            />
+          </SortableContext>
 
           <DragOverlay>
             {activeTodo ? (

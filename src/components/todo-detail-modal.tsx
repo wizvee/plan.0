@@ -47,7 +47,7 @@ export function TodoDetailModal({ todo, onEdit, onMemoEdit, onRemove, onConvert,
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-4" onClick={onClose}>
       <div
-        className="flex w-full max-w-sm flex-col rounded-2xl bg-card p-5 shadow-xl"
+        className="flex w-full max-w-sm flex-col rounded-xl bg-card p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start gap-3">

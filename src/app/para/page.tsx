@@ -13,5 +13,5 @@ export default async function ParaPage() {
     redirect("/login");
   }
 
-  return <ParaBoard userId={user.id} />;
+  return <ParaBoard userId={user.id} userEmail={user.email ?? ""} />;
 }

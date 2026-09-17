@@ -7,6 +7,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TodoDetailModal } from "@/components/todo-detail-modal";
 import { cn } from "@/lib/utils";
+import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR, getParaCategory } from "@/lib/category";
 import {
   BLOCK_GAP,
   DEFAULT_DURATION_MINUTES,
@@ -81,14 +82,26 @@ export function CalendarBlock({
   const renderedHeight = Math.max(minutesToPx(duration), MIN_BLOCK_HEIGHT) - BLOCK_GAP;
   const compact = renderedHeight <= 34;
 
+  const category = getParaCategory(todo);
+  const colorVar = todo.completed
+    ? "var(--muted-foreground)"
+    : category
+      ? `var(${CATEGORY_COLOR_VAR[category]})`
+      : "var(--muted-foreground)";
+  const tintVar = todo.completed
+    ? "var(--muted)"
+    : category
+      ? `var(${CATEGORY_TINT_VAR[category]})`
+      : "var(--secondary)";
+
   if (overlay) {
     return (
       <div
-        className="w-[200px] rounded-[5px] border-l-[3px] border-primary bg-accent px-2.5 py-1.5 shadow-lg"
-        style={{ height: renderedHeight }}
+        className="w-[200px] rounded-[5px] border-l-[3px] px-2.5 py-1.5 shadow-lg"
+        style={{ height: renderedHeight, borderLeftColor: colorVar, backgroundColor: tintVar }}
       >
-        <p className="truncate text-[13px] font-medium text-accent-foreground">{todo.content}</p>
-        <p className="truncate text-[11px] text-accent-foreground/70">
+        <p className="truncate text-[13px] font-medium text-foreground">{todo.content}</p>
+        <p className="truncate text-[11px] text-muted-foreground">
           {minutesRangeLabel(startMinutes, duration)}
         </p>
       </div>
@@ -102,6 +115,8 @@ export function CalendarBlock({
     left: 3,
     right: 3,
     transform: CSS.Translate.toString(transform),
+    borderLeftColor: colorVar,
+    backgroundColor: tintVar,
   };
 
   return (
@@ -112,9 +127,8 @@ export function CalendarBlock({
         {...attributes}
         {...listeners}
         className={cn(
-          "absolute z-[1] flex touch-none select-none flex-col justify-center overflow-hidden rounded-[5px] border-l-[3px] border-primary bg-accent px-2 py-1 shadow-[0_1px_1px_rgba(0,0,0,0.04)] transition-shadow hover:shadow-md",
+          "absolute z-[1] flex touch-none select-none flex-col justify-center overflow-hidden rounded-[5px] border-l-[3px] px-2 py-1 shadow-[0_1px_1px_rgba(0,0,0,0.04)] transition-shadow hover:shadow-md",
           isDragging && "z-20 opacity-40",
-          todo.completed && "border-muted-foreground/60 bg-muted",
           compact && "flex-row items-center gap-1.5 py-0"
         )}
       >
@@ -130,7 +144,7 @@ export function CalendarBlock({
           <span
             onClick={() => onEdit && setDetailOpen(true)}
             className={cn(
-              "min-w-0 flex-1 cursor-pointer truncate text-[12.5px] font-medium leading-tight text-accent-foreground",
+              "min-w-0 flex-1 cursor-pointer truncate text-[12.5px] font-medium leading-tight text-foreground",
               todo.completed && "text-muted-foreground line-through"
             )}
           >
@@ -138,7 +152,7 @@ export function CalendarBlock({
           </span>
         </div>
         {!compact ? (
-          <span className="truncate text-[10.5px] leading-tight text-accent-foreground/70">
+          <span className="truncate text-[10.5px] leading-tight text-muted-foreground">
             {minutesRangeLabel(startMinutes, duration)}
           </span>
         ) : null}

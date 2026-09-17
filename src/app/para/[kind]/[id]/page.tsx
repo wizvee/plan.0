@@ -24,5 +24,5 @@ export default async function ParaDetailPage({ params }: ParaDetailPageProps) {
     redirect("/login");
   }
 
-  return <ContainerDetailScreen kind={kind as ParaKind} id={id} userId={user.id} />;
+  return <ContainerDetailScreen kind={kind as ParaKind} id={id} userId={user.id} userEmail={user.email ?? ""} />;
 }

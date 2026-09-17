@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --radius: 0.875rem;
+  --radius: 0.5rem;
   --background: #F6F4F0;
   --foreground: #3B3632;
   --card: #FFFEFB;
@@ -23,6 +23,10 @@
   --border: rgba(59, 54, 50, 0.12);
   --input: #DAD4CA;
   --ring: #5C7599;
+  --category-area: oklch(54% 0.07 155);
+  --category-area-tint: oklch(94% 0.014 155);
+  --category-resource: oklch(54% 0.075 320);
+  --category-resource-tint: oklch(94% 0.014 320);
 }
 
 .dark {
@@ -44,6 +48,10 @@
   --border: rgba(234, 229, 221, 0.14);
   --input: #4A453D;
   --ring: #90A6C7;
+  --category-area: oklch(72% 0.09 155);
+  --category-area-tint: oklch(28% 0.035 155);
+  --category-resource: oklch(72% 0.1 320);
+  --category-resource-tint: oklch(28% 0.035 320);
 }
 
 @theme inline {
@@ -69,6 +77,10 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-category-area: var(--category-area);
+  --color-category-area-tint: var(--category-area-tint);
+  --color-category-resource: var(--category-resource);
+  --color-category-resource-tint: var(--category-resource-tint);
   --font-sans: "Wanted Sans Variable", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
   --font-mono: var(--font-geist-mono);
 }

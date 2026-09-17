@@ -14,13 +14,14 @@ import {
 import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Bookmark, Compass, Target } from "lucide-react";
 
+import { createClient } from "@/lib/supabase/client";
 import { useSupabaseTodos } from "@/lib/supabase/todos";
 import { useSupabaseAreas, useSupabaseProjects, useSupabaseResources } from "@/lib/supabase/containers";
 import { preferSpecificTargetCollision } from "@/lib/dnd";
 import { cn } from "@/lib/utils";
 import { BACKLOG, PARA_KIND_LABELS, PARA_KINDS, isInboxVisible, type ParaKind, type Todo, type TodoKind } from "@/lib/types";
 import { TodoCard } from "@/components/todo-card";
-import { TodoPanel } from "@/components/todo-panel";
+import { AppSidebar } from "@/components/app-sidebar";
 import { AppNavRail } from "@/components/app-nav-rail";
 import { ContainerCard } from "@/components/para/container-card";
 import { AddContainerForm } from "@/components/para/add-container-form";
@@ -35,7 +36,7 @@ function nextPosition(items: Todo[]) {
   return items.length === 0 ? 0 : Math.max(...items.map((t) => t.position)) + 1;
 }
 
-export function ParaBoard({ userId }: { userId: string }) {
+export function ParaBoard({ userId, userEmail }: { userId: string; userEmail: string }) {
   const router = useRouter();
   const { todos, setTodos, addTodo, addNote, updateTodo, removeTodo, persistPositions } = useSupabaseTodos(userId);
   const { projects, addProject } = useSupabaseProjects(userId);
@@ -117,6 +118,13 @@ export function ParaBoard({ userId }: { userId: string }) {
     );
   }
 
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.replace("/login");
+    router.refresh();
+  }
+
   function handleAddContainer(name: string) {
     if (activeKind === "project") void addProject(name);
     else if (activeKind === "area") void addArea(name);
@@ -179,12 +187,36 @@ export function ParaBoard({ userId }: { userId: string }) {
           }));
 
   return (
-    <div className="min-h-screen pb-14 sm:pb-0 sm:pr-14">
-      <div className="mx-auto flex w-full max-w-[1040px] flex-col gap-5 px-4 py-6 sm:px-6">
-        <header className="flex flex-col gap-1">
-          <h1 className="text-[26px] font-bold tracking-tight">PARA</h1>
-          <p className="text-[14px] text-muted-foreground">할 일을 프로젝트·영역·리소스 중 하나에 매핑합니다</p>
-        </header>
+    <div className="min-h-screen pb-14 sm:pb-0 sm:pl-[260px]">
+      <div className="mx-auto flex w-full max-w-[1100px] flex-col gap-5 px-4 py-6 sm:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <header className="flex flex-col gap-1">
+            <h1 className="text-[26px] font-bold tracking-tight">PARA</h1>
+            <p className="text-[14px] text-muted-foreground">할 일을 프로젝트·영역·리소스 중 하나에 매핑합니다</p>
+          </header>
+
+          <div className="flex gap-0.5 rounded-md bg-border/60 p-0.5">
+            {PARA_KINDS.map((kind) => {
+              const Icon = KIND_ICON[kind];
+              const selected = kind === activeKind;
+              return (
+                <button
+                  key={kind}
+                  type="button"
+                  onClick={() => setActiveKind(kind)}
+                  aria-pressed={selected}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-sm px-3.5 py-1.5 text-[13px] font-semibold transition-colors",
+                    selected ? "bg-card shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Icon className="size-[14px]" />
+                  {PARA_KIND_LABELS[kind]}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         <DndContext
           sensors={sensors}
@@ -192,74 +224,46 @@ export function ParaBoard({ userId }: { userId: string }) {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <div className="flex items-start gap-4">
-            <nav className="flex shrink-0 flex-col gap-1.5 rounded-full border border-border bg-card p-1.5">
-              {PARA_KINDS.map((kind) => {
-                const Icon = KIND_ICON[kind];
-                const selected = kind === activeKind;
-                return (
-                  <button
-                    key={kind}
-                    type="button"
-                    onClick={() => setActiveKind(kind)}
-                    aria-pressed={selected}
-                    aria-label={PARA_KIND_LABELS[kind]}
-                    className={cn(
-                      "flex size-11 flex-col items-center justify-center gap-0.5 rounded-full transition-colors",
-                      selected ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-primary"
-                    )}
-                  >
-                    <Icon className="size-[18px]" />
-                    <span className="text-[8px] font-bold tracking-wide">{PARA_KIND_LABELS[kind]}</span>
-                  </button>
-                );
-              })}
-            </nav>
-
-            <div className="min-w-0 flex-1">
-              <p className="mb-2.5 text-[12px] font-bold uppercase tracking-wide text-muted-foreground">
-                {PARA_KIND_LABELS[activeKind]}
-              </p>
-              <div className="flex flex-col gap-2.5">
-                {containerRows.map((row) => (
-                  <ContainerCard
-                    key={row.id}
-                    kind={activeKind}
-                    id={row.id}
-                    name={row.name}
-                    statusLabel={row.statusLabel}
-                    statusDone={row.statusDone}
-                    count={row.count}
-                    progress={row.progress}
-                    onClick={() => router.push(`/para/${activeKind}/${row.id}`)}
-                  />
-                ))}
-                <AddContainerForm
-                  placeholder={`새 ${PARA_KIND_LABELS[activeKind]} 만들기`}
-                  onAdd={handleAddContainer}
-                />
-              </div>
-            </div>
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+            {containerRows.map((row) => (
+              <ContainerCard
+                key={row.id}
+                kind={activeKind}
+                id={row.id}
+                name={row.name}
+                statusLabel={row.statusLabel}
+                statusDone={row.statusDone}
+                count={row.count}
+                progress={row.progress}
+                onClick={() => router.push(`/para/${activeKind}/${row.id}`)}
+              />
+            ))}
+            <AddContainerForm
+              placeholder={`새 ${PARA_KIND_LABELS[activeKind]} 만들기`}
+              onAdd={handleAddContainer}
+            />
           </div>
 
-          {panelOpen ? (
-            <SortableContext items={backlogItems.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-              <TodoPanel
-                items={backlogItems}
-                onToggle={(id) => {
-                  const current = todos.find((t) => t.id === id);
-                  if (current) void updateTodo(id, { completed: !current.completed });
-                }}
-                onRemove={(id) => void removeTodo(id)}
-                onEdit={(id, content) => void updateTodo(id, { content })}
-                onMemoEdit={(id, memo) => void updateTodo(id, { memo: memo || null })}
-                onConvert={handleConvert}
-                onAdd={handleAdd}
-                onClose={() => setPanelOpen(false)}
-                getBadge={badgeFor}
-              />
-            </SortableContext>
-          ) : null}
+          <SortableContext items={backlogItems.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+            <AppSidebar
+              activePage="para"
+              userEmail={userEmail}
+              onSignOut={handleSignOut}
+              panelOpen={panelOpen}
+              onClosePanel={() => setPanelOpen(false)}
+              items={backlogItems}
+              onToggle={(id) => {
+                const current = todos.find((t) => t.id === id);
+                if (current) void updateTodo(id, { completed: !current.completed });
+              }}
+              onRemove={(id) => void removeTodo(id)}
+              onEdit={(id, content) => void updateTodo(id, { content })}
+              onMemoEdit={(id, memo) => void updateTodo(id, { memo: memo || null })}
+              onConvert={handleConvert}
+              onAdd={handleAdd}
+              getBadge={badgeFor}
+            />
+          </SortableContext>
 
           <DragOverlay>{activeTodo ? <TodoCard todo={activeTodo} overlay /> : null}</DragOverlay>
         </DndContext>

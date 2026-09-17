@@ -15,9 +15,10 @@ interface IconRailProps {
   items: IconRailItem[];
 }
 
+/** 모바일 전용 하단 탭바. 데스크톱 내비게이션은 AppSidebar가 맡는다. */
 export function IconRail({ items }: IconRailProps) {
   return (
-    <div className="fixed left-0 right-0 bottom-0 z-50 flex h-14 items-center justify-center gap-8 border-t border-border bg-card sm:left-auto sm:top-0 sm:h-auto sm:w-14 sm:flex-col sm:justify-start sm:gap-2 sm:border-t-0 sm:border-l sm:py-4">
+    <div className="fixed inset-x-0 bottom-0 z-50 flex h-14 items-stretch border-t border-border bg-card sm:hidden">
       {items.map(({ icon: Icon, label, active, onClick }) => (
         <button
           key={label}
@@ -25,14 +26,17 @@ export function IconRail({ items }: IconRailProps) {
           onClick={onClick}
           aria-label={label}
           aria-pressed={active}
-          className={cn(
-            "flex size-10 items-center justify-center rounded-full transition-colors",
-            active
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:bg-accent hover:text-primary"
-          )}
+          className="flex flex-1 flex-col items-center justify-center gap-1 text-muted-foreground"
         >
-          <Icon className="size-5" />
+          <span
+            className={cn(
+              "flex h-[26px] w-[34px] items-center justify-center rounded-md transition-colors",
+              active && "bg-accent"
+            )}
+          >
+            <Icon className={cn("size-[18px]", active && "text-accent-foreground")} />
+          </span>
+          <span className={cn("text-[10.5px]", active ? "font-bold text-foreground" : "font-medium")}>{label}</span>
         </button>
       ))}
     </div>
