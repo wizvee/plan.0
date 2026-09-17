@@ -27,9 +27,11 @@ interface MiniCalendarProps {
   /** 이 주(월요일 시작)의 7일을 은은하게 강조 표시한다. 없으면 "오늘"만 표시. */
   highlightWeekStart?: Date;
   onSelectDate: (date: Date) => void;
+  /** 있으면 상단 "9월 2026" 라벨이 클릭 가능해져서, 지금 미니 캘린더가 보여주는 달로 월별 뷰를 연다. */
+  onSelectMonth?: (month: Date) => void;
 }
 
-export function MiniCalendar({ highlightWeekStart, onSelectDate }: MiniCalendarProps) {
+export function MiniCalendar({ highlightWeekStart, onSelectDate, onSelectMonth }: MiniCalendarProps) {
   const [displayMonth, setDisplayMonth] = useState(() => startOfMonth(highlightWeekStart ?? new Date()));
   const todayKey = useTodayKey();
 
@@ -54,9 +56,19 @@ export function MiniCalendar({ highlightWeekStart, onSelectDate }: MiniCalendarP
   return (
     <div className="rounded-lg border border-border bg-card p-3 pb-3.5">
       <div className="mb-2.5 flex items-center justify-between">
-        <span className="text-[13px] font-bold">
-          {format(displayMonth, "M")}월 <span className="font-medium text-muted-foreground">{format(displayMonth, "yyyy")}</span>
-        </span>
+        {onSelectMonth ? (
+          <button
+            type="button"
+            onClick={() => onSelectMonth(displayMonth)}
+            className="border-b border-dashed border-primary text-[13px] font-bold hover:text-primary"
+          >
+            {format(displayMonth, "M")}월 <span className="font-medium text-muted-foreground">{format(displayMonth, "yyyy")}</span>
+          </button>
+        ) : (
+          <span className="text-[13px] font-bold">
+            {format(displayMonth, "M")}월 <span className="font-medium text-muted-foreground">{format(displayMonth, "yyyy")}</span>
+          </span>
+        )}
         <div className="flex gap-0.5">
           <button
             type="button"

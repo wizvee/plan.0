@@ -30,6 +30,11 @@ interface AppSidebarProps {
   /** 캘린더 화면에서만 넘겨준다 — 미니 캘린더가 이번 주를 강조하고, 날짜를 누르면 그 주로 이동한다 */
   monday?: Date;
   onSelectWeek?: (monday: Date) => void;
+  /** 캘린더 화면에서만 넘겨준다 — 미니 캘린더 월 라벨을 클릭 가능하게 만들고, 그 달의 월별 뷰로 전환한다 */
+  onSelectMonth?: (month: Date) => void;
+  /** 캘린더 화면에서만 넘겨준다 — 이미 캘린더 화면에 있을 때 "캘린더" 메뉴를 눌러도 페이지 이동 없이
+   * 바로 이번 주 주별 뷰로 전환할 수 있게 함. 없으면 기본값(다른 화면에서 넘어올 때)대로 "/"로 이동. */
+  onCalendarClick?: () => void;
 }
 
 /**
@@ -54,6 +59,8 @@ export function AppSidebar({
   getBadge,
   monday,
   onSelectWeek,
+  onSelectMonth,
+  onCalendarClick,
 }: AppSidebarProps) {
   const router = useRouter();
   const { setNodeRef, isOver } = useDroppable({ id: BACKLOG });
@@ -131,7 +138,7 @@ export function AppSidebar({
 
         {/* 데스크톱 전용: 미니 캘린더 */}
         <div className="hidden sm:block">
-          <MiniCalendar highlightWeekStart={monday} onSelectDate={handleSelectDate} />
+          <MiniCalendar highlightWeekStart={monday} onSelectDate={handleSelectDate} onSelectMonth={onSelectMonth} />
         </div>
 
         {/* 보관함 — 모바일/데스크톱 공통 */}
@@ -164,7 +171,7 @@ export function AppSidebar({
         <div className="hidden flex-col gap-1 sm:flex">
           <button
             type="button"
-            onClick={() => router.push("/")}
+            onClick={() => (onCalendarClick ? onCalendarClick() : router.push("/"))}
             aria-pressed={activePage === "calendar"}
             className={cn(
               "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13.5px] font-medium",

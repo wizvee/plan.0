@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { addDays, format } from "date-fns";
+import { addDays, addMonths, format, startOfMonth, subMonths } from "date-fns";
 import {
   DndContext,
   DragOverlay,
@@ -25,6 +25,7 @@ import { DEFAULT_DURATION_MINUTES, HOUR_HEIGHT, MINUTES_PER_DAY, clampMinutes, s
 import { TodoCard } from "@/components/todo-card";
 import { CalendarBlock } from "@/components/calendar-block";
 import { WeekCalendar } from "@/components/week-calendar";
+import { MonthCalendar } from "@/components/month-calendar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppNavRail } from "@/components/app-nav-rail";
 import { WeekNav } from "@/components/week-nav";
@@ -49,16 +50,31 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
     const parsed = weekParam ? new Date(`${weekParam}T00:00:00`) : null;
     return mondayOf(parsed && !Number.isNaN(parsed.getTime()) ? parsed : new Date());
   });
+  const [viewMode, setViewMode] = useState<"week" | "month">(() =>
+    searchParams.get("view") === "month" ? "month" : "week"
+  );
+  const [displayMonth, setDisplayMonth] = useState(() => {
+    const monthParam = searchParams.get("month");
+    const parsed = monthParam ? new Date(`${monthParam}T00:00:00`) : null;
+    return startOfMonth(parsed && !Number.isNaN(parsed.getTime()) ? parsed : monday);
+  });
   const [activeId, setActiveId] = useState<string | null>(null);
   const [mobileDay, setMobileDay] = useState<DayKey>("mon");
   const [panelOpen, setPanelOpen] = useState(false);
 
   const weekKey = toDateKey(monday);
+  const monthKey = toDateKey(displayMonth);
   const todayKey = useTodayKey();
 
   useEffect(() => {
-    router.replace(`/?week=${weekKey}`, { scroll: false });
-  }, [router, weekKey]);
+    const url = viewMode === "month" ? `/?view=month&month=${monthKey}` : `/?week=${weekKey}`;
+    router.replace(url, { scroll: false });
+  }, [router, viewMode, weekKey, monthKey]);
+
+  function goToWeek(date: Date) {
+    setViewMode("week");
+    setMonday(mondayOf(date));
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
@@ -192,68 +208,70 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
   return (
     <div className="min-h-screen pb-14 sm:pb-0 sm:pl-[260px]">
       <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-4 py-6 sm:px-6">
-        <header className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
-            <div className="hidden sm:block">
-              <h1 className="text-[34px] font-bold leading-none tracking-tight">
-                {weekNumberLabel(monday)}
-              </h1>
-              <p className="mt-1.5 text-[15px] text-muted-foreground">{weekRangeLabel(monday)}</p>
+        {viewMode === "week" ? (
+          <header className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+              <div className="hidden sm:block">
+                <h1 className="text-[34px] font-bold leading-none tracking-tight">
+                  {weekNumberLabel(monday)}
+                </h1>
+                <p className="mt-1.5 text-[15px] text-muted-foreground">{weekRangeLabel(monday)}</p>
+              </div>
+              <div className="flex w-full items-center justify-between gap-4 sm:w-auto">
+                <WeekNav
+                  onPrev={() => setMonday((m) => shiftWeeks(m, -1))}
+                  onNext={() => setMonday((m) => shiftWeeks(m, 1))}
+                  onToday={() => setMonday(mondayOf(new Date()))}
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 text-[15px] font-medium text-muted-foreground hover:bg-accent sm:hidden"
+                  onClick={handleSignOut}
+                >
+                  로그아웃
+                </Button>
+              </div>
             </div>
-            <div className="flex w-full items-center justify-between gap-4 sm:w-auto">
-              <WeekNav
-                onPrev={() => setMonday((m) => shiftWeeks(m, -1))}
-                onNext={() => setMonday((m) => shiftWeeks(m, 1))}
-                onToday={() => setMonday(mondayOf(new Date()))}
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2 text-[15px] font-medium text-muted-foreground hover:bg-accent sm:hidden"
-                onClick={handleSignOut}
-              >
-                로그아웃
-              </Button>
-            </div>
-          </div>
-          <div className="sm:hidden">
-            <div className="flex items-center justify-between">
-              {DAY_KEYS.map((day, index) => {
-                const date = addDays(monday, index);
-                const isToday = toDateKey(date) === todayKey;
-                const isSelected = mobileDay === day;
-                return (
-                  <button
-                    key={day}
-                    type="button"
-                    onClick={() => setMobileDay(day)}
-                    className="flex flex-col items-center gap-1.5 py-1"
-                  >
-                    <span className="text-[11px] font-medium text-muted-foreground">
-                      {DAY_LABELS_KO[day]}
-                    </span>
-                    <span
-                      className={cn(
-                        "flex size-8 items-center justify-center rounded-full text-[15px] font-semibold transition-colors",
-                        isToday
-                          ? "bg-primary text-primary-foreground"
-                          : isSelected
-                            ? "ring-2 ring-primary text-foreground"
-                            : "text-foreground"
-                      )}
+            <div className="sm:hidden">
+              <div className="flex items-center justify-between">
+                {DAY_KEYS.map((day, index) => {
+                  const date = addDays(monday, index);
+                  const isToday = toDateKey(date) === todayKey;
+                  const isSelected = mobileDay === day;
+                  return (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() => setMobileDay(day)}
+                      className="flex flex-col items-center gap-1.5 py-1"
                     >
-                      {format(date, "d")}
-                    </span>
-                  </button>
-                );
-              })}
+                      <span className="text-[11px] font-medium text-muted-foreground">
+                        {DAY_LABELS_KO[day]}
+                      </span>
+                      <span
+                        className={cn(
+                          "flex size-8 items-center justify-center rounded-full text-[15px] font-semibold transition-colors",
+                          isToday
+                            ? "bg-primary text-primary-foreground"
+                            : isSelected
+                              ? "ring-2 ring-primary text-foreground"
+                              : "text-foreground"
+                        )}
+                      >
+                        {format(date, "d")}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-2.5 border-t border-border/70 pt-2.5 text-center text-[13px] text-muted-foreground">
+                {weekNumberLabel(monday)} · {format(addDays(monday, DAY_KEYS.indexOf(mobileDay)), "yyyy년 M월 d일")}{" "}
+                {DAY_LABELS_KO[mobileDay]}요일
+              </div>
             </div>
-            <div className="mt-2.5 border-t border-border/70 pt-2.5 text-center text-[13px] text-muted-foreground">
-              {weekNumberLabel(monday)} · {format(addDays(monday, DAY_KEYS.indexOf(mobileDay)), "yyyy년 M월 d일")}{" "}
-              {DAY_LABELS_KO[mobileDay]}요일
-            </div>
-          </div>
-        </header>
+          </header>
+        ) : null}
 
         <DndContext
           sensors={sensors}
@@ -261,16 +279,28 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <WeekCalendar
-            monday={monday}
-            mobileDay={mobileDay}
-            itemsByDay={scheduledByDay}
-            onToggle={handleToggle}
-            onRemove={handleRemove}
-            onEdit={handleEdit}
-            onMemoEdit={handleMemoEdit}
-            onResize={handleResize}
-          />
+          {viewMode === "week" ? (
+            <WeekCalendar
+              monday={monday}
+              mobileDay={mobileDay}
+              itemsByDay={scheduledByDay}
+              onToggle={handleToggle}
+              onRemove={handleRemove}
+              onEdit={handleEdit}
+              onMemoEdit={handleMemoEdit}
+              onResize={handleResize}
+            />
+          ) : (
+            <MonthCalendar
+              displayMonth={displayMonth}
+              todos={todos}
+              todayKey={todayKey}
+              onSelectDay={goToWeek}
+              onPrevMonth={() => setDisplayMonth((m) => subMonths(m, 1))}
+              onNextMonth={() => setDisplayMonth((m) => addMonths(m, 1))}
+              onToday={() => setDisplayMonth(startOfMonth(new Date()))}
+            />
+          )}
 
           <SortableContext items={backlogItems.map((t) => t.id)} strategy={verticalListSortingStrategy}>
             <AppSidebar
@@ -287,7 +317,15 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
               onConvert={handleConvert}
               onAdd={handleAdd}
               monday={monday}
-              onSelectWeek={(date) => setMonday(mondayOf(date))}
+              onSelectWeek={goToWeek}
+              onSelectMonth={(month) => {
+                setViewMode("month");
+                setDisplayMonth(startOfMonth(month));
+              }}
+              onCalendarClick={() => {
+                setViewMode("week");
+                setMonday(mondayOf(new Date()));
+              }}
             />
           </SortableContext>
 
@@ -303,7 +341,15 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
         </DndContext>
       </div>
 
-      <AppNavRail activePage="calendar" panelOpen={panelOpen} onTogglePanel={() => setPanelOpen((open) => !open)} />
+      <AppNavRail
+        activePage="calendar"
+        panelOpen={panelOpen}
+        onTogglePanel={() => setPanelOpen((open) => !open)}
+        onCalendarClick={() => {
+          setViewMode("week");
+          setMonday(mondayOf(new Date()));
+        }}
+      />
     </div>
   );
 }
