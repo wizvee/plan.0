@@ -299,6 +299,9 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
               onPrevMonth={() => setDisplayMonth((m) => subMonths(m, 1))}
               onNextMonth={() => setDisplayMonth((m) => addMonths(m, 1))}
               onToday={() => setDisplayMonth(startOfMonth(new Date()))}
+              onEdit={handleEdit}
+              onMemoEdit={handleMemoEdit}
+              onRemove={handleRemove}
             />
           )}
 

@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, startOfMonth, startOfWeek } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+import { TodoDetailModal } from "@/components/todo-detail-modal";
 import { cn } from "@/lib/utils";
 import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR, getParaCategory } from "@/lib/category";
 import { toDateKey } from "@/lib/week";
@@ -20,6 +21,9 @@ interface MonthCalendarProps {
   onPrevMonth: () => void;
   onNextMonth: () => void;
   onToday: () => void;
+  onEdit: (id: string, content: string) => void;
+  onMemoEdit: (id: string, memo: string) => void;
+  onRemove: (id: string) => void;
 }
 
 export function MonthCalendar({
@@ -30,7 +34,11 @@ export function MonthCalendar({
   onPrevMonth,
   onNextMonth,
   onToday,
+  onEdit,
+  onMemoEdit,
+  onRemove,
 }: MonthCalendarProps) {
+  const [detailTodo, setDetailTodo] = useState<Todo | null>(null);
   const eventsByDate = useMemo(() => {
     const map = new Map<string, Todo[]>();
     for (const todo of todos) {
@@ -103,12 +111,19 @@ export function MonthCalendar({
           const moreCount = events.length - visible.length;
 
           return (
-            <button
+            <div
               key={dateKey}
-              type="button"
+              role="button"
+              tabIndex={0}
               onClick={() => onSelectDay(date)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onSelectDay(date);
+                }
+              }}
               className={cn(
-                "flex min-h-[104px] flex-col items-start gap-1 overflow-hidden bg-card p-1.5 text-left transition-colors hover:bg-accent/40",
+                "flex min-h-[104px] cursor-pointer flex-col items-start gap-1 overflow-hidden bg-card p-1.5 text-left transition-colors hover:bg-accent/40",
                 isToday && "bg-accent/25"
               )}
             >
@@ -134,23 +149,38 @@ export function MonthCalendar({
                     ? `var(${CATEGORY_TINT_VAR[category]})`
                     : "var(--secondary)";
                 return (
-                  <span
+                  <button
                     key={todo.id}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDetailTodo(todo);
+                    }}
                     className={cn(
-                      "w-full truncate rounded-[4px] border-l-[3px] px-1.5 py-0.5 text-[11px] font-medium",
+                      "w-full truncate rounded-[4px] border-l-[3px] px-1.5 py-0.5 text-left text-[11px] font-medium",
                       todo.completed && "line-through"
                     )}
                     style={{ borderLeftColor: colorVar, backgroundColor: tintVar, color: colorVar }}
                   >
                     {todo.content}
-                  </span>
+                  </button>
                 );
               })}
               {moreCount > 0 ? <span className="text-[10px] text-muted-foreground">+{moreCount}개 더보기</span> : null}
-            </button>
+            </div>
           );
         })}
       </div>
+
+      {detailTodo ? (
+        <TodoDetailModal
+          todo={detailTodo}
+          onEdit={onEdit}
+          onMemoEdit={onMemoEdit}
+          onRemove={onRemove}
+          onClose={() => setDetailTodo(null)}
+        />
+      ) : null}
     </div>
   );
 }
