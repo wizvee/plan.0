@@ -1,5 +1,7 @@
 import { addDays, addWeeks, format, getISOWeek, startOfWeek } from "date-fns";
 
+import { DAY_KEYS, type DayKey } from "@/lib/types";
+
 export function mondayOf(date: Date): Date {
   return startOfWeek(date, { weekStartsOn: 1 });
 }
@@ -23,6 +25,11 @@ export function weekRangeLabel(monday: Date): string {
 
 export function dayDateKey(monday: Date, dayIndex: number): string {
   return toDateKey(addDays(monday, dayIndex));
+}
+
+/** date-fns getDay()는 일요일=0 시작이라, 월요일 시작인 DAY_KEYS 순서로 바꿔준다. */
+export function dayKeyOf(date: Date): DayKey {
+  return DAY_KEYS[(date.getDay() + 6) % 7];
 }
 
 export function isToday(dateKey: string): boolean {

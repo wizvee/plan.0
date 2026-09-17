@@ -187,6 +187,22 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     로그인 화면 박스형 카드 → 중앙 정렬 밑줄 인풋. 자세한 토큰 값/레이아웃 규칙/새 화면 만들 때
     체크리스트는 [DESIGN.md](./DESIGN.md) 참고 — **이후 화면 작업은 전부 이 문서를 따를 것.**
     머지: `claude/brave-ptolemy-pz7uye` → `claude/weekly-todo-webapp-plan-hx1le7`(커밋 `a7072f5`).
+15. **(2026-09-17 추가) `todos.day` + `week_start` → `scheduled_date` 하나로 통합**: 사용자가 프로젝트
+    Tasks 탭에 날짜가 안 보이는 버그를 Supabase에서 직접 로우를 열어보다가, `day`(요일 텍스트) +
+    `week_start`(그 주 월요일)로 "날짜"를 쪼개 저장하는 구조 자체가 월간 뷰나 임의 날짜(마감일 등)
+    확장에는 안 맞는다고 지적함 — 맞는 지적이라 스키마를 실제 `date` 컬럼 하나로 바꿈.
+    - `supabase/schema.sql`: `scheduled_date date` 컬럼 추가 → 기존 `day`+`week_start` 값으로부터
+      계산해서 채우는 `update` (day→요일 오프셋 매핑) → `day`/`week_start` 컬럼 drop. 전부
+      `information_schema.columns` 존재 체크로 감싸서 다시 실행해도 안전함(재실행 컨벤션 유지).
+      **다시 실행 필요.**
+    - `Todo` 타입(`src/lib/types.ts`)에서 `day`/`weekStart` 제거하고 `scheduledDate: string | null`
+      하나로. `isInboxVisible()`도 이 필드 기준으로 판정.
+    - 캘린더 쪽 요일 그룹핑은 `scheduledDate`가 그 주 범위(월~일) 안에 있는지로 필터링하고,
+      `lib/week.ts`의 새 헬퍼 `dayKeyOf(date)`로 실제 요일을 역산해서 칸에 배치(`week-board.tsx`).
+      그리드에 드롭할 때도 `dayDateKey(monday, dayIndex)`로 실제 날짜를 계산해서 저장.
+    - `todo-card.tsx`의 날짜 표시(진행 중이던 기능 — 완료 전인데 날짜가 지나면 빨간색)도 이제
+      `todo.scheduledDate`를 바로 읽으면 됨. 이 리팩터로 표시 버그도 같이 해결됐어야 함 — 배포 후
+      실제로 뜨는지 재확인 필요.
 
 ## 지금 구현된 것 (기능 목록)
 

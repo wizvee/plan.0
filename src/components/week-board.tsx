@@ -16,7 +16,7 @@ import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-ki
 
 import { useSupabaseTodos } from "@/lib/supabase/todos";
 import { createClient } from "@/lib/supabase/client";
-import { mondayOf, shiftWeeks, toDateKey, weekNumberLabel, weekRangeLabel } from "@/lib/week";
+import { dayDateKey, dayKeyOf, mondayOf, shiftWeeks, toDateKey, weekNumberLabel, weekRangeLabel } from "@/lib/week";
 import { preferSpecificTargetCollision } from "@/lib/dnd";
 import { cn } from "@/lib/utils";
 import { useTodayKey } from "@/lib/use-today";
@@ -67,13 +67,14 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
 
   const scheduledByDay = useMemo(() => {
     const grouped: Record<DayKey, Todo[]> = { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] };
+    const weekEndKey = toDateKey(addDays(monday, 6));
     for (const todo of todos) {
-      if (todo.day !== null && todo.weekStart === weekKey) {
-        grouped[todo.day].push(todo);
+      if (todo.scheduledDate !== null && todo.scheduledDate >= weekKey && todo.scheduledDate <= weekEndKey) {
+        grouped[dayKeyOf(new Date(`${todo.scheduledDate}T00:00:00`))].push(todo);
       }
     }
     return grouped;
-  }, [todos, weekKey]);
+  }, [todos, weekKey, monday]);
 
   function handleDragStart(event: DragStartEvent) {
     setActiveId(String(event.active.id));
@@ -95,7 +96,8 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
       const itemTop = active.rect.current.translated?.top ?? gridTop;
       const rawMinutes = ((itemTop - gridTop) / HOUR_HEIGHT) * 60;
       const startMinutes = clampMinutes(snapMinutes(rawMinutes), 0, MINUTES_PER_DAY - duration);
-      const patch = { day, weekStart: weekKey, startMinutes, durationMinutes: duration };
+      const scheduledDate = dayDateKey(monday, DAY_KEYS.indexOf(day));
+      const patch = { scheduledDate, startMinutes, durationMinutes: duration };
       setTodos((prev) => prev.map((t) => (t.id === activeIdStr ? { ...t, ...patch } : t)));
       void updateTodo(activeIdStr, patch);
       return;
@@ -104,10 +106,9 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
     const isOverBacklogItem = todos.some((t) => t.id === overIdStr && isInboxVisible(t));
     if (overIdStr !== BACKLOG && !isOverBacklogItem) return;
 
-    if (todo.day !== null) {
+    if (todo.scheduledDate !== null) {
       const patch = {
-        day: null,
-        weekStart: null,
+        scheduledDate: null,
         startMinutes: null,
         durationMinutes: null,
         position: nextPosition(backlogItems),
@@ -130,12 +131,7 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
     );
 
     void persistPositions(
-      ordered.map((t) => ({
-        id: t.id,
-        day: t.day,
-        weekStart: t.weekStart,
-        position: normalizedById.get(t.id)!,
-      }))
+      ordered.map((t) => ({ id: t.id, position: normalizedById.get(t.id)! }))
     );
   }
 
@@ -148,8 +144,7 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
     if (kind === "note") {
       void updateTodo(id, {
         kind,
-        day: null,
-        weekStart: null,
+        scheduledDate: null,
         startMinutes: null,
         durationMinutes: null,
         completed: false,
@@ -294,7 +289,7 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
 
           <DragOverlay>
             {activeTodo ? (
-              activeTodo.day === null ? (
+              activeTodo.scheduledDate === null ? (
                 <TodoCard todo={activeTodo} overlay />
               ) : (
                 <CalendarBlock todo={activeTodo} overlay />

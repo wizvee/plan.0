@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { addDays, format, isBefore, startOfDay } from "date-fns";
+import { format, isBefore, startOfDay } from "date-fns";
 import { GripVertical, StickyNote } from "lucide-react";
 
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,11 +11,10 @@ import { UrlChip } from "@/components/url-chip";
 import { TodoDetailModal } from "@/components/todo-detail-modal";
 import { cn } from "@/lib/utils";
 import { CATEGORY_COLOR_VAR, getParaCategory } from "@/lib/category";
-import { DAY_KEYS, type Todo, type TodoKind } from "@/lib/types";
+import type { Todo, TodoKind } from "@/lib/types";
 
 function scheduledDateOf(todo: Todo): Date | null {
-  if (!todo.day || !todo.weekStart) return null;
-  return addDays(new Date(`${todo.weekStart}T00:00:00`), DAY_KEYS.indexOf(todo.day));
+  return todo.scheduledDate ? new Date(`${todo.scheduledDate}T00:00:00`) : null;
 }
 
 interface TodoCardProps {

@@ -114,7 +114,7 @@ export function ParaBoard({ userId, userEmail }: { userId: string; userEmail: st
       prev.map((t) => (normalizedById.has(t.id) ? { ...t, position: normalizedById.get(t.id)! } : t))
     );
     void persistPositions(
-      ordered.map((t) => ({ id: t.id, day: t.day, weekStart: t.weekStart, position: normalizedById.get(t.id)! }))
+      ordered.map((t) => ({ id: t.id, position: normalizedById.get(t.id)! }))
     );
   }
 
@@ -140,8 +140,7 @@ export function ParaBoard({ userId, userEmail }: { userId: string; userEmail: st
     if (kind === "note") {
       void updateTodo(id, {
         kind,
-        day: null,
-        weekStart: null,
+        scheduledDate: null,
         startMinutes: null,
         durationMinutes: null,
         completed: false,

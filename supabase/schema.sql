@@ -5,8 +5,6 @@ create table if not exists public.todos (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   content text not null,
-  day text check (day in ('mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun')),
-  week_start date,
   completed boolean not null default false,
   position double precision not null default 0,
   created_at timestamptz not null default now()
@@ -24,6 +22,33 @@ alter table public.todos add column if not exists memo text;
 -- 할 일(task) / 노트(note) 구분. 노트는 체크박스·완료 개념이 없는 참고용 항목으로, 같은 todos
 -- 테이블에 종류만 다르게 저장한다 (전환 기능이 필드 하나만 바꾸면 되도록).
 alter table public.todos add column if not exists kind text not null default 'task' check (kind in ('task', 'note'));
+
+-- day(요일) + week_start(그 주 월요일) 조합 대신 실제 날짜 하나(scheduled_date)로 통합.
+-- 월간 뷰, 임의 날짜 지정(마감일 등) 확장을 대비해 "이 항목이 언제인지"를 절대 날짜로 저장한다.
+-- 기존 데이터가 있으면 day+week_start로부터 계산해서 채워준 뒤 두 컬럼은 제거한다.
+alter table public.todos add column if not exists scheduled_date date;
+
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'todos' and column_name = 'day'
+  ) then
+    update public.todos
+    set scheduled_date = week_start + (
+      case day
+        when 'mon' then 0 when 'tue' then 1 when 'wed' then 2 when 'thu' then 3
+        when 'fri' then 4 when 'sat' then 5 when 'sun' then 6
+      end
+    )
+    where day is not null and week_start is not null and scheduled_date is null;
+  end if;
+end $$;
+
+alter table public.todos drop column if exists day;
+alter table public.todos drop column if exists week_start;
+
+create index if not exists todos_scheduled_date_idx on public.todos (scheduled_date);
 
 -- PARA (Project / Area / Resource) — 계층 없이 완전히 독립된 3개의 컨테이너 테이블.
 -- 할 일 하나는 이 셋 중 최대 1곳에만 매핑됨 (아래 todos_para_single_mapping 제약으로 강제).

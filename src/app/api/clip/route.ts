@@ -48,8 +48,6 @@ export async function POST(request: NextRequest) {
       content: title,
       url: rawUrl,
       memo,
-      day: null,
-      week_start: null,
       completed: false,
       // 항상 목록 맨 뒤에 오도록 현재 시각을 정렬 키로 사용 (기존 position 값보다 항상 큼).
       position: Date.now(),

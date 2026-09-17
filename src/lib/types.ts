@@ -33,16 +33,14 @@ export interface Todo {
   id: string;
   content: string;
   kind: TodoKind;
-  /** null = 전역 Todo List 보관함, 그 외는 해당 주(weekStart)의 요일 */
-  day: DayKey | null;
-  /** day가 null이 아닐 때만 값이 있음. 그 주 월요일 날짜 (yyyy-MM-dd) */
-  weekStart: string | null;
+  /** null = 전역 Todo List 보관함, 그 외는 캘린더에 배치된 실제 날짜 (yyyy-MM-dd) */
+  scheduledDate: string | null;
   completed: boolean;
   position: number;
   createdAt: string;
-  /** day가 설정된 항목만 값이 있음. 자정 기준 분(0~1439) */
+  /** scheduledDate가 설정된 항목만 값이 있음. 자정 기준 분(0~1439) */
   startMinutes: number | null;
-  /** day가 설정된 항목만 값이 있음. 분 단위 소요 시간 */
+  /** scheduledDate가 설정된 항목만 값이 있음. 분 단위 소요 시간 */
   durationMinutes: number | null;
   /** 스크랩(공유하기 → 단축어)으로 추가된 항목의 원본 링크 */
   url: string | null;
@@ -60,7 +58,7 @@ export interface Todo {
  * 그 컨테이너의 Notes 탭으로 "이동"한 것으로 취급해 보관함에서는 사라진다.
  */
 export function isInboxVisible(todo: Todo): boolean {
-  if (todo.day !== null) return false;
+  if (todo.scheduledDate !== null) return false;
   if (todo.kind === "note" && (todo.projectId || todo.areaId || todo.resourceId)) return false;
   return true;
 }

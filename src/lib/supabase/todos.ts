@@ -4,15 +4,14 @@ import { useCallback, useEffect, useState } from "react";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/client";
-import type { DayKey, Todo, TodoKind } from "@/lib/types";
+import type { Todo, TodoKind } from "@/lib/types";
 
 interface TodoRow {
   id: string;
   user_id: string;
   content: string;
   kind: TodoKind;
-  day: DayKey | null;
-  week_start: string | null;
+  scheduled_date: string | null;
   completed: boolean;
   position: number;
   created_at: string;
@@ -30,8 +29,7 @@ function fromRow(row: TodoRow): Todo {
     id: row.id,
     content: row.content,
     kind: row.kind,
-    day: row.day,
-    weekStart: row.week_start,
+    scheduledDate: row.scheduled_date,
     completed: row.completed,
     position: row.position,
     createdAt: row.created_at,
@@ -51,8 +49,7 @@ type UpdatablePatch = Partial<
     | "content"
     | "kind"
     | "completed"
-    | "day"
-    | "weekStart"
+    | "scheduledDate"
     | "position"
     | "startMinutes"
     | "durationMinutes"
@@ -124,8 +121,7 @@ export function useSupabaseTodos(userId: string) {
           id: optimisticId,
           content: trimmed,
           kind,
-          day: null,
-          weekStart: null,
+          scheduledDate: null,
           completed: false,
           position,
           createdAt: new Date().toISOString(),
@@ -177,8 +173,7 @@ export function useSupabaseTodos(userId: string) {
       if (patch.content !== undefined) dbPatch.content = patch.content;
       if (patch.kind !== undefined) dbPatch.kind = patch.kind;
       if (patch.completed !== undefined) dbPatch.completed = patch.completed;
-      if (patch.day !== undefined) dbPatch.day = patch.day;
-      if (patch.weekStart !== undefined) dbPatch.week_start = patch.weekStart;
+      if (patch.scheduledDate !== undefined) dbPatch.scheduled_date = patch.scheduledDate;
       if (patch.position !== undefined) dbPatch.position = patch.position;
       if (patch.startMinutes !== undefined) dbPatch.start_minutes = patch.startMinutes;
       if (patch.durationMinutes !== undefined) dbPatch.duration_minutes = patch.durationMinutes;
@@ -194,11 +189,9 @@ export function useSupabaseTodos(userId: string) {
   );
 
   const persistPositions = useCallback(
-    async (changes: { id: string; day: DayKey | null; weekStart: string | null; position: number }[]) => {
+    async (changes: { id: string; position: number }[]) => {
       await Promise.all(
-        changes.map(({ id, day, weekStart, position }) =>
-          supabase.from("todos").update({ day, week_start: weekStart, position }).eq("id", id)
-        )
+        changes.map(({ id, position }) => supabase.from("todos").update({ position }).eq("id", id))
       );
     },
     [supabase]
