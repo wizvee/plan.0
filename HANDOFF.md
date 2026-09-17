@@ -178,6 +178,15 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     - **전환**: 할 일 카드를 클릭하면 뜨는 상세 팝업(`TodoDetailModal`)에 "노트로 전환"/"할 일로 전환"
       버튼 추가. 할 일→노트 전환 시 요일/시간 배정과 완료 상태를 전부 초기화함(노트는 캘린더 배정이나
       완료라는 개념이 없어서).
+14. **(2026-09-17 추가) UI/UX 리디자인 — 미니멀 캘린더형**: 사용자가 기존 Apple 미리알림 스타일이
+    마음에 안 든다고 해서, Claude Design 캔버스에 Notion Calendar/Google Calendar 참고 목업(로그인/
+    캘린더/PARA 보드/PARA 상세/모바일 2종)을 그려서 몇 차례 피드백(팔레트는 기존 유지, radius 더
+    각지게, 로그인 더 가볍게) 받은 뒤 코드에 반영. 오른쪽 아이콘 레일 → **왼쪽 사이드바**(데스크톱,
+    `app-sidebar.tsx`가 `todo-panel.tsx`를 대체)로 내비게이션 이동, PARA 매핑에 따른 **카테고리 색상
+    코딩**(`lib/category.ts`) 추가, PARA 보드 세로 아이콘 스위처 → 가로 세그먼트 컨트롤 + 카드 그리드,
+    로그인 화면 박스형 카드 → 중앙 정렬 밑줄 인풋. 자세한 토큰 값/레이아웃 규칙/새 화면 만들 때
+    체크리스트는 [DESIGN.md](./DESIGN.md) 참고 — **이후 화면 작업은 전부 이 문서를 따를 것.**
+    머지: `claude/brave-ptolemy-pz7uye` → `claude/weekly-todo-webapp-plan-hx1le7`(커밋 `a7072f5`).
 
 ## 지금 구현된 것 (기능 목록)
 
@@ -192,16 +201,19 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
   **블록 하단 모서리를 드래그해서 소요 시간을 리사이즈** 가능 (15분 단위 스냅)
 - 오늘 요일 칸에 현재 시각을 가리키는 빨간 라인 표시 (client-only 계산, `use-today.ts`)
 - 주차 이동 (`< 37주 >`, "이번 주" 바로가기, 오늘 날짜에 원형 표시)
-- 아이콘 레일(데스크톱은 오른쪽 고정, 모바일은 하단 고정) + 체크 아이콘으로 Todo List 열기
-  (데스크톱: 오른쪽 슬라이드 패널 / 모바일: 하단 바텀시트)
+- 데스크톱: 왼쪽 고정 사이드바(`AppSidebar`)에 브랜드/빠른 추가/미니 캘린더/보관함(항상 펼침)/
+  캘린더·PARA 전환/계정. 모바일: 하단 탭바(`IconRail`, Todo/캘린더/PARA) + "Todo" 탭으로 여는
+  보관함 바텀시트 (14번 결정 참고)
 - 모바일: iOS 캘린더 느낌의 요일+날짜 원형 스트립으로 하루씩 보기
 - 로그인(이메일·비밀번호), 로그아웃 — 가입 버튼은 개인용이라 주석 처리해둠
 - Supabase 실시간 동기화 (다른 기기/탭에서 바뀐 내용 자동 반영)
 - 공유하기 → 애플 단축어로 링크 스크랩 (`/api/clip`) — Todo List에 제목 + URL 임베드 카드로 추가
-- 디자인: "Chalk" 팔레트 (뮤트 더스티 블루 + 아이보리 배경), iOS 그룹 카드 느낌 유지
+- 디자인: 미니멀 캘린더형(Notion Calendar/Google Calendar 참고), 웜 크림 배경 + 블루그레이
+  프라이머리 팔레트는 유지, PARA 매핑에 따른 카테고리 색상 코딩 (14번 결정, [DESIGN.md](./DESIGN.md) 참고)
 - PARA(Project/Area/Resource, `/para`) — 할 일/노트를 요일/시간과는 독립적으로 프로젝트·영역·리소스
   중 하나에 드래그로 매핑. 상세 화면(`/para/[kind]/[id]`)에 Overview/Tasks/Notes 탭 (8번 결정 참고).
-  캘린더 화면과 아이콘 레일 하나(`AppNavRail`)를 공유 (12번 결정 참고)
+  목록 화면은 가로 세그먼트 컨트롤 + 카드 그리드, 상세 화면은 캘린더 화면과 `AppSidebar`를 공유
+  (12번, 14번 결정 참고)
 
 ## 파일 맵
 
@@ -209,6 +221,7 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
 PLANNING.md                    기획서 (컨셉/데이터 모델/스택 결정 근거)
 README.md                      실행 방법 + Supabase 설정 단계별 가이드
 HANDOFF.md                     이 문서
+DESIGN.md                      디자인 가이드 — 컬러 토큰/radius/레이아웃 규칙/새 화면 체크리스트 (14번 결정)
 
 supabase/schema.sql            todos + projects/areas/resources 테이블 + RLS 정책 + realtime publication (Supabase SQL Editor에서 1회 실행,
                                 재실행해도 안전)
@@ -227,6 +240,7 @@ src/lib/supabase/admin.ts       secret 키로 RLS 우회하는 서버 전용 클
 src/lib/supabase/todos.ts       useSupabaseTodos 훅 — fetch + realtime 구독 + 낙관적 업데이트(add/update/remove/reorder)
 src/lib/supabase/containers.ts  useSupabaseProjects/Areas/Resources 훅 — projects/areas/resources 테이블 CRUD + realtime
 src/lib/types.ts                Todo/Project/Area/Resource 타입, TodoKind, ParaKind, isInboxVisible(), 요일 키, 라벨
+src/lib/category.ts             getParaCategory() + 카테고리별 CSS 변수 맵 (DESIGN.md 3번 참고)
 src/lib/dnd.ts                  preferSpecificTargetCollision — 보관함 패널과 다른 드롭 영역이 겹칠 때 충돌 우선순위
 src/lib/week.ts                 주차 계산(월요일 시작, ISO 주차, 오늘 여부 등)
 src/lib/time.ts                 시간 캘린더 계산(시간→px 변환, 스냅, 시간 라벨 포맷, BLOCK_GAP 등)
@@ -236,15 +250,18 @@ src/lib/utils.ts                cn() 헬퍼 (shadcn 표준)
 src/components/week-board.tsx    메인 화면 전체 — 상태 관리, DnD 컨텍스트, 레이아웃 조립
 src/components/week-nav.tsx      주차 이동 버튼들
 src/components/week-calendar.tsx Mon~Sun 시간 단위 캘린더 그리드(요일 헤더 + 0~24시 스크롤 영역 + 현재 시각 라인)
-src/components/calendar-block.tsx 캘린더에 예약된 할 일 블록(드래그로 이동, 하단 핸들로 리사이즈)
-src/components/todo-panel.tsx   Todo List 패널 (데스크톱: 오른쪽 슬라이드 / 모바일: 하단 바텀시트)
-src/components/icon-rail.tsx    아이콘 레일 저수준 컴포넌트 (items 배열 받아서 렌더만 함)
-src/components/app-nav-rail.tsx 캘린더/PARA 화면이 공유하는 아이콘 레일 (Todo List·PARA·캘린더 3개 고정 항목)
+src/components/calendar-block.tsx 캘린더에 예약된 할 일 블록(드래그로 이동, 하단 핸들로 리사이즈, PARA 카테고리 색상 코딩)
+src/components/app-sidebar.tsx  데스크톱 사이드바 겸 모바일 보관함 바텀시트 (구 todo-panel.tsx 대체, DESIGN.md 5번 참고).
+                                 단일 컴포넌트를 sm: 반응형 클래스로만 전환 — JS 미디어쿼리 훅 없음
+src/components/mini-calendar.tsx 사이드바용 월 그리드 위젯 (오늘/이번 주 강조, 날짜 클릭 이동)
+src/components/icon-rail.tsx    모바일 전용 하단 탭바 저수준 컴포넌트 (items 배열 받아서 렌더만 함)
+src/components/app-nav-rail.tsx 캘린더/PARA 화면이 공유하는 하단 탭바 (Todo List·PARA·캘린더 3개 고정 항목,
+                                 데스크톱 내비게이션은 AppSidebar가 맡음)
 src/components/todo-card.tsx    할 일/노트 한 줄(할 일=체크박스, 노트=아이콘만 + 텍스트 + 드래그 핸들 +
                                  삭제 + URL이 있으면 파비콘 임베드 카드 + 전환 버튼)
 src/components/todo-detail-modal.tsx  할 일/노트 상세 팝업 (제목/메모 수정, 할일↔노트 전환, 삭제)
 src/components/add-todo-form.tsx  할 일/노트 추가 입력 행 (토글로 종류 선택)
-src/components/para-board.tsx   PARA 목록 화면 — 왼쪽 아이콘 레일 + 컨테이너 카드 목록 + 재사용된 TodoPanel
+src/components/para-board.tsx   PARA 목록 화면 — 가로 세그먼트 컨트롤 + 컨테이너 카드 그리드 + 재사용된 AppSidebar
 src/components/para/container-card.tsx        Project/Area/Resource 카드 (droppable, 클릭 시 상세로 이동)
 src/components/para/add-container-form.tsx    Project/Area/Resource 생성 입력 행 (Notes 탭의 "새 노트 추가"에도 재사용)
 src/components/para/container-detail-screen.tsx  상세 화면 (헤더 + 요약 줄 + Overview/Tasks/Notes 탭)
@@ -295,7 +312,9 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
 
 ## 새 세션에서 이어갈 때
 
-1. 이 문서 + PLANNING.md + README.md를 먼저 읽기.
+1. 이 문서 + PLANNING.md + README.md를 먼저 읽기. **화면/컴포넌트를 만들거나 고치는 작업이면
+   [DESIGN.md](./DESIGN.md)도 반드시 같이 읽기** — 컬러 토큰, radius, 레이아웃 규칙이 정리돼 있고
+   `CLAUDE.md`에서 자동으로 불러오도록 걸어뒀습니다.
 2. `git log --oneline`으로 커밋 히스토리 훑어보면 각 변경의 이유가 커밋 메시지에 꽤 자세히 적혀 있음.
 3. Supabase 설정부터 진행(README 참고)한 뒤, `npm run dev`로 실제 로그인부터 테스트.
 4. 이후 요청은 위 "아직 안 끝난 것" 목록 중 하나부터 진행하면 자연스럽게 이어집니다.
