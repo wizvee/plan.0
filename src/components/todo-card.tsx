@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { addDays, format, isBefore, startOfDay } from "date-fns";
 import { GripVertical, StickyNote } from "lucide-react";
 
 import { Checkbox } from "@/components/ui/checkbox";
@@ -10,7 +11,12 @@ import { UrlChip } from "@/components/url-chip";
 import { TodoDetailModal } from "@/components/todo-detail-modal";
 import { cn } from "@/lib/utils";
 import { CATEGORY_COLOR_VAR, getParaCategory } from "@/lib/category";
-import type { Todo, TodoKind } from "@/lib/types";
+import { DAY_KEYS, type Todo, type TodoKind } from "@/lib/types";
+
+function scheduledDateOf(todo: Todo): Date | null {
+  if (!todo.day || !todo.weekStart) return null;
+  return addDays(new Date(`${todo.weekStart}T00:00:00`), DAY_KEYS.indexOf(todo.day));
+}
 
 interface TodoCardProps {
   todo: Todo;
@@ -27,6 +33,8 @@ interface TodoCardProps {
 export function TodoCard({ todo, onToggle, onRemove, onEdit, onMemoEdit, onConvert, overlay, badge }: TodoCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
   const category = !badge ? getParaCategory(todo) : null;
+  const scheduledDate = scheduledDateOf(todo);
+  const isOverdue = scheduledDate ? !todo.completed && isBefore(scheduledDate, startOfDay(new Date())) : false;
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: todo.id,
@@ -86,9 +94,23 @@ export function TodoCard({ todo, onToggle, onRemove, onEdit, onMemoEdit, onConve
             ) : null}
           </span>
           {todo.url ? <UrlChip url={todo.url} /> : null}
-          {badge ? (
-            <span className="w-fit rounded-full bg-accent px-2 py-0.5 text-[11px] font-bold text-accent-foreground">
-              {badge}
+          {scheduledDate || badge ? (
+            <span className="flex flex-wrap items-center gap-2">
+              {scheduledDate ? (
+                <span
+                  className={cn(
+                    "text-[12px] font-semibold",
+                    isOverdue ? "text-destructive" : "text-muted-foreground"
+                  )}
+                >
+                  {format(scheduledDate, "yyyy. M. d.")}
+                </span>
+              ) : null}
+              {badge ? (
+                <span className="w-fit rounded-full bg-accent px-2 py-0.5 text-[11px] font-bold text-accent-foreground">
+                  {badge}
+                </span>
+              ) : null}
             </span>
           ) : null}
         </div>
