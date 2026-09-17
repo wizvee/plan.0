@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { addDays, format } from "date-fns";
 import {
@@ -55,6 +55,10 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
 
   const weekKey = toDateKey(monday);
   const todayKey = useTodayKey();
+
+  useEffect(() => {
+    router.replace(`/?week=${weekKey}`, { scroll: false });
+  }, [router, weekKey]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } })

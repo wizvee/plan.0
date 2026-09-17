@@ -30,8 +30,17 @@ interface MiniCalendarProps {
 }
 
 export function MiniCalendar({ highlightWeekStart, onSelectDate }: MiniCalendarProps) {
-  const [displayMonth, setDisplayMonth] = useState(() => startOfMonth(new Date()));
+  const [displayMonth, setDisplayMonth] = useState(() => startOfMonth(highlightWeekStart ?? new Date()));
   const todayKey = useTodayKey();
+
+  // highlightWeekStart가 바뀌면(주차 이동, PARA 화면에서 날짜 선택 등) 표시 중인 달도 따라가게
+  // 렌더 중에 동기화한다 — 이펙트 대신 이 패턴을 쓰면 한 번 더 렌더되는 걸 피할 수 있다.
+  const highlightKey = highlightWeekStart ? toDateKey(highlightWeekStart) : null;
+  const [syncedKey, setSyncedKey] = useState(highlightKey);
+  if (highlightKey !== syncedKey) {
+    setSyncedKey(highlightKey);
+    if (highlightWeekStart) setDisplayMonth(startOfMonth(highlightWeekStart));
+  }
 
   const gridStart = startOfWeek(startOfMonth(displayMonth), { weekStartsOn: 1 });
   const gridEnd = endOfWeek(endOfMonth(displayMonth), { weekStartsOn: 1 });
