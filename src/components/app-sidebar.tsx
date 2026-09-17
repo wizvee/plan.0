@@ -9,6 +9,7 @@ import { TodoCard } from "@/components/todo-card";
 import { AddTodoForm } from "@/components/add-todo-form";
 import { MiniCalendar } from "@/components/mini-calendar";
 import { cn } from "@/lib/utils";
+import { toDateKey } from "@/lib/week";
 import { BACKLOG, type Todo, type TodoKind } from "@/lib/types";
 
 interface AppSidebarProps {
@@ -66,7 +67,7 @@ export function AppSidebar({
     if (onSelectWeek) {
       onSelectWeek(date);
     } else {
-      router.push("/");
+      router.push(`/?week=${toDateKey(date)}`);
     }
   }
 

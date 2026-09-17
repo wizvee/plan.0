@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { addDays, format } from "date-fns";
 import {
   DndContext,
@@ -41,9 +41,14 @@ interface WeekBoardProps {
 
 export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { todos, setTodos, addTodo, addNote, updateTodo, removeTodo, persistPositions } =
     useSupabaseTodos(userId);
-  const [monday, setMonday] = useState(() => mondayOf(new Date()));
+  const [monday, setMonday] = useState(() => {
+    const weekParam = searchParams.get("week");
+    const parsed = weekParam ? new Date(`${weekParam}T00:00:00`) : null;
+    return mondayOf(parsed && !Number.isNaN(parsed.getTime()) ? parsed : new Date());
+  });
   const [activeId, setActiveId] = useState<string | null>(null);
   const [mobileDay, setMobileDay] = useState<DayKey>("mon");
   const [panelOpen, setPanelOpen] = useState(false);
