@@ -69,6 +69,8 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail }: Container
   const [tab, setTab] = useState<"overview" | "tasks" | "notes">("overview");
   const [panelOpen, setPanelOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
 
   const dropId = `para:${kind}:${id}`;
   const { setNodeRef, isOver } = useDroppable({ id: dropId });
@@ -188,6 +190,20 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail }: Container
     }
   }
 
+  function startEditingName() {
+    setNameDraft(container!.name);
+    setEditingName(true);
+  }
+
+  function commitName() {
+    const trimmed = nameDraft.trim();
+    setEditingName(false);
+    if (!trimmed || trimmed === container!.name) return;
+    if (kind === "project") void updateProject(id, { name: trimmed });
+    else if (kind === "area") void updateArea(id, { name: trimmed });
+    else void updateResource(id, { name: trimmed });
+  }
+
   function handleConvert(tid: string, newKind: TodoKind) {
     if (newKind === "note") {
       void updateTodo(tid, {
@@ -233,7 +249,26 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail }: Container
             <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
               <Icon className="size-5" />
             </div>
-            <h1 className="mt-1.5 text-[22px] font-bold leading-tight tracking-tight">{container.name}</h1>
+            {editingName ? (
+              <input
+                autoFocus
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                onBlur={commitName}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commitName();
+                  if (e.key === "Escape") setEditingName(false);
+                }}
+                className="-mx-1 mt-1.5 min-w-0 flex-1 rounded-md bg-transparent px-1 text-[22px] font-bold leading-tight tracking-tight outline-none ring-1 ring-primary"
+              />
+            ) : (
+              <h1
+                onClick={startEditingName}
+                className="-mx-1 mt-1.5 cursor-pointer rounded-md px-1 text-[22px] font-bold leading-tight tracking-tight hover:bg-accent"
+              >
+                {container.name}
+              </h1>
+            )}
           </div>
 
           <div className="mb-5 flex flex-wrap items-center gap-6 rounded-lg border border-border bg-card px-4 py-3.5">
@@ -290,17 +325,51 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail }: Container
             <div className="flex flex-col">
               <div className="flex items-center gap-4 border-b border-border py-3">
                 <span className="w-[130px] shrink-0 text-[14px] text-muted-foreground">Start date</span>
-                <span className="text-[14px] tabular-nums">
-                  {format(new Date(kind === "project" ? project!.startDate : container.createdAt), "yyyy-MM-dd")}
-                </span>
+                {kind === "project" ? (
+                  <input
+                    type="date"
+                    value={project!.startDate}
+                    onClick={(e) => e.currentTarget.showPicker?.()}
+                    onChange={(e) => {
+                      if (e.target.value) void updateProject(id, { startDate: e.target.value });
+                    }}
+                    className="-mx-1 cursor-pointer rounded-md bg-transparent px-1 text-[14px] tabular-nums text-foreground outline-none hover:bg-accent"
+                  />
+                ) : (
+                  <span className="text-[14px] tabular-nums">{format(new Date(container.createdAt), "yyyy-MM-dd")}</span>
+                )}
               </div>
               {kind === "project" ? (
                 <>
                   <div className="flex items-center gap-4 border-b border-border py-3">
+                    <span className="w-[130px] shrink-0 text-[14px] text-muted-foreground">Due date</span>
+                    <input
+                      type="date"
+                      value={project!.dueDate ?? ""}
+                      onClick={(e) => e.currentTarget.showPicker?.()}
+                      onChange={(e) => void updateProject(id, { dueDate: e.target.value || null })}
+                      className={cn(
+                        "-mx-1 cursor-pointer rounded-md bg-transparent px-1 text-[14px] tabular-nums outline-none hover:bg-accent",
+                        !project!.dueDate && "text-muted-foreground"
+                      )}
+                    />
+                  </div>
+                  <div className="flex items-center gap-4 border-b border-border py-3">
                     <span className="w-[130px] shrink-0 text-[14px] text-muted-foreground">Completion date</span>
-                    <span className={cn("text-[14px] tabular-nums", !project!.completedAt && "text-muted-foreground")}>
-                      {project!.completedAt ? format(new Date(project!.completedAt), "yyyy-MM-dd") : "Empty"}
-                    </span>
+                    <input
+                      type="date"
+                      value={project!.completedAt ? project!.completedAt.slice(0, 10) : ""}
+                      onClick={(e) => e.currentTarget.showPicker?.()}
+                      onChange={(e) =>
+                        void updateProject(id, {
+                          completedAt: e.target.value ? new Date(e.target.value).toISOString() : null,
+                        })
+                      }
+                      className={cn(
+                        "-mx-1 cursor-pointer rounded-md bg-transparent px-1 text-[14px] tabular-nums outline-none hover:bg-accent",
+                        !project!.completedAt && "text-muted-foreground"
+                      )}
+                    />
                   </div>
                   <div className="flex items-center gap-4 py-3">
                     <span className="w-[130px] shrink-0 text-[14px] text-muted-foreground">Days left</span>
