@@ -281,17 +281,38 @@ export function ContainerDetailScreen({ kind, id, userId }: ContainerDetailScree
             <div className="flex flex-col">
               <div className="flex items-center gap-4 border-b border-border py-3">
                 <span className="w-[130px] shrink-0 text-[14px] text-muted-foreground">Start date</span>
-                <span className="text-[14px] tabular-nums">
-                  {format(new Date(kind === "project" ? project!.startDate : container.createdAt), "yyyy-MM-dd")}
-                </span>
+                {kind === "project" ? (
+                  <input
+                    type="date"
+                    value={project!.startDate}
+                    onClick={(e) => e.currentTarget.showPicker?.()}
+                    onChange={(e) => {
+                      if (e.target.value) void updateProject(id, { startDate: e.target.value });
+                    }}
+                    className="-mx-1 cursor-pointer rounded-md bg-transparent px-1 text-[14px] tabular-nums text-foreground outline-none hover:bg-accent"
+                  />
+                ) : (
+                  <span className="text-[14px] tabular-nums">{format(new Date(container.createdAt), "yyyy-MM-dd")}</span>
+                )}
               </div>
               {kind === "project" ? (
                 <>
                   <div className="flex items-center gap-4 border-b border-border py-3">
                     <span className="w-[130px] shrink-0 text-[14px] text-muted-foreground">Completion date</span>
-                    <span className={cn("text-[14px] tabular-nums", !project!.completedAt && "text-muted-foreground")}>
-                      {project!.completedAt ? format(new Date(project!.completedAt), "yyyy-MM-dd") : "Empty"}
-                    </span>
+                    <input
+                      type="date"
+                      value={project!.completedAt ? project!.completedAt.slice(0, 10) : ""}
+                      onClick={(e) => e.currentTarget.showPicker?.()}
+                      onChange={(e) =>
+                        void updateProject(id, {
+                          completedAt: e.target.value ? new Date(e.target.value).toISOString() : null,
+                        })
+                      }
+                      className={cn(
+                        "-mx-1 cursor-pointer rounded-md bg-transparent px-1 text-[14px] tabular-nums outline-none hover:bg-accent",
+                        !project!.completedAt && "text-muted-foreground"
+                      )}
+                    />
                   </div>
                   <div className="flex items-center gap-4 py-3">
                     <span className="w-[130px] shrink-0 text-[14px] text-muted-foreground">Days left</span>
