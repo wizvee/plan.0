@@ -219,6 +219,20 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
       `AppSidebar`/`AppNavRail`에 `onCalendarClick?` prop을 추가해서, 있으면(캘린더 화면 자신만 넘겨줌)
       라우팅 대신 `viewMode`/`monday` state를 직접 리셋하고, 없으면(PARA 등 다른 화면) 기존처럼
       `router.push("/")`로 이동(그 경우는 새로 마운트되니 기본값=주별 뷰로 자연스럽게 열림).
+17. **(2026-09-18 추가) 할 일 상세 팝업에서 PARA/URL 직접 수정 가능하게**: 상세 팝업(`todo-detail-modal.tsx`)에서
+    지금까지 Project/Area/Resource 매핑과 URL을 수정할 방법이 없었던 문제. Notion/TickTick/미리알림을
+    참고해 Claude Design 캔버스로 목업을 그려 컨펌받은 뒤 반영.
+    - 제목 아래에 **PARA 속성 행** 추가 — 카테고리 아이콘(Target/Compass/Bookmark, 매핑 없으면 Layers)
+      + 매핑된 이름을 누르면 팝오버가 열리고, 검색 + "없음"(해제) + 프로젝트/영역/리소스별 그룹 목록에서
+      고를 수 있음. 바깥을 클릭하면 닫히도록 `pointerdown` 리스너로 처리.
+    - **URL 첨부**를 클릭하면 새 탭으로 이동만 되던 `UrlChip`(읽기 전용) 대신, 인풋으로 바로 타이핑해서
+      고칠 수 있게 바꾸고 옆에 새 탭 열기(↗) 버튼만 따로 뒀음 — 스크랩 항목 아니어도 항상 노출.
+    - 하단 액션도 세로로 쌓아뒀던 "노트로 전환"/삭제 버튼을 구분선 아래 한 줄(좌: 전환, 우: 삭제 아이콘)로 정리.
+    - `TodoDetailModal`이 이제 `projects`/`areas`/`resources`/`onAssignPara`/`onUrlEdit`을 받아야 해서,
+      이 모달을 렌더링하는 `todo-card.tsx`/`calendar-block.tsx`/`month-calendar.tsx`부터 그 위의
+      `week-calendar.tsx`/`app-sidebar.tsx`/`week-board.tsx`/`para-board.tsx`/`container-detail-screen.tsx`까지
+      전부 prop을 새로 뚫어야 했음 — 특히 `week-board.tsx`는 이때 처음으로 `useSupabaseProjects/Areas/Resources`를
+      불러오기 시작함(그전엔 캘린더 화면에 컨테이너 목록이 없었음).
 
 17. **(2026-09-18 추가) 노트/자료를 Google Drive 파일로 관리하는 기능 — 백엔드만 우선 구현**:
     PLANNING.md 9번 기획에 따라, 회사(Windows) 환경에서도 plan.0 화면 안에서만 노트(마크다운)와

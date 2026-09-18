@@ -20,24 +20,34 @@ import {
   minutesToPx,
   snapMinutes,
 } from "@/lib/time";
-import type { Todo } from "@/lib/types";
+import type { Area, Project, Resource, Todo } from "@/lib/types";
 
 interface CalendarBlockProps {
   todo: Todo;
+  projects?: Project[];
+  areas?: Area[];
+  resources?: Resource[];
   onToggle?: (id: string) => void;
   onRemove?: (id: string) => void;
   onEdit?: (id: string, content: string) => void;
   onMemoEdit?: (id: string, memo: string) => void;
+  onUrlEdit?: (id: string, url: string | null) => void;
+  onAssignPara?: (id: string, patch: { projectId: string | null; areaId: string | null; resourceId: string | null }) => void;
   onResize?: (id: string, durationMinutes: number) => void;
   overlay?: boolean;
 }
 
 export function CalendarBlock({
   todo,
+  projects,
+  areas,
+  resources,
   onToggle,
   onRemove,
   onEdit,
   onMemoEdit,
+  onUrlEdit,
+  onAssignPara,
   onResize,
   overlay,
 }: CalendarBlockProps) {
@@ -166,8 +176,13 @@ export function CalendarBlock({
       {detailOpen ? (
         <TodoDetailModal
           todo={todo}
+          projects={projects ?? []}
+          areas={areas ?? []}
+          resources={resources ?? []}
           onEdit={(id, content) => onEdit?.(id, content)}
           onMemoEdit={(id, memo) => onMemoEdit?.(id, memo)}
+          onUrlEdit={(id, url) => onUrlEdit?.(id, url)}
+          onAssignPara={(id, patch) => onAssignPara?.(id, patch)}
           onRemove={(id) => onRemove?.(id)}
           onClose={() => setDetailOpen(false)}
         />

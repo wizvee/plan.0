@@ -15,6 +15,7 @@ import {
 import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
 
 import { useSupabaseTodos } from "@/lib/supabase/todos";
+import { useSupabaseAreas, useSupabaseProjects, useSupabaseResources } from "@/lib/supabase/containers";
 import { createClient } from "@/lib/supabase/client";
 import { dayDateKey, dayKeyOf, mondayOf, shiftWeeks, toDateKey, weekNumberLabel, weekRangeLabel } from "@/lib/week";
 import { preferSpecificTargetCollision } from "@/lib/dnd";
@@ -45,6 +46,9 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
   const searchParams = useSearchParams();
   const { todos, setTodos, addTodo, addNote, updateTodo, removeTodo, persistPositions } =
     useSupabaseTodos(userId);
+  const { projects } = useSupabaseProjects(userId);
+  const { areas } = useSupabaseAreas(userId);
+  const { resources } = useSupabaseResources(userId);
   const [monday, setMonday] = useState(() => {
     const weekParam = searchParams.get("week");
     const parsed = weekParam ? new Date(`${weekParam}T00:00:00`) : null;
@@ -196,6 +200,17 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
     void updateTodo(id, { memo: memo || null });
   }
 
+  function handleUrlEdit(id: string, url: string | null) {
+    void updateTodo(id, { url });
+  }
+
+  function handleAssignPara(
+    id: string,
+    patch: { projectId: string | null; areaId: string | null; resourceId: string | null }
+  ) {
+    void updateTodo(id, patch);
+  }
+
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -284,16 +299,24 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
               monday={monday}
               mobileDay={mobileDay}
               itemsByDay={scheduledByDay}
+              projects={projects}
+              areas={areas}
+              resources={resources}
               onToggle={handleToggle}
               onRemove={handleRemove}
               onEdit={handleEdit}
               onMemoEdit={handleMemoEdit}
+              onUrlEdit={handleUrlEdit}
+              onAssignPara={handleAssignPara}
               onResize={handleResize}
             />
           ) : (
             <MonthCalendar
               displayMonth={displayMonth}
               todos={todos}
+              projects={projects}
+              areas={areas}
+              resources={resources}
               todayKey={todayKey}
               onSelectDay={goToWeek}
               onPrevMonth={() => setDisplayMonth((m) => subMonths(m, 1))}
@@ -301,6 +324,8 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
               onToday={() => setDisplayMonth(startOfMonth(new Date()))}
               onEdit={handleEdit}
               onMemoEdit={handleMemoEdit}
+              onUrlEdit={handleUrlEdit}
+              onAssignPara={handleAssignPara}
               onRemove={handleRemove}
             />
           )}
@@ -313,10 +338,15 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
               panelOpen={panelOpen}
               onClosePanel={() => setPanelOpen(false)}
               items={backlogItems}
+              projects={projects}
+              areas={areas}
+              resources={resources}
               onToggle={handleToggle}
               onRemove={handleRemove}
               onEdit={handleEdit}
               onMemoEdit={handleMemoEdit}
+              onUrlEdit={handleUrlEdit}
+              onAssignPara={handleAssignPara}
               onConvert={handleConvert}
               onAdd={handleAdd}
               monday={monday}
