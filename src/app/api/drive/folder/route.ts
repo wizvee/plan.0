@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
 import { ensureContainerFolder } from "@/lib/google-drive";
-import { getGoogleRefreshToken } from "@/lib/google-account";
+import { getGoogleRefreshToken, isInvalidGrantError, clearGoogleRefreshToken } from "@/lib/google-account";
 import type { ParaKind } from "@/lib/types";
 
 const TABLE_BY_KIND: Record<ParaKind, "projects" | "areas" | "resources"> = {
@@ -63,6 +63,13 @@ export async function POST(request: NextRequest) {
   try {
     folderId = await ensureContainerFolder(refreshToken, kind, container.name);
   } catch (err) {
+    if (isInvalidGrantError(err)) {
+      await clearGoogleRefreshToken(supabase, user.id);
+      return NextResponse.json(
+        { error: "Google Drive 연결이 만료됐습니다. 사이드바에서 다시 연결해주세요." },
+        { status: 409 }
+      );
+    }
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Drive 폴더 생성에 실패했습니다." },
       { status: 500 }

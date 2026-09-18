@@ -264,11 +264,26 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     - `src/lib/google-drive.ts`의 모든 함수가 `refreshToken`을 첫 인자로 받도록 변경(전역
       env 참조 제거). `src/lib/google-account.ts`에 조회/저장 헬퍼 + API route 공용 가드
       `requireGoogleAuth()` 추가, `/api/drive/{folder,files,notes}`가 이걸로 갱신됨.
-    - 사이드바 계정 영역에 "Google Drive 연결" 링크 추가(`/api/auth/google`로 이동하는 단순 링크 —
-      연결 여부를 보여주는 상태 표시는 아직 없음, 다음 개선 후보).
+    - 사이드바 계정 영역에 "Google Drive 연결" 링크 추가.
     - README의 Google Drive 연동 설정 섹션도 이 구조에 맞게 다시 씀 — OAuth Playground 절차 없어짐,
       리디렉션 URI를 앱 자신의 콜백 주소(`/api/auth/google/callback`)로 등록하는 것으로 바뀜.
     - 동의 화면을 "프로덕션"으로 게시할지는 여전히 사용자 선택 사항으로 남겨둠(문서가 강요하지 않음).
+    - 실사용 중 `redirect_uri_mismatch` 에러 발생 → Google Cloud 콘솔에 등록한 리디렉션 URI가
+      실제 배포 도메인과 정확히 안 맞았던 것(흔한 원인: 슬래시, http/https, 오타) — 해결됨.
+
+19. **(2026-09-18 추가) Google Drive 연결 상태를 사이드바에 표시 + 만료 토큰 자동 정리**: 18번
+    구현 직후 사용자가 "연결해도 계속 '연결' 링크만 뜬다"고 지적 + "7일마다 계속 눌러줘야 하는
+    거냐"고 질문 — 두 가지 다 처리함.
+    - 각 page.tsx(`/`, `/para`, `/para/[kind]/[id]`)가 `isGoogleConnected()`로 `google_accounts`에
+      row가 있는지 확인해서 `googleConnected` prop을 WeekBoard/ParaBoard/ContainerDetailScreen →
+      AppSidebar까지 내려줌. 연결 안 됐으면 "Google Drive 연결", 연결됐으면 "Google Drive 연결됨
+      · 재연결"로 사이드바 표시가 바뀜.
+    - **"테스트" 상태를 유지하는 한 7일 주기 재연결 자체는 없앨 수 없음**(Google 정책, 코드로 우회
+      불가) — 다만 `/api/drive/*`가 Google의 `invalid_grant` 에러(토큰 만료)를 감지하면
+      `google_accounts`에서 그 토큰을 자동으로 지우도록 만들어서(`isInvalidGrantError`/
+      `handleGoogleApiError`, `src/lib/google-account.ts`), 만료되면 사이드바가 자동으로 "연결 안
+      됨" 상태로 돌아가고 클릭 한 번으로 재연결하면 됨 — 사용자가 만료 여부를 직접 신경 쓸 필요는
+      없어짐.
 
 ## 지금 구현된 것 (기능 목록)
 

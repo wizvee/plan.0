@@ -368,8 +368,17 @@ PARA/
 - 구현된 API: `GET /api/auth/google`(연결 시작), `GET /api/auth/google/callback`(토큰 저장),
   `POST /api/drive/folder`(컨테이너 → Drive 폴더 조회/생성 + `drive_folder_id` 저장),
   `GET/POST /api/drive/files`(목록/업로드), `GET/POST/PUT /api/drive/notes`(읽기/생성/저장).
-- 사이드바(`app-sidebar.tsx`) 계정 영역에 "Google Drive 연결" 링크 추가(연결 여부 표시는 아직
-  없음 — 클릭하면 `/api/auth/google`로 이동하는 단순 링크, 연결 상태 뱃지는 다음 개선 후보).
+- 사이드바(`app-sidebar.tsx`) 계정 영역이 연결 상태를 보여줌 — 미연결이면 "Google Drive 연결"
+  링크, 연결됐으면 "Google Drive 연결됨"(+ "재연결" 링크)으로 바뀜. 각 page.tsx가
+  `isGoogleConnected()`로 `google_accounts`에 row가 있는지 확인해서 `googleConnected` prop을
+  WeekBoard/ParaBoard/ContainerDetailScreen → AppSidebar까지 내려줌(실제 토큰 유효성까지 매번
+  검사하진 않음 — 있으면 "연결됨"으로 간주).
+- **만료된 토큰 자동 정리**: "테스트" 상태라 7일 뒤 refresh token이 무효화되면, 그다음 Drive API
+  호출이 Google의 `invalid_grant` 에러로 실패한다. `/api/drive/*` 라우트들이 이 에러를 감지하면
+  `google_accounts`에서 그 사용자의 토큰을 지우고 409(재연결 안내 메시지)를 반환한다
+  (`src/lib/google-account.ts`의 `isInvalidGrantError`/`handleGoogleApiError`) — 그러면 사이드바가
+  자동으로 "연결 안 됨" 상태로 돌아가서 재연결을 자연스럽게 유도한다("테스트" 상태를 유지하는 한
+  이 7일 주기 재연결 자체는 없앨 수 없음, README 참고).
 
 ### 9.7 진행 순서
 

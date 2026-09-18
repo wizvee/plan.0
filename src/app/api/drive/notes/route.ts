@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { createMarkdownFile, getFileContent, updateFileContent } from "@/lib/google-drive";
-import { requireGoogleAuth } from "@/lib/google-account";
+import { handleGoogleApiError, requireGoogleAuth } from "@/lib/google-account";
 
 /** ?fileId=<Drive 파일 ID> — 인앱 마크다운 에디터에서 읽어올 노트 내용. */
 export async function GET(request: NextRequest) {
@@ -11,8 +11,12 @@ export async function GET(request: NextRequest) {
   const fileId = request.nextUrl.searchParams.get("fileId");
   if (!fileId) return NextResponse.json({ error: "fileId가 필요합니다." }, { status: 400 });
 
-  const content = await getFileContent(auth.refreshToken, fileId);
-  return NextResponse.json({ content });
+  try {
+    const content = await getFileContent(auth.refreshToken, fileId);
+    return NextResponse.json({ content });
+  } catch (err) {
+    return handleGoogleApiError(auth, err);
+  }
 }
 
 /** { folderId, title } — 그 폴더에 새 마크다운 노트 파일을 만든다. */
@@ -27,8 +31,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "folderId와 title이 필요합니다." }, { status: 400 });
   }
 
-  const file = await createMarkdownFile(auth.refreshToken, folderId, title.trim(), `# ${title.trim()}\n\n`);
-  return NextResponse.json({ file }, { status: 201 });
+  try {
+    const file = await createMarkdownFile(auth.refreshToken, folderId, title.trim(), `# ${title.trim()}\n\n`);
+    return NextResponse.json({ file }, { status: 201 });
+  } catch (err) {
+    return handleGoogleApiError(auth, err);
+  }
 }
 
 /** { fileId, content } — 인앱 에디터에서 수정한 노트 내용을 저장한다. */
@@ -43,6 +51,10 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: "fileId와 content가 필요합니다." }, { status: 400 });
   }
 
-  await updateFileContent(auth.refreshToken, fileId, content);
-  return NextResponse.json({ ok: true });
+  try {
+    await updateFileContent(auth.refreshToken, fileId, content);
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return handleGoogleApiError(auth, err);
+  }
 }

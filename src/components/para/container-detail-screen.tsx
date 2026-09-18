@@ -57,9 +57,10 @@ interface ContainerDetailScreenProps {
   id: string;
   userId: string;
   userEmail: string;
+  googleConnected: boolean;
 }
 
-export function ContainerDetailScreen({ kind, id, userId, userEmail }: ContainerDetailScreenProps) {
+export function ContainerDetailScreen({ kind, id, userId, userEmail, googleConnected }: ContainerDetailScreenProps) {
   const router = useRouter();
   const { todos, setTodos, addTodo, addNote, updateTodo, removeTodo, persistPositions } = useSupabaseTodos(userId);
   const { projects, updateProject } = useSupabaseProjects(userId);
@@ -451,6 +452,7 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail }: Container
         <AppSidebar
           activePage="para"
           userEmail={userEmail}
+          googleConnected={googleConnected}
           onSignOut={handleSignOut}
           panelOpen={panelOpen}
           onClosePanel={() => setPanelOpen(false)}

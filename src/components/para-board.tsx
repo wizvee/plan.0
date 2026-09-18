@@ -36,7 +36,15 @@ function nextPosition(items: Todo[]) {
   return items.length === 0 ? 0 : Math.max(...items.map((t) => t.position)) + 1;
 }
 
-export function ParaBoard({ userId, userEmail }: { userId: string; userEmail: string }) {
+export function ParaBoard({
+  userId,
+  userEmail,
+  googleConnected,
+}: {
+  userId: string;
+  userEmail: string;
+  googleConnected: boolean;
+}) {
   const router = useRouter();
   const { todos, setTodos, addTodo, addNote, updateTodo, removeTodo, persistPositions } = useSupabaseTodos(userId);
   const { projects, addProject } = useSupabaseProjects(userId);
@@ -254,6 +262,7 @@ export function ParaBoard({ userId, userEmail }: { userId: string; userEmail: st
             <AppSidebar
               activePage="para"
               userEmail={userEmail}
+              googleConnected={googleConnected}
               onSignOut={handleSignOut}
               panelOpen={panelOpen}
               onClosePanel={() => setPanelOpen(false)}

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import { isGoogleConnected } from "@/lib/google-account";
 import { ParaBoard } from "@/components/para-board";
 
 export default async function ParaPage() {
@@ -13,5 +14,7 @@ export default async function ParaPage() {
     redirect("/login");
   }
 
-  return <ParaBoard userId={user.id} userEmail={user.email ?? ""} />;
+  const googleConnected = await isGoogleConnected(supabase, user.id);
+
+  return <ParaBoard userId={user.id} userEmail={user.email ?? ""} googleConnected={googleConnected} />;
 }

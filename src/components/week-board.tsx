@@ -39,9 +39,10 @@ function nextPosition(items: Todo[]) {
 interface WeekBoardProps {
   userId: string;
   userEmail: string;
+  googleConnected: boolean;
 }
 
-export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
+export function WeekBoard({ userId, userEmail, googleConnected }: WeekBoardProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { todos, setTodos, addTodo, addNote, updateTodo, removeTodo, persistPositions } =
@@ -334,6 +335,7 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
             <AppSidebar
               activePage="calendar"
               userEmail={userEmail}
+              googleConnected={googleConnected}
               onSignOut={handleSignOut}
               panelOpen={panelOpen}
               onClosePanel={() => setPanelOpen(false)}

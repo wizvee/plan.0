@@ -15,6 +15,7 @@ import { BACKLOG, type Area, type Project, type Resource, type Todo, type TodoKi
 interface AppSidebarProps {
   activePage: "calendar" | "para";
   userEmail: string;
+  googleConnected: boolean;
   onSignOut: () => void;
   panelOpen: boolean;
   onClosePanel: () => void;
@@ -51,6 +52,7 @@ interface AppSidebarProps {
 export function AppSidebar({
   activePage,
   userEmail,
+  googleConnected,
   onSignOut,
   panelOpen,
   onClosePanel,
@@ -218,9 +220,19 @@ export function AppSidebar({
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span className="truncate text-[12.5px]">{userEmail}</span>
             <div className="flex items-center gap-2 text-[11.5px] text-muted-foreground">
-              <a href="/api/auth/google" className="hover:text-foreground">
-                Google Drive 연결
-              </a>
+              {googleConnected ? (
+                <>
+                  <span>Google Drive 연결됨</span>
+                  <span>·</span>
+                  <a href="/api/auth/google" className="hover:text-foreground">
+                    재연결
+                  </a>
+                </>
+              ) : (
+                <a href="/api/auth/google" className="hover:text-foreground">
+                  Google Drive 연결
+                </a>
+              )}
               <span>·</span>
               <button type="button" onClick={onSignOut} className="hover:text-foreground">
                 로그아웃
