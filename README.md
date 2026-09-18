@@ -73,13 +73,8 @@ DB가 아니라 **본인 Google Drive**에 파일로 저장합니다(왜 이렇�
 1. [Google Cloud Console](https://console.cloud.google.com/)에서 새 프로젝트 생성(또는 기존 프로젝트 사용).
 2. **API 및 서비스 → 라이브러리**에서 "Google Drive API" 검색 후 사용 설정.
 3. **API 및 서비스 → OAuth 동의 화면**: User Type은 "외부"로 만들고(개인 Gmail 계정이라 "내부"는
-   선택 불가), 앱 이름/본인 이메일 정도만 채워서 저장. 게시 상태는 **"테스트"**로 두고, "테스트
-   사용자"에 본인 이메일을 추가.
-   - 참고: 테스트 상태에서 발급받은 refresh token은 **7일 뒤 만료**됩니다. 계속 갱신 없이 쓰려면
-     나중에 게시 상태를 "프로덕션"으로 전환해야 하는데(개인 전용 앱이어도 마찬가지), 이번 기능은
-     민감하지 않은 스코프(`drive.file`, 앱이 직접 만든 파일에만 접근)만 쓰므로 심사 없이 전환 가능한
-     경우가 많습니다 — 다만 Google 정책은 바뀔 수 있어 실제 화면 안내를 따르는 게 정확합니다. 일단은
-     테스트 상태로 시작하고, 7일마다 재발급이 번거로워지면 그때 전환을 검토하세요.
+   선택 불가), 앱 이름/본인 이메일 정도만 채워서 저장. "테스트 사용자"에 본인 이메일을 추가
+   (5번에서 refresh token을 받으려면 테스트 사용자로 등록돼 있어야 함).
 4. **API 및 서비스 → 사용자 인증 정보 → 사용자 인증 정보 만들기 → OAuth 클라이언트 ID**: 애플리케이션
    유형 "웹 애플리케이션", 승인된 리디렉션 URI에 `https://developers.google.com/oauthplayground` 추가
    (아래 5번에서 refresh token을 발급받는 용도로만 쓰고, 앱 자체는 이 URI로 리디렉트되지 않습니다).
@@ -90,7 +85,14 @@ DB가 아니라 **본인 Google Drive**에 파일로 저장합니다(왜 이렇�
    - 왼쪽 목록에서 **Drive API v3 → `https://www.googleapis.com/auth/drive.file`** 스코프 선택 →
      "Authorize APIs" → 본인 Google 계정으로 로그인/동의(테스트 사용자로 등록한 계정이어야 함).
    - "Exchange authorization code for tokens" 클릭 → 나오는 **Refresh token** 값을 복사.
-6. `.env.local`(로컬)과 Vercel Environment Variables(배포)에 아래 세 값 추가:
+6. **동의 화면을 "프로덕션"으로 전환 (한 번만, 중요)** — 3번에서 만든 동의 화면이 "테스트" 상태로
+   남아있으면 방금 받은 refresh token이 **7일 뒤 자동 만료**되어 7일마다 5번을 반복해야 합니다.
+   **API 및 서비스 → OAuth 동의 화면**으로 돌아가서 상단의 **"게시(PUBLISH APP)"** 버튼을 눌러
+   상태를 "프로덕션"으로 바꾸세요. `drive.file`은 Google이 분류한 "민감(sensitive)" 스코프일 뿐
+   "제한됨(restricted)" 스코프가 아니라서, 게시해도 별도 심사 없이 바로 적용됩니다(사용자가 본인
+   1명뿐인 개인 앱이라 심사 대상도 아님). 이후로는 이 refresh token을 계속 그대로 쓰면 되고,
+   주기적으로 다시 발급받을 필요가 없습니다.
+7. `.env.local`(로컬)과 Vercel Environment Variables(배포)에 아래 세 값 추가:
    ```
    GOOGLE_CLIENT_ID=4번에서 받은 클라이언트 ID
    GOOGLE_CLIENT_SECRET=4번에서 받은 클라이언트 보안 비밀
