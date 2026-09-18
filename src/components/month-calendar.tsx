@@ -8,7 +8,7 @@ import { TodoDetailModal } from "@/components/todo-detail-modal";
 import { cn } from "@/lib/utils";
 import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR, getParaCategory } from "@/lib/category";
 import { toDateKey } from "@/lib/week";
-import { DAY_LABELS_KO, type Todo } from "@/lib/types";
+import { DAY_LABELS_KO, type Area, type Project, type Resource, type Todo } from "@/lib/types";
 
 const WEEKDAY_ORDER: (keyof typeof DAY_LABELS_KO)[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const MAX_VISIBLE_EVENTS = 2;
@@ -16,6 +16,9 @@ const MAX_VISIBLE_EVENTS = 2;
 interface MonthCalendarProps {
   displayMonth: Date;
   todos: Todo[];
+  projects: Project[];
+  areas: Area[];
+  resources: Resource[];
   todayKey: string | null;
   onSelectDay: (date: Date) => void;
   onPrevMonth: () => void;
@@ -23,12 +26,17 @@ interface MonthCalendarProps {
   onToday: () => void;
   onEdit: (id: string, content: string) => void;
   onMemoEdit: (id: string, memo: string) => void;
+  onUrlEdit: (id: string, url: string | null) => void;
+  onAssignPara: (id: string, patch: { projectId: string | null; areaId: string | null; resourceId: string | null }) => void;
   onRemove: (id: string) => void;
 }
 
 export function MonthCalendar({
   displayMonth,
   todos,
+  projects,
+  areas,
+  resources,
   todayKey,
   onSelectDay,
   onPrevMonth,
@@ -36,9 +44,12 @@ export function MonthCalendar({
   onToday,
   onEdit,
   onMemoEdit,
+  onUrlEdit,
+  onAssignPara,
   onRemove,
 }: MonthCalendarProps) {
-  const [detailTodo, setDetailTodo] = useState<Todo | null>(null);
+  const [detailTodoId, setDetailTodoId] = useState<string | null>(null);
+  const detailTodo = detailTodoId ? todos.find((t) => t.id === detailTodoId) ?? null : null;
   const eventsByDate = useMemo(() => {
     const map = new Map<string, Todo[]>();
     for (const todo of todos) {
@@ -154,7 +165,7 @@ export function MonthCalendar({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setDetailTodo(todo);
+                      setDetailTodoId(todo.id);
                     }}
                     className={cn(
                       "w-full truncate rounded-[4px] border-l-[3px] px-1.5 py-0.5 text-left text-[11px] font-medium",
@@ -175,10 +186,15 @@ export function MonthCalendar({
       {detailTodo ? (
         <TodoDetailModal
           todo={detailTodo}
+          projects={projects}
+          areas={areas}
+          resources={resources}
           onEdit={onEdit}
           onMemoEdit={onMemoEdit}
+          onUrlEdit={onUrlEdit}
+          onAssignPara={onAssignPara}
           onRemove={onRemove}
-          onClose={() => setDetailTodo(null)}
+          onClose={() => setDetailTodoId(null)}
         />
       ) : null}
     </div>

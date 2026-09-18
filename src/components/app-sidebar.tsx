@@ -10,7 +10,7 @@ import { AddTodoForm } from "@/components/add-todo-form";
 import { MiniCalendar } from "@/components/mini-calendar";
 import { cn } from "@/lib/utils";
 import { toDateKey } from "@/lib/week";
-import { BACKLOG, type Todo, type TodoKind } from "@/lib/types";
+import { BACKLOG, type Area, type Project, type Resource, type Todo, type TodoKind } from "@/lib/types";
 
 interface AppSidebarProps {
   activePage: "calendar" | "para";
@@ -19,10 +19,15 @@ interface AppSidebarProps {
   panelOpen: boolean;
   onClosePanel: () => void;
   items: Todo[];
+  projects?: Project[];
+  areas?: Area[];
+  resources?: Resource[];
   onToggle: (id: string) => void;
   onRemove: (id: string) => void;
   onEdit: (id: string, content: string) => void;
   onMemoEdit: (id: string, memo: string) => void;
+  onUrlEdit?: (id: string, url: string | null) => void;
+  onAssignPara?: (id: string, patch: { projectId: string | null; areaId: string | null; resourceId: string | null }) => void;
   onConvert?: (id: string, kind: TodoKind) => void;
   onAdd: (content: string, kind: TodoKind) => void;
   /** PARA 목록 화면에서 재사용할 때, 이미 매핑된 항목에 보여줄 배지 텍스트 */
@@ -50,10 +55,15 @@ export function AppSidebar({
   panelOpen,
   onClosePanel,
   items,
+  projects,
+  areas,
+  resources,
   onToggle,
   onRemove,
   onEdit,
   onMemoEdit,
+  onUrlEdit,
+  onAssignPara,
   onConvert,
   onAdd,
   getBadge,
@@ -156,10 +166,15 @@ export function AppSidebar({
             <TodoCard
               key={todo.id}
               todo={todo}
+              projects={projects}
+              areas={areas}
+              resources={resources}
               onToggle={onToggle}
               onRemove={onRemove}
               onEdit={onEdit}
               onMemoEdit={onMemoEdit}
+              onUrlEdit={onUrlEdit}
+              onAssignPara={onAssignPara}
               onConvert={onConvert}
               badge={getBadge?.(todo)}
             />

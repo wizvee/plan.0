@@ -7,7 +7,7 @@ import { useDroppable } from "@dnd-kit/core";
 import { CalendarBlock } from "@/components/calendar-block";
 import { cn } from "@/lib/utils";
 import { useTodayKey } from "@/lib/use-today";
-import { DAY_KEYS, DAY_LABELS_KO, type DayKey, type Todo } from "@/lib/types";
+import { DAY_KEYS, DAY_LABELS_KO, type Area, type DayKey, type Project, type Resource, type Todo } from "@/lib/types";
 import {
   GUTTER_WIDTH,
   HOURS_IN_DAY,
@@ -22,10 +22,15 @@ interface WeekCalendarProps {
   monday: Date;
   mobileDay: DayKey;
   itemsByDay: Record<DayKey, Todo[]>;
+  projects: Project[];
+  areas: Area[];
+  resources: Resource[];
   onToggle: (id: string) => void;
   onRemove: (id: string) => void;
   onEdit: (id: string, content: string) => void;
   onMemoEdit: (id: string, memo: string) => void;
+  onUrlEdit: (id: string, url: string | null) => void;
+  onAssignPara: (id: string, patch: { projectId: string | null; areaId: string | null; resourceId: string | null }) => void;
   onResize: (id: string, durationMinutes: number) => void;
 }
 
@@ -62,19 +67,29 @@ function DayGridColumn({
   day,
   items,
   isToday,
+  projects,
+  areas,
+  resources,
   onToggle,
   onRemove,
   onEdit,
   onMemoEdit,
+  onUrlEdit,
+  onAssignPara,
   onResize,
 }: {
   day: DayKey;
   items: Todo[];
   isToday: boolean;
+  projects: Project[];
+  areas: Area[];
+  resources: Resource[];
   onToggle: (id: string) => void;
   onRemove: (id: string) => void;
   onEdit: (id: string, content: string) => void;
   onMemoEdit: (id: string, memo: string) => void;
+  onUrlEdit: (id: string, url: string | null) => void;
+  onAssignPara: (id: string, patch: { projectId: string | null; areaId: string | null; resourceId: string | null }) => void;
   onResize: (id: string, durationMinutes: number) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `grid:${day}` });
@@ -98,10 +113,15 @@ function DayGridColumn({
         <CalendarBlock
           key={todo.id}
           todo={todo}
+          projects={projects}
+          areas={areas}
+          resources={resources}
           onToggle={onToggle}
           onRemove={onRemove}
           onEdit={onEdit}
           onMemoEdit={onMemoEdit}
+          onUrlEdit={onUrlEdit}
+          onAssignPara={onAssignPara}
           onResize={onResize}
         />
       ))}
@@ -113,10 +133,15 @@ export function WeekCalendar({
   monday,
   mobileDay,
   itemsByDay,
+  projects,
+  areas,
+  resources,
   onToggle,
   onRemove,
   onEdit,
   onMemoEdit,
+  onUrlEdit,
+  onAssignPara,
   onResize,
 }: WeekCalendarProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -178,10 +203,15 @@ export function WeekCalendar({
                   day={day}
                   items={itemsByDay[day]}
                   isToday={isToday}
+                  projects={projects}
+                  areas={areas}
+                  resources={resources}
                   onToggle={onToggle}
                   onRemove={onRemove}
                   onEdit={onEdit}
                   onMemoEdit={onMemoEdit}
+                  onUrlEdit={onUrlEdit}
+                  onAssignPara={onAssignPara}
                   onResize={onResize}
                 />
               </div>

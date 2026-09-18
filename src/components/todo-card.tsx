@@ -11,7 +11,7 @@ import { UrlChip } from "@/components/url-chip";
 import { TodoDetailModal } from "@/components/todo-detail-modal";
 import { cn } from "@/lib/utils";
 import { CATEGORY_COLOR_VAR, getParaCategory } from "@/lib/category";
-import type { Todo, TodoKind } from "@/lib/types";
+import type { Area, Project, Resource, Todo, TodoKind } from "@/lib/types";
 
 function scheduledDateOf(todo: Todo): Date | null {
   return todo.scheduledDate ? new Date(`${todo.scheduledDate}T00:00:00`) : null;
@@ -19,17 +19,36 @@ function scheduledDateOf(todo: Todo): Date | null {
 
 interface TodoCardProps {
   todo: Todo;
+  projects?: Project[];
+  areas?: Area[];
+  resources?: Resource[];
   onToggle?: (id: string) => void;
   onRemove?: (id: string) => void;
   onEdit?: (id: string, content: string) => void;
   onMemoEdit?: (id: string, memo: string) => void;
+  onUrlEdit?: (id: string, url: string | null) => void;
+  onAssignPara?: (id: string, patch: { projectId: string | null; areaId: string | null; resourceId: string | null }) => void;
   onConvert?: (id: string, kind: TodoKind) => void;
   overlay?: boolean;
   /** PARA 매핑 표시용 — 이 할 일이 속한 Project/Area/Resource 이름 */
   badge?: string;
 }
 
-export function TodoCard({ todo, onToggle, onRemove, onEdit, onMemoEdit, onConvert, overlay, badge }: TodoCardProps) {
+export function TodoCard({
+  todo,
+  projects,
+  areas,
+  resources,
+  onToggle,
+  onRemove,
+  onEdit,
+  onMemoEdit,
+  onUrlEdit,
+  onAssignPara,
+  onConvert,
+  overlay,
+  badge,
+}: TodoCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
   const category = !badge ? getParaCategory(todo) : null;
   const scheduledDate = scheduledDateOf(todo);
@@ -117,8 +136,13 @@ export function TodoCard({ todo, onToggle, onRemove, onEdit, onMemoEdit, onConve
       {detailOpen ? (
         <TodoDetailModal
           todo={todo}
+          projects={projects ?? []}
+          areas={areas ?? []}
+          resources={resources ?? []}
           onEdit={(id, content) => onEdit?.(id, content)}
           onMemoEdit={(id, memo) => onMemoEdit?.(id, memo)}
+          onUrlEdit={(id, url) => onUrlEdit?.(id, url)}
+          onAssignPara={(id, patch) => onAssignPara?.(id, patch)}
           onRemove={(id) => onRemove?.(id)}
           onConvert={(id, kind) => onConvert?.(id, kind)}
           onClose={() => setDetailOpen(false)}
