@@ -220,6 +220,22 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
       라우팅 대신 `viewMode`/`monday` state를 직접 리셋하고, 없으면(PARA 등 다른 화면) 기존처럼
       `router.push("/")`로 이동(그 경우는 새로 마운트되니 기본값=주별 뷰로 자연스럽게 열림).
 
+17. **(2026-09-18 추가) 노트/자료를 Google Drive 파일로 관리하는 기능 — 백엔드만 우선 구현**:
+    PLANNING.md 9번 기획에 따라, 회사(Windows) 환경에서도 plan.0 화면 안에서만 노트(마크다운)와
+    첨부 자료(PPT/PDF 등)를 다루되 DB가 아니라 본인 Google Drive에 파일로 저장하도록 진행.
+    - 서버 쪽만 우선 구현: `drive_folder_id` 컬럼(3개 테이블) + `src/lib/google-drive.ts` +
+      `/api/drive/{folder,files,notes}` 세 라우트. **Notes 탭 UI는 아직 안 건드림** — HANDOFF.md
+      상단 "작업 방식" 규칙(UI는 목업 컨펌 전엔 코드로 안 만듦)에 따라 캔버스 시안 컨펌 이후로 미룸.
+    - 애초 안(9.6)은 사용자가 드라이브에 미리 만들어둔 최상위 폴더 ID를 환경변수로 넘기는 방식이었는데,
+      구현하면서 스코프 문제를 발견해서 바꿈: 사용자가 직접 만든 폴더는 `drive.file`(앱이 만든 파일에만
+      접근하는 좁은 스코프)로는 못 보고, 더 민감한 `drive` 전체 스코프가 필요해짐. 대신 **최상위 "PARA"
+      폴더도 앱이 최초 API 호출 시 자동 생성**하도록 바꿔서 전체 트리가 앱 소유가 되게 하고, 좁은
+      스코프만으로 충분하게 만듦. 그래서 `GOOGLE_DRIVE_ROOT_FOLDER_ID` 환경변수는 필요 없어짐.
+    - Google Cloud OAuth 클라이언트 등록 + refresh token 발급은 본인 Google 계정으로 직접 진행해야
+      하는 부분이라(에이전트가 대신 못 함) 아직 미완료 — README.md "Google Drive 연동 설정" 섹션에
+      단계별로 정리해둠(OAuth Playground로 refresh token 받는 방법 포함). 이게 끝나야 방금 만든
+      API들을 실제로 테스트해볼 수 있음.
+
 ## 지금 구현된 것 (기능 목록)
 
 - Todo List(전역 보관함, 사이드 패널) + Mon~Sun **시간 단위 캘린더 그리드** (0~24시, 스크롤 가능)
@@ -266,6 +282,9 @@ src/app/login/page.tsx          로그인 폼 (가입 전환 버튼은 주석 �
 src/app/api/clip/route.ts       공유하기 스크랩용 API — 비밀키 헤더 인증 → Todo List에 새 항목 insert
 src/app/para/page.tsx           서버 컴포넌트: 로그인 체크 후 ParaBoard 렌더
 src/app/para/[kind]/[id]/page.tsx 서버 컴포넌트: kind 검증 + 로그인 체크 후 ContainerDetailScreen 렌더
+src/app/api/drive/folder/route.ts  컨테이너(project/area/resource) → Drive 폴더 조회, 없으면 생성 후 drive_folder_id 저장
+src/app/api/drive/files/route.ts   Drive 폴더 내 파일 목록 조회 / 바이너리 파일 업로드
+src/app/api/drive/notes/route.ts   마크다운 노트 파일 생성 / 내용 읽기(GET) / 내용 저장(PUT)
 src/proxy.ts                    (구 middleware.ts) 인증 안 된 요청을 /login으로 리다이렉트 (/api/*는 제외)
 
 src/lib/supabase/client.ts      브라우저용 Supabase 클라이언트
@@ -280,6 +299,8 @@ src/lib/week.ts                 주차 계산(월요일 시작, ISO 주차, 오�
 src/lib/time.ts                 시간 캘린더 계산(시간→px 변환, 스냅, 시간 라벨 포맷, BLOCK_GAP 등)
 src/lib/use-today.ts            "오늘 날짜"를 client-only로 계산하는 훅 (SSR 시간대 버그 방지)
 src/lib/utils.ts                cn() 헬퍼 (shadcn 표준)
+src/lib/google-drive.ts         Google Drive API 서버 전용 래퍼 — 컨테이너별 폴더 조회/생성,
+                                파일 목록/업로드, 마크다운 파일 읽기/쓰기 (17번 결정, PLANNING.md 9번)
 
 src/components/week-board.tsx    메인 화면 전체 — 상태 관리, DnD 컨텍스트, 레이아웃 조립
 src/components/week-nav.tsx      주차 이동 버튼들
@@ -330,6 +351,12 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
    다시 한 번 실행(`todos.kind` 컬럼 + `projects`/`areas`/`resources`의 `notes` 컬럼 제거)해야
    최신 상태로 동작함. Project/Area/Resource **이름 수정 UI**(지금은 생성만 가능), 완료·보관 항목을
    목록에서 접거나 필터링하는 기능은 여전히 다음 할 일로 남아있음.
+10. **(2026-09-18 추가) Google Drive 노트/자료 연동 — 백엔드만 구현, 3가지 남음** (17번 결정 참고):
+    (a) Google Cloud OAuth 클라이언트 등록 + refresh token 발급을 사용자가 직접 해야 함(README
+    참고) — 이게 없으면 `/api/drive/*`가 전부 500 에러; (b) 컨테이너 생성/조회 화면 어디에서도
+    아직 `/api/drive/folder`를 호출하지 않음 — lazy 생성으로 할지 등 PLANNING.md 9.8 열린 질문
+    4번을 정하고 나서 연결; (c) Notes 탭 UI 자체는 아직 기존 그대로(할 일/노트 리스트) — 캔버스
+    시안 컨펌 전이라 손 안 댐(DESIGN.md 체크리스트 1번, 상단 "작업 방식" 규칙).
 
 ## `.env` / 키 노출 관련 (사용자 질문에 대한 답)
 

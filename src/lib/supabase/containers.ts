@@ -15,6 +15,7 @@ interface ProjectRow {
   due_date: string | null;
   created_at: string;
   completed_at: string | null;
+  drive_folder_id: string | null;
 }
 
 function projectFromRow(row: ProjectRow): Project {
@@ -26,10 +27,13 @@ function projectFromRow(row: ProjectRow): Project {
     dueDate: row.due_date,
     createdAt: row.created_at,
     completedAt: row.completed_at,
+    driveFolderId: row.drive_folder_id,
   };
 }
 
-type ProjectPatch = Partial<Pick<Project, "name" | "status" | "startDate" | "dueDate" | "completedAt">>;
+type ProjectPatch = Partial<
+  Pick<Project, "name" | "status" | "startDate" | "dueDate" | "completedAt" | "driveFolderId">
+>;
 
 export function useSupabaseProjects(userId: string) {
   const [supabase] = useState(() => createClient());
@@ -90,6 +94,7 @@ export function useSupabaseProjects(userId: string) {
           dueDate: null,
           createdAt: new Date().toISOString(),
           completedAt: null,
+          driveFolderId: null,
         },
       ]);
 
@@ -118,6 +123,7 @@ export function useSupabaseProjects(userId: string) {
       if (patch.startDate !== undefined) dbPatch.start_date = patch.startDate;
       if (patch.dueDate !== undefined) dbPatch.due_date = patch.dueDate;
       if (patch.completedAt !== undefined) dbPatch.completed_at = patch.completedAt;
+      if (patch.driveFolderId !== undefined) dbPatch.drive_folder_id = patch.driveFolderId;
 
       await supabase.from("projects").update(dbPatch).eq("id", id);
     },
@@ -141,6 +147,7 @@ interface ContainerRow {
   name: string;
   archived: boolean;
   created_at: string;
+  drive_folder_id: string | null;
 }
 
 function containerFromRow(row: ContainerRow): ParaContainer {
@@ -149,10 +156,11 @@ function containerFromRow(row: ContainerRow): ParaContainer {
     name: row.name,
     archived: row.archived,
     createdAt: row.created_at,
+    driveFolderId: row.drive_folder_id,
   };
 }
 
-type ContainerPatch = Partial<Pick<ParaContainer, "name" | "archived">>;
+type ContainerPatch = Partial<Pick<ParaContainer, "name" | "archived" | "driveFolderId">>;
 
 function useSupabaseContainerTable(table: "areas" | "resources", userId: string) {
   const [supabase] = useState(() => createClient());
@@ -204,7 +212,7 @@ function useSupabaseContainerTable(table: "areas" | "resources", userId: string)
       const optimisticId = crypto.randomUUID();
       setItems((prev) => [
         ...prev,
-        { id: optimisticId, name: trimmed, archived: false, createdAt: new Date().toISOString() },
+        { id: optimisticId, name: trimmed, archived: false, createdAt: new Date().toISOString(), driveFolderId: null },
       ]);
 
       const { data, error } = await supabase
@@ -225,7 +233,13 @@ function useSupabaseContainerTable(table: "areas" | "resources", userId: string)
   const updateItem = useCallback(
     async (id: string, patch: ContainerPatch) => {
       setItems((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
-      await supabase.from(table).update(patch).eq("id", id);
+
+      const dbPatch: Record<string, unknown> = {};
+      if (patch.name !== undefined) dbPatch.name = patch.name;
+      if (patch.archived !== undefined) dbPatch.archived = patch.archived;
+      if (patch.driveFolderId !== undefined) dbPatch.drive_folder_id = patch.driveFolderId;
+
+      await supabase.from(table).update(dbPatch).eq("id", id);
     },
     [supabase, table]
   );

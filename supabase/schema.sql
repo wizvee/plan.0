@@ -85,6 +85,13 @@ alter table public.projects drop column if exists notes;
 alter table public.areas drop column if exists notes;
 alter table public.resources drop column if exists notes;
 
+-- PLANNING.md 9번: 노트/자료를 DB가 아니라 Google Drive 파일로 관리하기 위한 연결 고리.
+-- 컨테이너별로 대응하는 Drive 폴더 ID 하나만 저장하고, 파일 목록 자체는 캐시하지 않음
+-- (화면을 열 때마다 Drive API로 조회). 값이 없으면 아직 폴더가 생성되지 않은 상태.
+alter table public.projects add column if not exists drive_folder_id text;
+alter table public.areas add column if not exists drive_folder_id text;
+alter table public.resources add column if not exists drive_folder_id text;
+
 alter table public.todos add column if not exists project_id uuid references public.projects (id) on delete set null;
 alter table public.todos add column if not exists area_id uuid references public.areas (id) on delete set null;
 alter table public.todos add column if not exists resource_id uuid references public.resources (id) on delete set null;

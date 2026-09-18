@@ -84,6 +84,8 @@ export interface Project {
   dueDate: string | null;
   createdAt: string;
   completedAt: string | null;
+  /** PLANNING.md 9번: 이 프로젝트에 대응하는 Google Drive 폴더 ID. 아직 없으면 null */
+  driveFolderId: string | null;
 }
 
 /** Area와 Resource는 같은 모양 — 끝(due date)이 없는 컨테이너라는 점만 Project와 다름 */
@@ -92,6 +94,8 @@ export interface ParaContainer {
   name: string;
   archived: boolean;
   createdAt: string;
+  /** PLANNING.md 9번: 이 컨테이너에 대응하는 Google Drive 폴더 ID. 아직 없으면 null */
+  driveFolderId: string | null;
 }
 
 export type Area = ParaContainer;

@@ -60,6 +60,45 @@ Todo List 보관함에 새 항목이 생깁니다(제목 + 원본 링크 임베�
      `{ "title": 위에서 받은 이름, "url": 공유받은 URL, "memo": 위에서 받은 텍스트 }`.
 3. 사파리(또는 아무 앱)에서 링크를 공유 → 방금 만든 단축어 실행 → Todo List에 바로 뜹니다.
 
+## Google Drive 연동 설정 (Project/Area/Resource별 노트·자료, 선택)
+
+Project/Area/Resource 상세화면에서 노트(마크다운)와 첨부 자료(PPT/PDF 등)를 관리하는 기능은
+DB가 아니라 **본인 Google Drive**에 파일로 저장합니다(왜 이렇게 설계했는지는
+[PLANNING.md 9번](./PLANNING.md#9-노트자료-확장-기획-google-drive-연동--2026-09-18-논의-중--미구현) 참고).
+아직 Notes 탭 UI 자체는 반영 전이고, 서버 쪽 연동(폴더 생성/파일 목록/업로드/노트 읽기·쓰기)만
+구현돼 있는 상태입니다. **이 설정은 필수는 아니고, 안 해도 나머지 기능은 그대로 동작합니다.**
+
+이 부분은 본인 Google 계정 로그인이 필요해서 직접 진행해야 합니다:
+
+1. [Google Cloud Console](https://console.cloud.google.com/)에서 새 프로젝트 생성(또는 기존 프로젝트 사용).
+2. **API 및 서비스 → 라이브러리**에서 "Google Drive API" 검색 후 사용 설정.
+3. **API 및 서비스 → OAuth 동의 화면**: User Type은 "외부"로 만들고(개인 Gmail 계정이라 "내부"는
+   선택 불가), 앱 이름/본인 이메일 정도만 채워서 저장. 게시 상태는 **"테스트"**로 두고, "테스트
+   사용자"에 본인 이메일을 추가.
+   - 참고: 테스트 상태에서 발급받은 refresh token은 **7일 뒤 만료**됩니다. 계속 갱신 없이 쓰려면
+     나중에 게시 상태를 "프로덕션"으로 전환해야 하는데(개인 전용 앱이어도 마찬가지), 이번 기능은
+     민감하지 않은 스코프(`drive.file`, 앱이 직접 만든 파일에만 접근)만 쓰므로 심사 없이 전환 가능한
+     경우가 많습니다 — 다만 Google 정책은 바뀔 수 있어 실제 화면 안내를 따르는 게 정확합니다. 일단은
+     테스트 상태로 시작하고, 7일마다 재발급이 번거로워지면 그때 전환을 검토하세요.
+4. **API 및 서비스 → 사용자 인증 정보 → 사용자 인증 정보 만들기 → OAuth 클라이언트 ID**: 애플리케이션
+   유형 "웹 애플리케이션", 승인된 리디렉션 URI에 `https://developers.google.com/oauthplayground` 추가
+   (아래 5번에서 refresh token을 발급받는 용도로만 쓰고, 앱 자체는 이 URI로 리디렉트되지 않습니다).
+   생성 후 나오는 **클라이언트 ID / 클라이언트 보안 비밀**을 복사.
+5. Refresh token 발급 — [Google OAuth 2.0 Playground](https://developers.google.com/oauthplayground/)에서:
+   - 오른쪽 위 톱니바퀴(설정) → "Use your own OAuth credentials" 체크 → 4번에서 받은 클라이언트
+     ID/보안 비밀 입력.
+   - 왼쪽 목록에서 **Drive API v3 → `https://www.googleapis.com/auth/drive.file`** 스코프 선택 →
+     "Authorize APIs" → 본인 Google 계정으로 로그인/동의(테스트 사용자로 등록한 계정이어야 함).
+   - "Exchange authorization code for tokens" 클릭 → 나오는 **Refresh token** 값을 복사.
+6. `.env.local`(로컬)과 Vercel Environment Variables(배포)에 아래 세 값 추가:
+   ```
+   GOOGLE_CLIENT_ID=4번에서 받은 클라이언트 ID
+   GOOGLE_CLIENT_SECRET=4번에서 받은 클라이언트 보안 비밀
+   GOOGLE_REFRESH_TOKEN=5번에서 받은 refresh token
+   ```
+   최상위 "PARA" 폴더는 앱이 API 호출 시 본인 드라이브에 알아서 만들기 때문에, 폴더를 미리
+   만들거나 폴더 ID를 따로 등록할 필요는 없습니다.
+
 ## 시작하기
 
 ```bash

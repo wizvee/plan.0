@@ -297,24 +297,34 @@ PARA/
 - 위 구성은 아직 손그림/캔버스 시안으로 컨펌받지 않은 초안 수준 — 실제 레이아웃(리스트 UI, 업로드
   버튼 위치 등)은 DESIGN.md 체크리스트에 따라 캔버스에서 먼저 그려보고 확정 예정.
 
-### 9.6 인증/연동 방식 (안)
+### 9.6 인증/연동 방식 — 구현 완료 (2026-09-18)
 
 - Google Cloud 콘솔에 프로젝트 등록 + OAuth 동의화면 설정 (1인용이라도 Drive API 쓰려면 최초 1회
-  필요).
+  필요) — 사용자가 직접 진행해야 하는 부분이라 README.md "Google Drive 연동 설정" 섹션에 단계별로
+  정리해둠.
 - 서버(Next.js API route)에서 Drive API(`googleapis` 라이브러리)를 호출 — refresh token을 서버
   환경변수(Vercel)에 저장해두고, 앱은 그 토큰으로 서버 사이드에서만 Drive에 접근한다(클라이언트에
-  Google 자격증명 노출 안 함).
-- 필요한 최소 API 동작: 폴더 생성(`files.create`, mimeType 폴더), 폴더 내 파일 목록
-  (`files.list`, `'<folderId>' in parents` 쿼리), 파일 업로드(`files.create`/`files.update`,
-  multipart), 파일 내용 읽기/쓰기(마크다운 노트 에디터용, `files.get`/`files.update` with
-  media).
+  Google 자격증명 노출 안 함). `src/lib/google-drive.ts`.
+- **스코프는 `drive.file`(앱이 직접 만든 파일에만 접근)로 최소화** — 애초 안(9.3)은 사용자가
+  드라이브에 미리 만들어둔 최상위 폴더 ID를 넘겨받는 방식이었는데, 그러면 그 폴더는 앱이 만든 게
+  아니라서 `drive.file` 스코프로는 접근이 안 되고 더 넓은(민감한) `drive` 스코프가 필요해짐. 대신
+  **최상위 "PARA" 폴더 자체도 앱이 최초 호출 시 내 드라이브(`root`)에 자동 생성**하도록 바꿔서,
+  전체 트리가 앱 소유가 되어 `drive.file` 스코프만으로 충분하게 만듦 — 사용자가 폴더를 직접 만들
+  필요도, `GOOGLE_DRIVE_ROOT_FOLDER_ID` 환경변수도 없어짐.
+- 구현된 API: `POST /api/drive/folder`(컨테이너 → Drive 폴더 조회/생성 + `drive_folder_id` 저장),
+  `GET /api/drive/files`(폴더 내 파일 목록), `POST /api/drive/files`(바이너리 업로드),
+  `POST /api/drive/notes`(마크다운 파일 생성), `GET/PUT /api/drive/notes`(내용 읽기/쓰기).
 
-### 9.7 진행 순서 (미착수)
+### 9.7 진행 순서
 
-1. ⬜ Google Cloud 프로젝트/OAuth 동의화면 등록, refresh token 발급 및 환경변수 등록
-2. ⬜ `supabase/schema.sql`에 `drive_folder_id` 컬럼 추가 (projects/areas/resources 3개 테이블)
-3. ⬜ 서버 API route: 폴더 생성/조회, 파일 목록, 업로드, 마크다운 파일 읽기/쓰기
-4. ⬜ 컨테이너 생성 플로우에 Drive 폴더 자동 생성 연결
+1. ⬜ Google Cloud 프로젝트/OAuth 동의화면 등록, refresh token 발급 및 환경변수 등록 — **사용자가
+   직접 해야 하는 부분** (README.md 참고), 아직 미완료. 이게 끝나야 아래 구현된 API들을 실제로
+   테스트해볼 수 있음.
+2. ✅ `supabase/schema.sql`에 `drive_folder_id` 컬럼 추가 (projects/areas/resources 3개 테이블)
+3. ✅ 서버 API route: 폴더 생성/조회, 파일 목록, 업로드, 마크다운 파일 읽기/쓰기 (9.6 참고)
+4. ⬜ 컨테이너 생성 플로우에 Drive 폴더 자동 생성 연결 — 지금은 `/api/drive/folder`를 호출하는
+   쪽이 아직 없음(lazy 생성 방식으로, 9.8 열린 질문 4번 결정에 따라 파일 탭을 처음 열 때 호출하는
+   게 유력)
 5. ⬜ 상세 화면 Notes 탭 UI 교체 (파일 목록 + 업로드 버튼 + 인앱 마크다운 에디터) — 착수 전 캔버스
    시안 컨펌 필요 (DESIGN.md 체크리스트 1번)
 6. ⬜ 기존에 이미 만들어둔 프로젝트/영역/리소스(폴더 미생성 상태)에 대한 소급 처리 방식 결정 (9.8
