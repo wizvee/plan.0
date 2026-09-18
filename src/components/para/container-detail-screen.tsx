@@ -33,7 +33,11 @@ import {
 import { TodoCard } from "@/components/todo-card";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppNavRail } from "@/components/app-nav-rail";
-import { AddContainerForm } from "@/components/para/add-container-form";
+import { ScrapSection } from "@/components/para/scrap-section";
+import { FilesTab } from "@/components/para/files-tab";
+import type { DriveFile } from "@/lib/google-drive";
+import { classifyDriveFile } from "@/lib/drive-file";
+import { parseNoteContent, serializeNoteContent, type NoteProperty } from "@/lib/frontmatter";
 
 const KIND_ICON: Record<ParaKind, typeof Target> = {
   project: Target,
@@ -67,11 +71,30 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail, googleConne
   const { areas, updateArea } = useSupabaseAreas(userId);
   const { resources, updateResource } = useSupabaseResources(userId);
 
-  const [tab, setTab] = useState<"overview" | "tasks" | "notes">("overview");
+  const [tab, setTab] = useState<"overview" | "tasks" | "files">("overview");
   const [panelOpen, setPanelOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
+
+  // 스크랩 선택/승격 (PLANNING.md 9.5)
+  const [scrapSelectMode, setScrapSelectMode] = useState(false);
+  const [selectedScrapIds, setSelectedScrapIds] = useState<string[]>([]);
+  const [promoting, setPromoting] = useState(false);
+
+  // 자료 탭 — 파일 목록 + 인앱 마크다운 에디터 (PLANNING.md 9.5)
+  const [filesMode, setFilesMode] = useState<"list" | "edit">("list");
+  const [driveFiles, setDriveFiles] = useState<DriveFile[]>([]);
+  const [filesLoading, setFilesLoading] = useState(false);
+  const [filesError, setFilesError] = useState<string | null>(null);
+  const [showUpload, setShowUpload] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [editingFileId, setEditingFileId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
+  const [editingBody, setEditingBody] = useState("");
+  const [editingProperties, setEditingProperties] = useState<NoteProperty[]>([]);
+  const [promotedBanner, setPromotedBanner] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const dropId = `para:${kind}:${id}`;
   const { setNodeRef, isOver } = useDroppable({ id: dropId });
@@ -231,6 +254,209 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail, googleConne
     void updateTodo(tid, patch);
   }
 
+  function setContainerDriveFolderId(folderId: string) {
+    if (kind === "project") void updateProject(id, { driveFolderId: folderId });
+    else if (kind === "area") void updateArea(id, { driveFolderId: folderId });
+    else void updateResource(id, { driveFolderId: folderId });
+  }
+
+  async function ensureDriveFolder(): Promise<string> {
+    if (container!.driveFolderId) return container!.driveFolderId;
+    const res = await fetch("/api/drive/folder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind, containerId: id }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? "Drive 폴더를 만들지 못했습니다.");
+    setContainerDriveFolderId(data.folderId);
+    return data.folderId as string;
+  }
+
+  async function loadDriveFiles(folderId: string) {
+    setFilesLoading(true);
+    setFilesError(null);
+    try {
+      const res = await fetch(`/api/drive/files?folderId=${folderId}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "파일 목록을 불러오지 못했습니다.");
+      setDriveFiles(data.files as DriveFile[]);
+    } catch (err) {
+      setFilesError(err instanceof Error ? err.message : "파일 목록을 불러오지 못했습니다.");
+    } finally {
+      setFilesLoading(false);
+    }
+  }
+
+  async function handleSelectFiles() {
+    setTab("files");
+    setFilesMode("list");
+    try {
+      const folderId = await ensureDriveFolder();
+      await loadDriveFiles(folderId);
+    } catch (err) {
+      setFilesError(err instanceof Error ? err.message : "Drive 폴더를 만들지 못했습니다.");
+    }
+  }
+
+  async function handleUploadFile(file: File) {
+    setUploading(true);
+    setFilesError(null);
+    try {
+      const folderId = await ensureDriveFolder();
+      const form = new FormData();
+      form.append("folderId", folderId);
+      form.append("file", file);
+      const res = await fetch("/api/drive/files", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "업로드에 실패했습니다.");
+      setDriveFiles((prev) => [...prev, data.file as DriveFile]);
+      setShowUpload(false);
+    } catch (err) {
+      setFilesError(err instanceof Error ? err.message : "업로드에 실패했습니다.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleOpenFile(file: DriveFile) {
+    if (classifyDriveFile(file) !== "md") {
+      if (file.webViewLink) window.open(file.webViewLink, "_blank", "noopener,noreferrer");
+      return;
+    }
+    setFilesError(null);
+    try {
+      const res = await fetch(`/api/drive/notes?fileId=${file.id}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "노트를 불러오지 못했습니다.");
+      const { properties, body } = parseNoteContent(data.content as string);
+      setEditingFileId(file.id);
+      setEditingTitle(file.name.replace(/\.md$/, ""));
+      setEditingBody(body);
+      setEditingProperties(properties);
+      setPromotedBanner(false);
+      setFilesMode("edit");
+    } catch (err) {
+      setFilesError(err instanceof Error ? err.message : "노트를 불러오지 못했습니다.");
+    }
+  }
+
+  function handleNewNote() {
+    setEditingFileId(null);
+    setEditingTitle("");
+    setEditingBody("");
+    setEditingProperties([]);
+    setPromotedBanner(false);
+    setFilesMode("edit");
+  }
+
+  function handleAddTagProperty() {
+    setEditingProperties((prev) =>
+      prev.some((p) => p.type === "tag") ? prev : [...prev, { key: "태그", type: "tag" as const, values: [] }]
+    );
+  }
+
+  function handleAddTagValue(propIndex: number, value: string) {
+    setEditingProperties((prev) => prev.map((p, i) => (i === propIndex ? { ...p, values: [...p.values, value] } : p)));
+  }
+
+  function handleRemoveTagValue(propIndex: number, valueIndex: number) {
+    setEditingProperties((prev) =>
+      prev.map((p, i) => (i === propIndex ? { ...p, values: p.values.filter((_, vi) => vi !== valueIndex) } : p))
+    );
+  }
+
+  async function handleSaveFile() {
+    setSaving(true);
+    setFilesError(null);
+    try {
+      const content = serializeNoteContent(editingProperties, editingBody);
+      const title = editingTitle.trim() || "제목 없음";
+      if (editingFileId) {
+        const res = await fetch("/api/drive/notes", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fileId: editingFileId, content, title }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "저장에 실패했습니다.");
+        const name = title.endsWith(".md") ? title : `${title}.md`;
+        setDriveFiles((prev) => prev.map((f) => (f.id === editingFileId ? { ...f, name } : f)));
+      } else {
+        const folderId = await ensureDriveFolder();
+        const createRes = await fetch("/api/drive/notes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ folderId, title }),
+        });
+        const createData = await createRes.json();
+        if (!createRes.ok) throw new Error(createData.error ?? "노트 생성에 실패했습니다.");
+        const putRes = await fetch("/api/drive/notes", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fileId: createData.file.id, content }),
+        });
+        const putData = await putRes.json();
+        if (!putRes.ok) throw new Error(putData.error ?? "저장에 실패했습니다.");
+        setEditingFileId(createData.file.id as string);
+        setDriveFiles((prev) => [...prev, createData.file as DriveFile]);
+      }
+      setFilesMode("list");
+    } catch (err) {
+      setFilesError(err instanceof Error ? err.message : "저장에 실패했습니다.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleStartScrapSelect() {
+    setScrapSelectMode(true);
+    setSelectedScrapIds([]);
+  }
+
+  function handleCancelScrapSelect() {
+    setScrapSelectMode(false);
+    setSelectedScrapIds([]);
+  }
+
+  function handleToggleScrapSelect(scrapId: string) {
+    setSelectedScrapIds((prev) => (prev.includes(scrapId) ? prev.filter((x) => x !== scrapId) : [...prev, scrapId]));
+  }
+
+  async function handlePromoteScraps() {
+    if (selectedScrapIds.length === 0) return;
+    setPromoting(true);
+    setFilesError(null);
+    try {
+      const res = await fetch("/api/drive/promote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind, containerId: id, scrapIds: selectedScrapIds }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "노트 생성에 실패했습니다.");
+
+      const promotedIds = data.promotedScrapIds as string[];
+      setTodos((prev) => prev.filter((t) => !promotedIds.includes(t.id)));
+      setContainerDriveFolderId(data.folderId as string);
+      setDriveFiles((prev) => [...prev, data.file as DriveFile]);
+
+      setScrapSelectMode(false);
+      setSelectedScrapIds([]);
+      setEditingFileId(data.file.id as string);
+      setEditingTitle(data.title as string);
+      setEditingBody(data.body as string);
+      setEditingProperties(data.properties as NoteProperty[]);
+      setPromotedBanner(true);
+      setTab("files");
+      setFilesMode("edit");
+    } catch (err) {
+      setFilesError(err instanceof Error ? err.message : "노트 생성에 실패했습니다.");
+    } finally {
+      setPromoting(false);
+    }
+  }
+
   const activeTodo = activeId ? todos.find((t) => t.id === activeId) ?? null : null;
 
   return (
@@ -317,18 +543,18 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail, googleConne
           </div>
 
           <div className="mb-4 flex gap-5 border-b border-border">
-            {(["overview", "tasks", "notes"] as const).map((t) => (
+            {(["overview", "tasks", "files"] as const).map((t) => (
               <button
                 key={t}
                 type="button"
-                onClick={() => setTab(t)}
+                onClick={() => (t === "files" ? void handleSelectFiles() : setTab(t))}
                 className={cn(
                   "relative pb-3 text-[14.5px] font-bold text-muted-foreground",
                   tab === t &&
                     "text-foreground after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:rounded-full after:bg-primary"
                 )}
               >
-                {t === "overview" ? "Overview" : t === "tasks" ? "Tasks" : "Notes"}
+                {t === "overview" ? "Overview" : t === "tasks" ? "Tasks" : "자료"}
               </button>
             ))}
           </div>
@@ -395,55 +621,80 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail, googleConne
           ) : null}
 
           {tab === "tasks" ? (
-            <div className="flex flex-col divide-y divide-border/70">
-              {mappedTasks.length === 0 ? (
-                <p className="py-6 text-[14px] text-muted-foreground">
-                  아직 매핑된 할 일이 없습니다. 오른쪽(모바일은 하단) &ldquo;할 일 보관함&rdquo;을 열어서 이{" "}
-                  {PARA_KIND_LABELS[kind]}로 드래그해보세요.
-                </p>
-              ) : (
-                mappedTasks.map((todo) => (
-                  <TodoCard
-                    key={todo.id}
-                    todo={todo}
-                    projects={projects}
-                    areas={areas}
-                    resources={resources}
-                    onToggle={(tid) => void updateTodo(tid, { completed: !todo.completed })}
-                    onRemove={(tid) => void removeTodo(tid)}
-                    onEdit={(tid, content) => void updateTodo(tid, { content })}
-                    onMemoEdit={(tid, memo) => void updateTodo(tid, { memo: memo || null })}
-                    onUrlEdit={(tid, url) => void updateTodo(tid, { url })}
-                    onAssignPara={handleAssignPara}
-                    onConvert={handleConvert}
-                  />
-                ))
-              )}
+            <div className="flex flex-col">
+              <div className="flex flex-col divide-y divide-border/70">
+                {mappedTasks.length === 0 ? (
+                  <p className="py-6 text-[14px] text-muted-foreground">
+                    아직 매핑된 할 일이 없습니다. 오른쪽(모바일은 하단) &ldquo;할 일 보관함&rdquo;을 열어서 이{" "}
+                    {PARA_KIND_LABELS[kind]}로 드래그해보세요.
+                  </p>
+                ) : (
+                  mappedTasks.map((todo) => (
+                    <TodoCard
+                      key={todo.id}
+                      todo={todo}
+                      projects={projects}
+                      areas={areas}
+                      resources={resources}
+                      onToggle={(tid) => void updateTodo(tid, { completed: !todo.completed })}
+                      onRemove={(tid) => void removeTodo(tid)}
+                      onEdit={(tid, content) => void updateTodo(tid, { content })}
+                      onMemoEdit={(tid, memo) => void updateTodo(tid, { memo: memo || null })}
+                      onUrlEdit={(tid, url) => void updateTodo(tid, { url })}
+                      onAssignPara={handleAssignPara}
+                      onConvert={handleConvert}
+                    />
+                  ))
+                )}
+              </div>
+
+              <ScrapSection
+                scraps={mappedNotes}
+                projects={projects}
+                areas={areas}
+                resources={resources}
+                selectMode={scrapSelectMode}
+                selectedIds={selectedScrapIds}
+                promoting={promoting}
+                onStartSelect={handleStartScrapSelect}
+                onCancelSelect={handleCancelScrapSelect}
+                onToggleSelect={handleToggleScrapSelect}
+                onPromote={() => void handlePromoteScraps()}
+                onRemove={(tid) => void removeTodo(tid)}
+                onEdit={(tid, content) => void updateTodo(tid, { content })}
+                onMemoEdit={(tid, memo) => void updateTodo(tid, { memo: memo || null })}
+                onUrlEdit={(tid, url) => void updateTodo(tid, { url })}
+                onAssignPara={handleAssignPara}
+                onConvert={handleConvert}
+              />
             </div>
           ) : null}
 
-          {tab === "notes" ? (
-            <div className="flex flex-col gap-2.5">
-              {mappedNotes.map((note) => (
-                <TodoCard
-                  key={note.id}
-                  todo={note}
-                  projects={projects}
-                  areas={areas}
-                  resources={resources}
-                  onRemove={(tid) => void removeTodo(tid)}
-                  onEdit={(tid, content) => void updateTodo(tid, { content })}
-                  onMemoEdit={(tid, memo) => void updateTodo(tid, { memo: memo || null })}
-                  onUrlEdit={(tid, url) => void updateTodo(tid, { url })}
-                  onAssignPara={handleAssignPara}
-                  onConvert={handleConvert}
-                />
-              ))}
-              <AddContainerForm
-                placeholder="새 노트 추가"
-                onAdd={(content) => void addNote(content, nextPosition(mappedNotes), containerMapping)}
-              />
-            </div>
+          {tab === "files" ? (
+            <FilesTab
+              mode={filesMode}
+              loading={filesLoading}
+              error={filesError}
+              files={driveFiles}
+              showUpload={showUpload}
+              uploading={uploading}
+              onToggleUpload={() => setShowUpload((v) => !v)}
+              onUploadFile={(file) => void handleUploadFile(file)}
+              onOpenFile={(file) => void handleOpenFile(file)}
+              onNewNote={handleNewNote}
+              editingTitle={editingTitle}
+              editingBody={editingBody}
+              editingProperties={editingProperties}
+              promotedBanner={promotedBanner}
+              saving={saving}
+              onTitleChange={setEditingTitle}
+              onBodyChange={setEditingBody}
+              onAddTagProperty={handleAddTagProperty}
+              onAddTagValue={handleAddTagValue}
+              onRemoveTagValue={handleRemoveTagValue}
+              onBackToList={() => setFilesMode("list")}
+              onSave={() => void handleSaveFile()}
+            />
           ) : null}
         </div>
       </div>

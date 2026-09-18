@@ -285,6 +285,48 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
       됨" 상태로 돌아가고 클릭 한 번으로 재연결하면 됨 — 사용자가 만료 여부를 직접 신경 쓸 필요는
       없어짐.
 
+20. **(2026-09-18 추가) 노트/자료 캔버스 시안(9.5) 코드 반영 — Tasks 탭 스크랩 승격 + 자료 탭**:
+    19번까지 완료된 OAuth/API 백엔드 위에, 확정된 캔버스 시안(PLANNING.md 9.5,
+    https://claude.ai/artifact/KMMXdKodS4dpEbt7iehxpq)을 그대로 코드로 옮김.
+    - **용어/탭 정리**: 컨테이너 상세 화면(`container-detail-screen.tsx`) 3번째 탭이
+      ~~Notes~~ → **"자료"**로 바뀌고, `todos.kind='note'` 항목(스크랩)은 이제 Notes 탭이 아니라
+      **Tasks 탭 안 "스크랩" 섹션**(`scrap-section.tsx`)으로 옮김 — 인박스 가시성 규칙(13번 결정,
+      `isInboxVisible`)이나 할일↔스크랩 전환 로직은 전혀 안 바뀜, UI 위치와 이름만 바뀜.
+    - **스크랩 → 노트 승격**: "노트로 만들기"를 누르면 스크랩 섹션이 체크박스 선택 모드로
+      바뀌고(`scrap-section.tsx`), 하나 이상 고른 뒤 "노트 만들기"를 누르면
+      `POST /api/drive/promote`(새 라우트)가 (a) 컨테이너 Drive 폴더가 없으면 그 자리에서
+      생성하고, (b) 선택된 스크랩들의 제목/URL/메모를 엮은 마크다운 + frontmatter를 새 노트
+      파일로 만들고, (c) 원본 스크랩 로우를 삭제까지 한 번에 처리한다(사용자 확정: 승격 후 원본은
+      안 남김). 응답으로 파일/속성/본문을 그대로 받아서 자료 탭 에디터를 승격 직후 상태로 바로 염
+      + "원본 스크랩은 정리됐다" 배너 표시.
+    - **자료 탭**(`files-tab.tsx`): Drive 폴더의 파일 목록(`GET /api/drive/files`, 아이콘은
+      `lib/drive-file.ts`의 `classifyDriveFile`로 md/pdf/pptx/image 구분) + 업로드(클릭 또는
+      드래그앤드롭, `POST /api/drive/files`) + 새 노트 버튼. 마크다운 파일을 클릭하면
+      `GET /api/drive/notes?fileId=`로 읽어서 인앱 에디터로 전환, 비-마크다운 파일은
+      `webViewLink`를 새 탭으로 엶(별도 미리보기 컴포넌트 안 만듦, 시안 그대로).
+    - **인앱 마크다운 에디터**: 제목 인풋 + "속성"(Properties) 블록 + 본문 textarea. 저장 시
+      `PUT /api/drive/notes`(fileId + content, 제목이 바뀌었으면 `title`도 같이 보내서 파일명까지
+      리네임 — `google-drive.ts`에 `renameFile` 추가)를 호출하고, 새 노트면 먼저
+      `POST /api/drive/notes`로 파일을 만든 뒤 곧바로 `PUT`으로 실제 내용을 덮어씀.
+    - **Properties(속성) 구현**: `src/lib/frontmatter.ts`에 YAML frontmatter 파서/직렬화기를
+      **별도 라이브러리 없이 손으로** 최소 구현(9.5에서 "코드 작업 시작할 때 결정"하기로 했던
+      부분) — 모든 속성 값은 항상 리스트로 쓰고(`key:\n  - value`), 읽을 때 값이 전부
+      `http(s)://`로 시작하면 링크형(클릭 가능한 밑줄 텍스트), 아니면 태그형(작은 사각 칩,
+      `rounded-sm`)으로 추론해서 렌더링. "속성 추가"는 태그형 속성 하나만 추가 가능(시안 그대로,
+      중복 방지 가드 포함), 태그 칩은 이 구현에서 값 추가/삭제까지 되게 살짝 보강함(시안은 정적
+      프로토타입이라 "+"/칩에 실제 동작이 안 걸려 있었음).
+    - **Drive 폴더 lazy 생성 확정** (9.8 열린 질문 4번): 컨테이너 생성 시점이 아니라, **자료 탭을
+      처음 열 때(또는 스크랩을 처음 승격할 때)** `drive_folder_id`가 없으면 그 자리에서
+      `POST /api/drive/folder`를 호출해서 만듦 — 기존에 이미 만들어져 있던 프로젝트/영역/리소스도
+      별도 마이그레이션 없이 자연스럽게 커버됨.
+    - 새 파일: `src/lib/frontmatter.ts`, `src/lib/drive-file.ts`,
+      `src/app/api/drive/promote/route.ts`, `src/components/para/scrap-section.tsx`,
+      `src/components/para/files-tab.tsx`. `container-detail-screen.tsx`가 이 모든 상태(파일
+      목록/에디터/스크랩 선택)를 갖고 있고 두 프레젠테이션 컴포넌트에 내려주는 구조 —
+      다른 화면(캘린더/PARA 목록)에서 하던 것과 같은 패턴.
+    - `tsc --noEmit`, `eslint`, `next build` 모두 통과 확인. 브라우저로 실제 Drive 연동까지
+      테스트는 아직 안 함(로컬에서 실제 계정으로 연결 후 확인 필요).
+
 ## 지금 구현된 것 (기능 목록)
 
 - Todo List(전역 보관함, 사이드 패널) + Mon~Sun **시간 단위 캘린더 그리드** (0~24시, 스크롤 가능)
@@ -309,10 +351,13 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
 - 공유하기 → 애플 단축어로 링크 스크랩 (`/api/clip`) — Todo List에 제목 + URL 임베드 카드로 추가
 - 디자인: 미니멀 캘린더형(Notion Calendar/Google Calendar 참고), 웜 크림 배경 + 블루그레이
   프라이머리 팔레트는 유지, PARA 매핑에 따른 카테고리 색상 코딩 (14번 결정, [DESIGN.md](./DESIGN.md) 참고)
-- PARA(Project/Area/Resource, `/para`) — 할 일/노트를 요일/시간과는 독립적으로 프로젝트·영역·리소스
-  중 하나에 드래그로 매핑. 상세 화면(`/para/[kind]/[id]`)에 Overview/Tasks/Notes 탭 (8번 결정 참고).
+- PARA(Project/Area/Resource, `/para`) — 할 일/스크랩을 요일/시간과는 독립적으로 프로젝트·영역·리소스
+  중 하나에 드래그로 매핑. 상세 화면(`/para/[kind]/[id]`)에 Overview/Tasks/자료 탭 (8번, 20번 결정 참고).
   목록 화면은 가로 세그먼트 컨트롤 + 카드 그리드, 상세 화면은 캘린더 화면과 `AppSidebar`를 공유
   (12번, 14번 결정 참고)
+- 노트/자료(Google Drive 연동) — 컨테이너별 Drive 폴더에 마크다운 노트 + PPT/PDF/이미지 등 첨부를
+  저장. Tasks 탭 안 스크랩을 여러 개 골라 하나의 노트로 승격 가능, 노트는 옵시디언 Properties
+  스타일의 링크형/태그형 속성을 지원 (PLANNING.md 9번, 20번 결정 참고)
 
 ## 파일 맵
 
@@ -335,7 +380,8 @@ src/app/api/auth/google/route.ts        로그인 사용자를 Google 동의 화
 src/app/api/auth/google/callback/route.ts  인가 코드를 토큰으로 교환해서 google_accounts에 저장
 src/app/api/drive/folder/route.ts  컨테이너(project/area/resource) → Drive 폴더 조회, 없으면 생성 후 drive_folder_id 저장
 src/app/api/drive/files/route.ts   Drive 폴더 내 파일 목록 조회 / 바이너리 파일 업로드
-src/app/api/drive/notes/route.ts   마크다운 노트 파일 생성 / 내용 읽기(GET) / 내용 저장(PUT)
+src/app/api/drive/notes/route.ts   마크다운 노트 파일 생성 / 내용 읽기(GET) / 내용 저장 + 리네임(PUT)
+src/app/api/drive/promote/route.ts 선택한 스크랩(들)을 노트로 승격(폴더 확보 + 마크다운 생성 + 원본 스크랩 삭제, 20번 결정)
 src/proxy.ts                    (구 middleware.ts) 인증 안 된 요청을 /login으로 리다이렉트 (/api/*는 제외)
 
 src/lib/supabase/client.ts      브라우저용 Supabase 클라이언트
@@ -351,9 +397,11 @@ src/lib/time.ts                 시간 캘린더 계산(시간→px 변환, 스�
 src/lib/use-today.ts            "오늘 날짜"를 client-only로 계산하는 훅 (SSR 시간대 버그 방지)
 src/lib/utils.ts                cn() 헬퍼 (shadcn 표준)
 src/lib/google-drive.ts         Google Drive API 서버 전용 래퍼 — 컨테이너별 폴더 조회/생성,
-                                파일 목록/업로드, 마크다운 파일 읽기/쓰기. 모든 함수가 refreshToken을
-                                인자로 받음(전역 env 참조 없음, 18번 결정) (PLANNING.md 9번)
+                                파일 목록/업로드, 마크다운 파일 읽기/쓰기/리네임. 모든 함수가
+                                refreshToken을 인자로 받음(전역 env 참조 없음, 18번 결정) (PLANNING.md 9번)
 src/lib/google-account.ts      google_accounts 조회/저장 + API route 공용 가드 requireGoogleAuth() (18번 결정)
+src/lib/frontmatter.ts         노트 Properties용 YAML frontmatter 파서/직렬화기 (손으로 구현, 20번 결정)
+src/lib/drive-file.ts          Drive 파일 종류 판별(md/pdf/pptx/image) + 수정일 포맷 (클라이언트에서도 씀)
 
 src/components/week-board.tsx    메인 화면 전체 — 상태 관리, DnD 컨텍스트, 레이아웃 조립
 src/components/week-nav.tsx      주차 이동 버튼들
@@ -372,7 +420,9 @@ src/components/add-todo-form.tsx  할 일/노트 추가 입력 행 (토글로 �
 src/components/para-board.tsx   PARA 목록 화면 — 가로 세그먼트 컨트롤 + 컨테이너 카드 그리드 + 재사용된 AppSidebar
 src/components/para/container-card.tsx        Project/Area/Resource 카드 (droppable, 클릭 시 상세로 이동)
 src/components/para/add-container-form.tsx    Project/Area/Resource 생성 입력 행 (Notes 탭의 "새 노트 추가"에도 재사용)
-src/components/para/container-detail-screen.tsx  상세 화면 (헤더 + 요약 줄 + Overview/Tasks/Notes 탭)
+src/components/para/container-detail-screen.tsx  상세 화면 (헤더 + 요약 줄 + Overview/Tasks/자료 탭, 20번 결정)
+src/components/para/scrap-section.tsx         Tasks 탭 안 "스크랩" 섹션 — 선택 모드 + 노트 승격 버튼 (20번 결정)
+src/components/para/files-tab.tsx             자료 탭 — 파일 목록/업로드/새 노트 + 인앱 마크다운 에디터(Properties 포함) (20번 결정)
 src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/checkbox/input)
 ```
 
@@ -404,14 +454,13 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
    다시 한 번 실행(`todos.kind` 컬럼 + `projects`/`areas`/`resources`의 `notes` 컬럼 제거)해야
    최신 상태로 동작함. Project/Area/Resource **이름 수정 UI**(지금은 생성만 가능), 완료·보관 항목을
    목록에서 접거나 필터링하는 기능은 여전히 다음 할 일로 남아있음.
-10. **(2026-09-18 갱신, 18번 결정 반영) Google Drive 노트/자료 연동 — 백엔드는 구현됨, 3가지 남음**:
-    (a) Google Cloud 콘솔에서 OAuth 클라이언트 등록 + `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`
-    환경변수 등록을 사용자가 직접 해야 함(README 참고) — 이게 없으면 "Google Drive 연결" 버튼을
-    눌러도 실패함. 그 다음 실제 연결(로그인)은 사이드바 버튼으로 바로 되고, 콘솔에 더 갈 일은 없음;
-    (b) 컨테이너 생성/조회 화면 어디에서도 아직 `/api/drive/folder`를 호출하지 않음 — lazy 생성으로
-    할지 등 PLANNING.md 9.8 열린 질문 4번을 정하고 나서 연결; (c) 자료 탭 UI 자체는 아직 기존
-    그대로(할 일/스크랩 리스트) — 캔버스 시안(옵시디언 Properties 스타일 포함)은 확정됐지만
-    (PLANNING.md 9.5) 아직 실제 코드로 옮기지 않음.
+10. **(2026-09-18 갱신, 20번 결정 반영) Google Drive 노트/자료 연동 — 코드 반영 완료, 실사용 테스트 남음**:
+    OAuth 연결 + 폴더 lazy 생성 + 파일 목록/업로드/노트 편집 + 스크랩 승격까지 전부 코드로 반영됨
+    (20번 결정). 남은 건 실제 브라우저에서 본인 Google 계정으로 자료 탭 열기 → 업로드 → 새 노트
+    작성/저장 → 스크랩 여러 개 선택해서 승격까지 한 바퀴 실사용 테스트뿐. 이후 다음 후보:
+    (a) PLANNING.md 9.8에 남은 캐싱/업로드 제한/보관 폴더 열린 질문들; (b) 노트 편집기에
+    마크다운 미리보기/문법 하이라이팅 추가할지; (c) 링크형 속성 값을 에디터에서 직접 수정/삭제하는
+    UI(지금은 승격 시 자동으로만 채워지고 읽기 전용, 시안 그대로).
 
 ## `.env` / 키 노출 관련 (사용자 질문에 대한 답)
 

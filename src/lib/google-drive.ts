@@ -135,6 +135,11 @@ export async function updateFileContent(refreshToken: string, fileId: string, co
   });
 }
 
+export async function renameFile(refreshToken: string, fileId: string, name: string): Promise<void> {
+  const drive = getDrive(refreshToken);
+  await drive.files.update({ fileId, requestBody: { name } });
+}
+
 export async function getFileContent(refreshToken: string, fileId: string): Promise<string> {
   const drive = getDrive(refreshToken);
   const res = await drive.files.get({ fileId, alt: "media" }, { responseType: "text" });

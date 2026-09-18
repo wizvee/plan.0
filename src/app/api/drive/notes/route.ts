@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { createMarkdownFile, getFileContent, updateFileContent } from "@/lib/google-drive";
+import { createMarkdownFile, getFileContent, renameFile, updateFileContent } from "@/lib/google-drive";
 import { handleGoogleApiError, requireGoogleAuth } from "@/lib/google-account";
 
 /** ?fileId=<Drive 파일 ID> — 인앱 마크다운 에디터에서 읽어올 노트 내용. */
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/** { fileId, content } — 인앱 에디터에서 수정한 노트 내용을 저장한다. */
+/** { fileId, content, title? } — 인앱 에디터에서 수정한 노트 내용을 저장한다. title이 있으면 파일명도 바꾼다. */
 export async function PUT(request: NextRequest) {
   const auth = await requireGoogleAuth();
   if (!auth.ok) return auth.error;
@@ -47,12 +47,17 @@ export async function PUT(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const fileId = body?.fileId;
   const content = body?.content;
+  const title = body?.title;
   if (typeof fileId !== "string" || typeof content !== "string") {
     return NextResponse.json({ error: "fileId와 content가 필요합니다." }, { status: 400 });
   }
 
   try {
     await updateFileContent(auth.refreshToken, fileId, content);
+    if (typeof title === "string" && title.trim()) {
+      const name = title.trim().endsWith(".md") ? title.trim() : `${title.trim()}.md`;
+      await renameFile(auth.refreshToken, fileId, name);
+    }
     return NextResponse.json({ ok: true });
   } catch (err) {
     return handleGoogleApiError(auth, err);
