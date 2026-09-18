@@ -68,41 +68,39 @@ DB가 아니라 **본인 Google Drive**에 파일로 저장합니다(왜 이렇�
 아직 Notes 탭 UI 자체는 반영 전이고, 서버 쪽 연동(폴더 생성/파일 목록/업로드/노트 읽기·쓰기)만
 구현돼 있는 상태입니다. **이 설정은 필수는 아니고, 안 해도 나머지 기능은 그대로 동작합니다.**
 
-이 부분은 본인 Google 계정 로그인이 필요해서 직접 진행해야 합니다:
+refresh token은 환경변수에 하드코딩하지 않습니다 — 로그인한 사용자가 사이드바의 **"Google Drive
+연결"**을 누르면 앱이 직접 Google 동의 화면으로 보냈다가 돌아와서, 그 사용자 몫의 refresh token을
+`google_accounts` 테이블에 저장합니다(사용자별로 각자 자기 Drive를 연결하는 구조 — 나중에 여러
+사용자를 지원하게 되어도 그대로 씁니다). Google Cloud 콘솔 설정은 아래 4단계만 최초 1회 필요하고,
+이후 실제 연결(토큰 발급)은 다시 콘솔에 갈 필요 없이 앱 안 버튼만 누르면 됩니다:
 
 1. [Google Cloud Console](https://console.cloud.google.com/)에서 새 프로젝트 생성(또는 기존 프로젝트 사용).
 2. **API 및 서비스 → 라이브러리**에서 "Google Drive API" 검색 후 사용 설정.
 3. **API 및 서비스 → OAuth 동의 화면**: User Type은 "외부"로 만들고(개인 Gmail 계정이라 "내부"는
    선택 불가), 앱 이름/본인 이메일 정도만 채워서 저장. "테스트 사용자"에 본인 이메일을 추가
-   (5번에서 refresh token을 받으려면 테스트 사용자로 등록돼 있어야 함).
+   (동의 화면을 "프로덕션"으로 게시하기 전까지는, 여기 등록된 이메일로만 연결 가능).
 4. **API 및 서비스 → 사용자 인증 정보 → 사용자 인증 정보 만들기 → OAuth 클라이언트 ID**: 애플리케이션
-   유형 "웹 애플리케이션", 승인된 리디렉션 URI에 `https://developers.google.com/oauthplayground` 추가
-   (아래 5번에서 refresh token을 발급받는 용도로만 쓰고, 앱 자체는 이 URI로 리디렉트되지 않습니다).
-   생성 후 나오는 **클라이언트 ID / 클라이언트 보안 비밀**을 복사.
-5. Refresh token 발급 — [Google OAuth 2.0 Playground](https://developers.google.com/oauthplayground/)에서:
-   - 오른쪽 위 톱니바퀴(설정) → "Use your own OAuth credentials" 체크 → 4번에서 받은 클라이언트
-     ID/보안 비밀 입력.
-   - 왼쪽 목록에서 **Drive API v3 → `https://www.googleapis.com/auth/drive.file`** 스코프 선택 →
-     "Authorize APIs" → 본인 Google 계정으로 로그인/동의(테스트 사용자로 등록한 계정이어야 함).
-   - "Exchange authorization code for tokens" 클릭 → 나오는 **Refresh token** 값을 복사.
-6. **(선택) 동의 화면 게시 상태 — "테스트" vs "프로덕션"**: 3번에서 만든 동의 화면이 "테스트"
-   상태면, 방금 받은 refresh token이 **7일 뒤 자동 만료**되어 그 이후엔 5번을 다시 해야 합니다.
-   **API 및 서비스 → OAuth 동의 화면**에서 "게시(PUBLISH APP)"를 누르면 "프로덕션" 상태로 바뀌면서
-   이 만료가 없어집니다(참고: 이 게시 상태는 이 Google Cloud OAuth 클라이언트 하나에 대한 설정일
-   뿐, plan.0 앱 자체를 공개 배포하거나 가입을 여는 것과는 무관합니다 — 지금처럼 앱 가입 버튼은
-   막아둔 채로도 이 설정만 바꿀 수 있음). 다만 이건 전적으로 선택 사항입니다 — 테스트 상태를
-   유지하면서 필요할 때마다 5번을 다시 진행해도 됩니다. 또한 지금 구조(`GOOGLE_REFRESH_TOKEN`
-   환경변수 하나)는 애초에 "이 배포에 구글 계정 하나만 연결"되는 걸 전제로 하고 있어서, 나중에
-   여러 사용자가 각자 자기 Drive를 연결하는 형태로 확장하려면 이 인증 구조 자체를 바꿔야 합니다
-   — 그 계획이 있다면 지금 방식은 임시방편으로 보고 진행하시는 걸 권합니다.
-7. `.env.local`(로컬)과 Vercel Environment Variables(배포)에 아래 세 값 추가:
+   유형 "웹 애플리케이션", **승인된 리디렉션 URI**에 앱이 실제로 쓰는 콜백 주소를 등록:
+   - 로컬 개발: `http://localhost:3000/api/auth/google/callback`
+   - 배포 주소(예: Vercel): `https://your-app.vercel.app/api/auth/google/callback`
+
+   생성 후 나오는 **클라이언트 ID / 클라이언트 보안 비밀**을 복사해서 `.env.local`(로컬)과 Vercel
+   Environment Variables(배포)에 등록:
    ```
-   GOOGLE_CLIENT_ID=4번에서 받은 클라이언트 ID
-   GOOGLE_CLIENT_SECRET=4번에서 받은 클라이언트 보안 비밀
-   GOOGLE_REFRESH_TOKEN=5번에서 받은 refresh token
+   GOOGLE_CLIENT_ID=여기서 받은 클라이언트 ID
+   GOOGLE_CLIENT_SECRET=여기서 받은 클라이언트 보안 비밀
    ```
-   최상위 "PARA" 폴더는 앱이 API 호출 시 본인 드라이브에 알아서 만들기 때문에, 폴더를 미리
-   만들거나 폴더 ID를 따로 등록할 필요는 없습니다.
+
+이제 앱에 로그인한 뒤 사이드바 하단 계정 영역의 **"Google Drive 연결"**을 누르면 Google 동의
+화면으로 이동 → 로그인/동의하면 자동으로 돌아와서 연결이 끝납니다. "PARA"라는 최상위 폴더는
+앱이 그 시점에 본인 드라이브에 알아서 만들기 때문에, 폴더를 미리 만들거나 폴더 ID를 등록할 필요는
+없습니다.
+
+**동의 화면 게시 상태("테스트" vs "프로덕션")**: 3번에서 만든 동의 화면을 "테스트" 상태로 두면
+Google 정책상 발급되는 refresh token이 7일 뒤 만료되어, 그 이후엔 사이드바에서 "Google Drive
+연결"을 다시 누르면 됩니다(콘솔에 갈 필요 없이 버튼 클릭 한 번). "프로덕션"으로 게시하면 이 7일
+제한이 없어지지만, 완전히 선택 사항이고 지금 당장 정할 필요는 없습니다 — 두 상태 모두 앱 자체를
+공개 배포하거나 가입을 여는 것과는 무관한, Google Cloud 콘솔 안의 별도 설정입니다.
 
 ## 시작하기
 

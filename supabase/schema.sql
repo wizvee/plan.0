@@ -92,6 +92,38 @@ alter table public.projects add column if not exists drive_folder_id text;
 alter table public.areas add column if not exists drive_folder_id text;
 alter table public.resources add column if not exists drive_folder_id text;
 
+-- 사용자별 Google OAuth refresh token. 환경변수에 통째로 하나 박아두는 대신, 앱 안 "Google Drive
+-- 연결" 버튼(/api/auth/google 플로우)으로 로그인할 때 이 테이블에 저장된다 — 여러 사용자가 각자
+-- 자기 Drive를 연결하는 구조를 처음부터 지원하기 위함(단일 계정 하드코딩 안 함).
+create table if not exists public.google_accounts (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  refresh_token text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.google_accounts enable row level security;
+
+drop policy if exists "Users can view their own google account" on public.google_accounts;
+create policy "Users can view their own google account"
+  on public.google_accounts for select
+  using (auth.uid() = user_id);
+
+drop policy if exists "Users can insert their own google account" on public.google_accounts;
+create policy "Users can insert their own google account"
+  on public.google_accounts for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "Users can update their own google account" on public.google_accounts;
+create policy "Users can update their own google account"
+  on public.google_accounts for update
+  using (auth.uid() = user_id);
+
+drop policy if exists "Users can delete their own google account" on public.google_accounts;
+create policy "Users can delete their own google account"
+  on public.google_accounts for delete
+  using (auth.uid() = user_id);
+
 alter table public.todos add column if not exists project_id uuid references public.projects (id) on delete set null;
 alter table public.todos add column if not exists area_id uuid references public.areas (id) on delete set null;
 alter table public.todos add column if not exists resource_id uuid references public.resources (id) on delete set null;

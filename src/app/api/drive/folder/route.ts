@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
 import { ensureContainerFolder } from "@/lib/google-drive";
+import { getGoogleRefreshToken } from "@/lib/google-account";
 import type { ParaKind } from "@/lib/types";
 
 const TABLE_BY_KIND: Record<ParaKind, "projects" | "areas" | "resources"> = {
@@ -23,6 +24,11 @@ export async function POST(request: NextRequest) {
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
+  }
+
+  const refreshToken = await getGoogleRefreshToken(supabase, user.id);
+  if (!refreshToken) {
+    return NextResponse.json({ error: "Google Drive 계정을 먼저 연결해주세요." }, { status: 409 });
   }
 
   let body: FolderBody;
@@ -55,7 +61,7 @@ export async function POST(request: NextRequest) {
 
   let folderId: string;
   try {
-    folderId = await ensureContainerFolder(kind, container.name);
+    folderId = await ensureContainerFolder(refreshToken, kind, container.name);
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Drive 폴더 생성에 실패했습니다." },

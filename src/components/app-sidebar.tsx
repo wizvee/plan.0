@@ -202,9 +202,15 @@ export function AppSidebar({
           </div>
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span className="truncate text-[12.5px]">{userEmail}</span>
-            <button type="button" onClick={onSignOut} className="text-left text-[11.5px] text-muted-foreground hover:text-foreground">
-              로그아웃
-            </button>
+            <div className="flex items-center gap-2 text-[11.5px] text-muted-foreground">
+              <a href="/api/auth/google" className="hover:text-foreground">
+                Google Drive 연결
+              </a>
+              <span>·</span>
+              <button type="button" onClick={onSignOut} className="hover:text-foreground">
+                로그아웃
+              </button>
+            </div>
           </div>
         </div>
       </div>

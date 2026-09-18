@@ -236,6 +236,26 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
       단계별로 정리해둠(OAuth Playground로 refresh token 받는 방법 포함). 이게 끝나야 방금 만든
       API들을 실제로 테스트해볼 수 있음.
 
+18. **(2026-09-18 추가) Google 인증 구조를 "환경변수 refresh token 1개" → "앱 안 OAuth 연결
+    플로우"로 재설계**: 17번에서 만든 방식(에이전트가 OAuth Playground로 refresh token을 받아서
+    환경변수에 넣으라고 안내)에 사용자가 강하게 반대함 — "테스트" 상태라 7일마다 만료되는데 그때마다
+    수동으로 재발급받으라는 건 실사용 앱에 맞지 않고, "사용자는 영원히 1명"이라는 전제도 잘못됐을 수
+    있다는 지적(나중에 여러 사용자에게 열 수도 있음). 사용자 판단: "Google 로그인하면 당연히 앱이
+    refresh token을 받아오는 구조"가 맞다 — 그래서 그렇게 재설계함.
+    - `google_accounts` 테이블 추가(`user_id` PK, `refresh_token`, RLS로 본인 것만). `.env`에는
+      이제 앱 전체가 공유하는 `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`만 남고
+      `GOOGLE_REFRESH_TOKEN`은 없어짐.
+    - `GET /api/auth/google`(로그인 사용자를 Google 동의 화면으로) / `GET /api/auth/google/callback`
+      (코드를 토큰으로 교환해서 `google_accounts`에 저장) 두 라우트 추가.
+    - `src/lib/google-drive.ts`의 모든 함수가 `refreshToken`을 첫 인자로 받도록 변경(전역
+      env 참조 제거). `src/lib/google-account.ts`에 조회/저장 헬퍼 + API route 공용 가드
+      `requireGoogleAuth()` 추가, `/api/drive/{folder,files,notes}`가 이걸로 갱신됨.
+    - 사이드바 계정 영역에 "Google Drive 연결" 링크 추가(`/api/auth/google`로 이동하는 단순 링크 —
+      연결 여부를 보여주는 상태 표시는 아직 없음, 다음 개선 후보).
+    - README의 Google Drive 연동 설정 섹션도 이 구조에 맞게 다시 씀 — OAuth Playground 절차 없어짐,
+      리디렉션 URI를 앱 자신의 콜백 주소(`/api/auth/google/callback`)로 등록하는 것으로 바뀜.
+    - 동의 화면을 "프로덕션"으로 게시할지는 여전히 사용자 선택 사항으로 남겨둠(문서가 강요하지 않음).
+
 ## 지금 구현된 것 (기능 목록)
 
 - Todo List(전역 보관함, 사이드 패널) + Mon~Sun **시간 단위 캘린더 그리드** (0~24시, 스크롤 가능)
@@ -282,6 +302,8 @@ src/app/login/page.tsx          로그인 폼 (가입 전환 버튼은 주석 �
 src/app/api/clip/route.ts       공유하기 스크랩용 API — 비밀키 헤더 인증 → Todo List에 새 항목 insert
 src/app/para/page.tsx           서버 컴포넌트: 로그인 체크 후 ParaBoard 렌더
 src/app/para/[kind]/[id]/page.tsx 서버 컴포넌트: kind 검증 + 로그인 체크 후 ContainerDetailScreen 렌더
+src/app/api/auth/google/route.ts        로그인 사용자를 Google 동의 화면으로 리다이렉트 (18번 결정)
+src/app/api/auth/google/callback/route.ts  인가 코드를 토큰으로 교환해서 google_accounts에 저장
 src/app/api/drive/folder/route.ts  컨테이너(project/area/resource) → Drive 폴더 조회, 없으면 생성 후 drive_folder_id 저장
 src/app/api/drive/files/route.ts   Drive 폴더 내 파일 목록 조회 / 바이너리 파일 업로드
 src/app/api/drive/notes/route.ts   마크다운 노트 파일 생성 / 내용 읽기(GET) / 내용 저장(PUT)
@@ -300,7 +322,9 @@ src/lib/time.ts                 시간 캘린더 계산(시간→px 변환, 스�
 src/lib/use-today.ts            "오늘 날짜"를 client-only로 계산하는 훅 (SSR 시간대 버그 방지)
 src/lib/utils.ts                cn() 헬퍼 (shadcn 표준)
 src/lib/google-drive.ts         Google Drive API 서버 전용 래퍼 — 컨테이너별 폴더 조회/생성,
-                                파일 목록/업로드, 마크다운 파일 읽기/쓰기 (17번 결정, PLANNING.md 9번)
+                                파일 목록/업로드, 마크다운 파일 읽기/쓰기. 모든 함수가 refreshToken을
+                                인자로 받음(전역 env 참조 없음, 18번 결정) (PLANNING.md 9번)
+src/lib/google-account.ts      google_accounts 조회/저장 + API route 공용 가드 requireGoogleAuth() (18번 결정)
 
 src/components/week-board.tsx    메인 화면 전체 — 상태 관리, DnD 컨텍스트, 레이아웃 조립
 src/components/week-nav.tsx      주차 이동 버튼들
@@ -351,12 +375,14 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
    다시 한 번 실행(`todos.kind` 컬럼 + `projects`/`areas`/`resources`의 `notes` 컬럼 제거)해야
    최신 상태로 동작함. Project/Area/Resource **이름 수정 UI**(지금은 생성만 가능), 완료·보관 항목을
    목록에서 접거나 필터링하는 기능은 여전히 다음 할 일로 남아있음.
-10. **(2026-09-18 추가) Google Drive 노트/자료 연동 — 백엔드만 구현, 3가지 남음** (17번 결정 참고):
-    (a) Google Cloud OAuth 클라이언트 등록 + refresh token 발급을 사용자가 직접 해야 함(README
-    참고) — 이게 없으면 `/api/drive/*`가 전부 500 에러; (b) 컨테이너 생성/조회 화면 어디에서도
-    아직 `/api/drive/folder`를 호출하지 않음 — lazy 생성으로 할지 등 PLANNING.md 9.8 열린 질문
-    4번을 정하고 나서 연결; (c) Notes 탭 UI 자체는 아직 기존 그대로(할 일/노트 리스트) — 캔버스
-    시안 컨펌 전이라 손 안 댐(DESIGN.md 체크리스트 1번, 상단 "작업 방식" 규칙).
+10. **(2026-09-18 갱신, 18번 결정 반영) Google Drive 노트/자료 연동 — 백엔드는 구현됨, 3가지 남음**:
+    (a) Google Cloud 콘솔에서 OAuth 클라이언트 등록 + `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`
+    환경변수 등록을 사용자가 직접 해야 함(README 참고) — 이게 없으면 "Google Drive 연결" 버튼을
+    눌러도 실패함. 그 다음 실제 연결(로그인)은 사이드바 버튼으로 바로 되고, 콘솔에 더 갈 일은 없음;
+    (b) 컨테이너 생성/조회 화면 어디에서도 아직 `/api/drive/folder`를 호출하지 않음 — lazy 생성으로
+    할지 등 PLANNING.md 9.8 열린 질문 4번을 정하고 나서 연결; (c) 자료 탭 UI 자체는 아직 기존
+    그대로(할 일/스크랩 리스트) — 캔버스 시안(옵시디언 Properties 스타일 포함)은 확정됐지만
+    (PLANNING.md 9.5) 아직 실제 코드로 옮기지 않음.
 
 ## `.env` / 키 노출 관련 (사용자 질문에 대한 답)
 

@@ -335,31 +335,49 @@ PARA/
 로직을 프론트에서 처리할지(마크다운 조합 후 `/api/drive/notes` POST + `todos` DELETE를 순서대로
 호출) 서버에 전용 엔드포인트(`/api/drive/promote` 같은)를 새로 만들지는 코드 작업 시작할 때 결정.
 
-### 9.6 인증/연동 방식 — 구현 완료 (2026-09-18)
+### 9.6 인증/연동 방식 — 구현 완료 (2026-09-18, 앱 안 OAuth 연결 플로우로 재설계)
 
-- Google Cloud 콘솔에 프로젝트 등록 + OAuth 동의화면 설정 (1인용이라도 Drive API 쓰려면 최초 1회
-  필요) — 사용자가 직접 진행해야 하는 부분이라 README.md "Google Drive 연동 설정" 섹션에 단계별로
-  정리해둠.
-- 서버(Next.js API route)에서 Drive API(`googleapis` 라이브러리)를 호출 — refresh token을 서버
-  환경변수(Vercel)에 저장해두고, 앱은 그 토큰으로 서버 사이드에서만 Drive에 접근한다(클라이언트에
-  Google 자격증명 노출 안 함). `src/lib/google-drive.ts`.
-- **스코프는 `drive.file`(앱이 직접 만든 파일에만 접근)로 최소화** — 애초 안(9.3)은 사용자가
-  드라이브에 미리 만들어둔 최상위 폴더 ID를 넘겨받는 방식이었는데, 그러면 그 폴더는 앱이 만든 게
-  아니라서 `drive.file` 스코프로는 접근이 안 되고 더 넓은(민감한) `drive` 스코프가 필요해짐. 대신
-  **최상위 "PARA" 폴더 자체도 앱이 최초 호출 시 내 드라이브(`root`)에 자동 생성**하도록 바꿔서,
-  전체 트리가 앱 소유가 되어 `drive.file` 스코프만으로 충분하게 만듦 — 사용자가 폴더를 직접 만들
-  필요도, `GOOGLE_DRIVE_ROOT_FOLDER_ID` 환경변수도 없어짐.
-- 구현된 API: `POST /api/drive/folder`(컨테이너 → Drive 폴더 조회/생성 + `drive_folder_id` 저장),
-  `GET /api/drive/files`(폴더 내 파일 목록), `POST /api/drive/files`(바이너리 업로드),
-  `POST /api/drive/notes`(마크다운 파일 생성), `GET/PUT /api/drive/notes`(내용 읽기/쓰기).
+> **처음 안(환경변수에 refresh token 하나를 박아두는 방식)은 폐기.** 사용자 피드백: (1) "테스트"
+> 상태의 refresh token이 7일마다 만료되는데, 그때마다 OAuth Playground에 가서 수동으로 재발급받는
+> 건 실사용 앱에 말이 안 됨. (2) "사용자가 영원히 1명뿐"이라는 전제 자체가 틀릴 수 있음(나중에
+> 여러 사용자에게 열 수도 있음) — 어느 쪽이든 **"Google 로그인하면 당연히 앱이 알아서 refresh
+> token을 받아오는 구조"**가 맞는 방향이라는 사용자 판단으로 재설계함.
+
+- **사용자별 OAuth 연결 플로우**: 환경변수는 앱 전체가 공유하는 `GOOGLE_CLIENT_ID`/
+  `GOOGLE_CLIENT_SECRET`(OAuth 클라이언트 자체의 자격증명)만 남기고, refresh token은 사용자마다
+  따로 발급받아 **`google_accounts` 테이블**(`user_id` PK, `refresh_token`, RLS로 본인 것만
+  조회/수정 가능)에 저장한다. 로그인한 사용자가 사이드바의 "Google Drive 연결"을 누르면:
+  1. `GET /api/auth/google` — 로그인 확인 후 Google 동의 화면으로 리다이렉트
+     (`access_type=offline`, `prompt=consent`로 매번 refresh token을 받도록 강제, scope는
+     `drive.file` 그대로 유지)
+  2. `GET /api/auth/google/callback` — 인가 코드를 토큰으로 교환해서 `google_accounts`에 저장
+  3. `/api/drive/*` 라우트들은 이제 환경변수가 아니라 요청한 사용자의 `google_accounts` row에서
+     refresh token을 조회해서 씀 (연결 안 돼 있으면 409 + "Google Drive 계정을 먼저 연결해주세요")
+  - Google Cloud 콘솔에서 할 일은 이제 "OAuth 클라이언트 발급 + 리디렉션 URI를 앱 자신의 콜백
+    주소로 등록"까지만 — OAuth Playground를 거치는 절차 자체가 없어짐. README.md 갱신됨.
+- **동의 화면 게시 상태("테스트"/"프로덕션")는 여전히 사용자의 선택**: 테스트 상태를 유지하면
+  7일마다 refresh token이 만료되지만, 그때는 콘솔에 갈 필요 없이 앱 안 "Google Drive 연결"
+  버튼을 한 번 더 누르면 됨(로그인처럼 간단한 동작이 됨). 프로덕션 전환 여부는 문서가 강요하지
+  않음 — 나중에 실제로 결정할 사안.
+- `src/lib/google-drive.ts`의 모든 함수는 이제 `refreshToken`을 첫 인자로 받는다(전역 상태 없이
+  호출부가 매번 명시적으로 넘김). `src/lib/google-account.ts`에 `getGoogleRefreshToken`/
+  `saveGoogleRefreshToken`/`requireGoogleAuth`(API route 공용 가드) 추가.
+- **스코프는 여전히 `drive.file`로 최소화** — 최상위 "PARA" 폴더도 앱이 각 사용자의 내 드라이브에
+  최초 연결 시 자동 생성(사용자가 미리 만든 폴더를 넘겨받지 않음, 이유는 위와 동일: 더 넓은 `drive`
+  스코프가 필요해지는 걸 피하기 위함).
+- 구현된 API: `GET /api/auth/google`(연결 시작), `GET /api/auth/google/callback`(토큰 저장),
+  `POST /api/drive/folder`(컨테이너 → Drive 폴더 조회/생성 + `drive_folder_id` 저장),
+  `GET/POST /api/drive/files`(목록/업로드), `GET/POST/PUT /api/drive/notes`(읽기/생성/저장).
+- 사이드바(`app-sidebar.tsx`) 계정 영역에 "Google Drive 연결" 링크 추가(연결 여부 표시는 아직
+  없음 — 클릭하면 `/api/auth/google`로 이동하는 단순 링크, 연결 상태 뱃지는 다음 개선 후보).
 
 ### 9.7 진행 순서
 
-1. ⬜ Google Cloud 프로젝트/OAuth 동의화면 등록, refresh token 발급 및 환경변수 등록 — **사용자가
-   직접 해야 하는 부분** (README.md 참고), 아직 미완료. 이게 끝나야 아래 구현된 API들을 실제로
-   테스트해볼 수 있음.
-2. ✅ `supabase/schema.sql`에 `drive_folder_id` 컬럼 추가 (projects/areas/resources 3개 테이블)
-3. ✅ 서버 API route: 폴더 생성/조회, 파일 목록, 업로드, 마크다운 파일 읽기/쓰기 (9.6 참고)
+1. ✅ Google Cloud 프로젝트/OAuth 클라이언트 등록 (README.md 참고, 콘솔 작업은 최초 1회) —
+   **실제 연결(로그인)은 사용자가 앱 안 "Google Drive 연결" 버튼으로 진행**, 아직 실사용 테스트 전.
+2. ✅ `supabase/schema.sql`에 `drive_folder_id` 컬럼 추가 (projects/areas/resources 3개 테이블) +
+   `google_accounts` 테이블(사용자별 refresh token, RLS)
+3. ✅ 서버 API route: OAuth 연결 플로우 + 폴더 생성/조회, 파일 목록, 업로드, 마크다운 읽기/쓰기 (9.6 참고)
 4. ⬜ 컨테이너 생성 플로우에 Drive 폴더 자동 생성 연결 — 지금은 `/api/drive/folder`를 호출하는
    쪽이 아직 없음(lazy 생성 방식으로, 9.8 열린 질문 4번 결정에 따라 파일 탭을 처음 열 때 호출하는
    게 유력)
