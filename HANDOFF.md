@@ -327,6 +327,23 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     - `tsc --noEmit`, `eslint`, `next build` 모두 통과 확인. 브라우저로 실제 Drive 연동까지
       테스트는 아직 안 함(로컬에서 실제 계정으로 연결 후 확인 필요).
 
+21. **(2026-09-18 추가) Google Drive 연결 실패가 화면에 아무 흔적도 안 남던 버그 수정**: 사용자가
+    사이드바에서 "Google Drive 연결"을 누르고 정상적으로 돌아왔다고 생각했는데, 자료 탭에서 계속
+    "Google Drive 계정을 먼저 연결해주세요."가 뜬 문제. 원인: `/api/auth/google/callback`이 성공/
+    실패 여부를 `?google=connected|error|no_refresh_token` 쿼리로 돌려주고는 있었는데, 그걸
+    화면 어디에서도 읽어서 보여주지 않았음 — 특히 Google이 refresh token을 안 내려주는 경우
+    (`no_refresh_token`, 이미 동의한 계정인데도 이런저런 이유로 발생 가능)엔 `google_accounts`에
+    아무것도 저장되지 않은 채 조용히 "성공한 것처럼" 원래 화면(`/para`)으로 돌아가서, 사용자
+    입장에선 연결이 실패한 걸 알 방법이 전혀 없었음.
+    - `para-board.tsx`(사이드바의 "Google Drive 연결" 링크가 `next` 파라미터 없이 항상 `/api/auth/google`을
+      가리켜서, 콜백은 기본값인 `/para`로 돌아옴 — 그래서 이 화면에 배너를 둠)에 `?google=` 값을
+      마운트 시점에 한 번 읽어 배너로 보여주고, `router.replace`로 주소에서 지움.
+    - 배너 문구: `connected` → "Google Drive가 연결됐습니다.", `no_refresh_token` → "Google에서
+      접근 권한(refresh token)을 받지 못했습니다. 사이드바에서 다시 연결해주세요.", `error` →
+      "Google Drive 연결에 실패했습니다. 사이드바에서 다시 시도해주세요."
+    - 사용자가 겪은 실제 원인이 `no_refresh_token`이었는지 `error`였는지는 이 배너가 붙은 다음
+      재연결을 시도해봐야 확인 가능 — 코드 자체(콜백 로직, RLS 정책)에서는 버그를 못 찾음.
+
 ## 지금 구현된 것 (기능 목록)
 
 - Todo List(전역 보관함, 사이드 패널) + Mon~Sun **시간 단위 캘린더 그리드** (0~24시, 스크롤 가능)
