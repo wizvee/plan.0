@@ -26,15 +26,20 @@ export async function saveGoogleRefreshToken(
   userId: string,
   refreshToken: string
 ): Promise<void> {
-  await supabase
+  const { error } = await supabase
     .from("google_accounts")
     .upsert({ user_id: userId, refresh_token: refreshToken, updated_at: new Date().toISOString() });
+  // supabase-js는 실패해도 예외를 던지지 않고 {error}만 채워서 돌려준다 — 여기서 직접 안 던지면
+  // 호출부(콜백 라우트)의 catch가 못 잡아서 저장 실패를 성공으로 착각하게 된다(실제로 겪은 버그:
+  // google_accounts 테이블이 아직 없는 Supabase 프로젝트에서도 "연결됐습니다" 배너가 떴었음).
+  if (error) throw new Error(error.message);
 }
 
 /** "테스트" 상태 동의 화면에서 7일 만에 만료되는 등, 저장된 토큰이 더 이상 안 먹힐 때 지운다 —
  * 지우고 나면 사이드바가 다시 "연결" 상태로 보여서 재연결을 자연스럽게 유도한다. */
 export async function clearGoogleRefreshToken(supabase: SupabaseClient, userId: string): Promise<void> {
-  await supabase.from("google_accounts").delete().eq("user_id", userId);
+  const { error } = await supabase.from("google_accounts").delete().eq("user_id", userId);
+  if (error) throw new Error(error.message);
 }
 
 export type GoogleAuth =

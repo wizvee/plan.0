@@ -344,6 +344,28 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     - 사용자가 겪은 실제 원인이 `no_refresh_token`이었는지 `error`였는지는 이 배너가 붙은 다음
       재연결을 시도해봐야 확인 가능 — 코드 자체(콜백 로직, RLS 정책)에서는 버그를 못 찾음.
 
+22. **(2026-09-18 추가) 진짜 원인 발견: `google_accounts` 테이블이 실제 Supabase 프로젝트에
+    없었음 + 그걸 숨긴 코드 버그**: 21번 배너를 붙이고 재연결했더니 "Google Drive가 연결됐습니다"
+    배너가 떴는데도 여전히 연결 안 됨 에러가 났고, 사용자가 Supabase 대시보드를 직접 확인해보니
+    **`google_accounts` 테이블 자체가 없었음**. 18번 결정에서 `supabase/schema.sql`에 이 테이블을
+    추가했는데, 그 시점에 스키마 재실행을 사용자에게 다시 안내하지 않아서(9.6 문서화 당시 놓침)
+    실제 프로젝트엔 한 번도 반영이 안 된 상태였음.
+    - 이게 "연결됐습니다"로 잘못 표시된 이유: `src/lib/google-account.ts`의
+      `saveGoogleRefreshToken`/`clearGoogleRefreshToken`이 `supabase.from(...).upsert(...)`/`.delete(...)`
+      호출 결과의 `{ error }`를 그냥 버리고 있었음 — supabase-js는 쿼리가 실패해도 예외를 던지지
+      않고 `{data, error}`만 채워서 돌려주는데, 이 두 함수가 그 `error`를 확인 안 해서 테이블이
+      없어 저장이 실패해도 조용히 넘어갔고, `/api/auth/google/callback`의 `try/catch`는 예외가
+      안 나서 catch가 못 잡고 그대로 `?google=connected`로 리다이렉트했음. 이제 두 함수 다 `error`가
+      있으면 `throw`하도록 고쳐서, 앞으로 비슷한 저장 실패는 콜백의 catch가 잡아서
+      `?google=error`로 정확히 표시됨.
+    - **사용자가 해야 할 일**: Supabase SQL Editor에서 `supabase/schema.sql` 전체를 다시 한 번
+      실행해서 `google_accounts` 테이블을 실제로 생성해야 함(재실행해도 안전하도록 작성돼 있음).
+      그 다음 사이드바에서 "Google Drive 연결"을 다시 눌러 재연결.
+    - **교훈**: `schema.sql`에 새 테이블/컬럼을 추가할 때마다 "다시 실행 필요"를 그 자리에서
+      명시적으로 안내할 것(15번 결정 이후 계속 지켜온 관례인데 18번에서 빠뜨림). 그리고
+      supabase-js 쓰기 호출은 항상 `{ error }`를 구조분해해서 확인할 것 — 예외를 던지지 않는
+      라이브러리라 확인 안 하면 실패가 조용히 성공처럼 보인다.
+
 ## 지금 구현된 것 (기능 목록)
 
 - Todo List(전역 보관함, 사이드 패널) + Mon~Sun **시간 단위 캘린더 그리드** (0~24시, 스크롤 가능)
