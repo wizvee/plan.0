@@ -223,6 +223,13 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail }: Container
     }
   }
 
+  function handleAssignPara(
+    tid: string,
+    patch: { projectId: string | null; areaId: string | null; resourceId: string | null }
+  ) {
+    void updateTodo(tid, patch);
+  }
+
   const activeTodo = activeId ? todos.find((t) => t.id === activeId) ?? null : null;
 
   return (
@@ -398,10 +405,15 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail }: Container
                   <TodoCard
                     key={todo.id}
                     todo={todo}
+                    projects={projects}
+                    areas={areas}
+                    resources={resources}
                     onToggle={(tid) => void updateTodo(tid, { completed: !todo.completed })}
                     onRemove={(tid) => void removeTodo(tid)}
                     onEdit={(tid, content) => void updateTodo(tid, { content })}
                     onMemoEdit={(tid, memo) => void updateTodo(tid, { memo: memo || null })}
+                    onUrlEdit={(tid, url) => void updateTodo(tid, { url })}
+                    onAssignPara={handleAssignPara}
                     onConvert={handleConvert}
                   />
                 ))
@@ -415,9 +427,14 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail }: Container
                 <TodoCard
                   key={note.id}
                   todo={note}
+                  projects={projects}
+                  areas={areas}
+                  resources={resources}
                   onRemove={(tid) => void removeTodo(tid)}
                   onEdit={(tid, content) => void updateTodo(tid, { content })}
                   onMemoEdit={(tid, memo) => void updateTodo(tid, { memo: memo || null })}
+                  onUrlEdit={(tid, url) => void updateTodo(tid, { url })}
+                  onAssignPara={handleAssignPara}
                   onConvert={handleConvert}
                 />
               ))}
@@ -438,6 +455,9 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail }: Container
           panelOpen={panelOpen}
           onClosePanel={() => setPanelOpen(false)}
           items={backlogItems}
+          projects={projects}
+          areas={areas}
+          resources={resources}
           onToggle={(tid) => {
             const current = todos.find((t) => t.id === tid);
             if (current) void updateTodo(tid, { completed: !current.completed });
@@ -445,6 +465,8 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail }: Container
           onRemove={(tid) => void removeTodo(tid)}
           onEdit={(tid, content) => void updateTodo(tid, { content })}
           onMemoEdit={(tid, memo) => void updateTodo(tid, { memo: memo || null })}
+          onUrlEdit={(tid, url) => void updateTodo(tid, { url })}
+          onAssignPara={handleAssignPara}
           onConvert={handleConvert}
           onAdd={(content, itemKind) =>
             itemKind === "note"

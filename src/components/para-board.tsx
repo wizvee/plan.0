@@ -150,6 +150,13 @@ export function ParaBoard({ userId, userEmail }: { userId: string; userEmail: st
     }
   }
 
+  function handleAssignPara(
+    id: string,
+    patch: { projectId: string | null; areaId: string | null; resourceId: string | null }
+  ) {
+    void updateTodo(id, patch);
+  }
+
   const activeTodo = activeId ? todos.find((t) => t.id === activeId) ?? null : null;
 
   const containerRows =
@@ -251,6 +258,9 @@ export function ParaBoard({ userId, userEmail }: { userId: string; userEmail: st
               panelOpen={panelOpen}
               onClosePanel={() => setPanelOpen(false)}
               items={backlogItems}
+              projects={projects}
+              areas={areas}
+              resources={resources}
               onToggle={(id) => {
                 const current = todos.find((t) => t.id === id);
                 if (current) void updateTodo(id, { completed: !current.completed });
@@ -258,6 +268,8 @@ export function ParaBoard({ userId, userEmail }: { userId: string; userEmail: st
               onRemove={(id) => void removeTodo(id)}
               onEdit={(id, content) => void updateTodo(id, { content })}
               onMemoEdit={(id, memo) => void updateTodo(id, { memo: memo || null })}
+              onUrlEdit={(id, url) => void updateTodo(id, { url })}
+              onAssignPara={handleAssignPara}
               onConvert={handleConvert}
               onAdd={handleAdd}
               getBadge={badgeFor}
