@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useDroppable } from "@dnd-kit/core";
-import { Calendar, LayoutGrid, Plus, X } from "lucide-react";
+import { Calendar, Cloud, LayoutGrid, LogOut, Plus, RefreshCw, X } from "lucide-react";
 
 import { TodoCard } from "@/components/todo-card";
 import { AddTodoForm } from "@/components/add-todo-form";
@@ -41,6 +41,45 @@ interface AppSidebarProps {
   /** 캘린더 화면에서만 넘겨준다 — 이미 캘린더 화면에 있을 때 "캘린더" 메뉴를 눌러도 페이지 이동 없이
    * 바로 이번 주 주별 뷰로 전환할 수 있게 함. 없으면 기본값(다른 화면에서 넘어올 때)대로 "/"로 이동. */
   onCalendarClick?: () => void;
+}
+
+/** 계정 영역의 아이콘 버튼 하나 + hover 시 뜨는 툴팁. `as="a"`면 링크(Google Drive 연결/재연결),
+ * 기본은 버튼(로그아웃)으로 렌더링한다. */
+function AccountIconButton({
+  as = "button",
+  href,
+  onClick,
+  label,
+  active,
+  children,
+}: {
+  as?: "a" | "button";
+  href?: string;
+  onClick?: () => void;
+  label: string;
+  active?: boolean;
+  children: ReactNode;
+}) {
+  const className = cn(
+    "flex size-[26px] items-center justify-center rounded-md text-muted-foreground hover:bg-card hover:text-foreground",
+    active && "bg-accent text-accent-foreground hover:bg-accent hover:text-accent-foreground"
+  );
+  return (
+    <div className="group relative">
+      {as === "a" ? (
+        <a href={href} aria-label={label} className={className}>
+          {children}
+        </a>
+      ) : (
+        <button type="button" onClick={onClick} aria-label={label} className={className}>
+          {children}
+        </button>
+      )}
+      <span className="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-sm bg-foreground px-2 py-1 text-[11px] font-bold text-card opacity-0 transition-opacity group-hover:opacity-100">
+        {label}
+      </span>
+    </div>
+  );
 }
 
 /**
@@ -217,26 +256,27 @@ export function AppSidebar({
           <div className="flex size-[30px] shrink-0 items-center justify-center rounded-full bg-accent text-[12px] font-bold text-accent-foreground">
             {initials}
           </div>
-          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
             <span className="truncate text-[12.5px]">{userEmail}</span>
-            <div className="flex items-center gap-2 text-[11.5px] text-muted-foreground">
+            <div className="flex items-center gap-0.5">
               {googleConnected ? (
                 <>
-                  <span>Google Drive 연결됨</span>
-                  <span>·</span>
-                  <a href="/api/auth/google" className="hover:text-foreground">
-                    재연결
-                  </a>
+                  <AccountIconButton label="Google Drive 연결됨" active>
+                    <Cloud className="size-3.5" />
+                  </AccountIconButton>
+                  <AccountIconButton as="a" href="/api/auth/google" label="재연결">
+                    <RefreshCw className="size-3.5" />
+                  </AccountIconButton>
                 </>
               ) : (
-                <a href="/api/auth/google" className="hover:text-foreground">
-                  Google Drive 연결
-                </a>
+                <AccountIconButton as="a" href="/api/auth/google" label="Google Drive 연결">
+                  <Cloud className="size-3.5" />
+                </AccountIconButton>
               )}
-              <span>·</span>
-              <button type="button" onClick={onSignOut} className="hover:text-foreground">
-                로그아웃
-              </button>
+              <span className="mx-1 h-3.5 w-px bg-border" aria-hidden="true" />
+              <AccountIconButton onClick={onSignOut} label="로그아웃">
+                <LogOut className="size-3.5" />
+              </AccountIconButton>
             </div>
           </div>
         </div>

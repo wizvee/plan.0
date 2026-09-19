@@ -366,6 +366,23 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
       supabase-js 쓰기 호출은 항상 `{ error }`를 구조분해해서 확인할 것 — 예외를 던지지 않는
       라이브러리라 확인 안 하면 실패가 조용히 성공처럼 보인다.
 
+23. **(2026-09-19 추가) 사이드바 계정 영역 — 텍스트 링크를 아이콘 버튼으로 교체**: "Google Drive
+    연결됨 · 재연결 · 로그아웃"이 260px 사이드바 폭 안에서 줄바꿈되던 문제. 캔버스 시안
+    (https://claude.ai/artifact/Fm71GVEBC45mvpqR2QKVCj) 컨펌 후 반영.
+    - `app-sidebar.tsx`에 로컬 `AccountIconButton` 컴포넌트 추가 — 아이콘 버튼 하나 + hover 시
+      뜨는 툴팁(Tailwind `group`/`group-hover:opacity-100`, 별도 CSS/라이브러리 없음).
+    - 연결됨: Cloud 아이콘(accent 배경, 툴팁 "Google Drive 연결됨") + RefreshCw 아이콘(링크, 툴팁
+      "재연결"). 미연결: Cloud 아이콘 하나(링크, 툴팁 "Google Drive 연결"). 오른쪽 끝은 항상
+      LogOut 아이콘(툴팁 "로그아웃") — 세로 구분선으로 분리.
+    - 사이드바 폭(260px, DESIGN.md 5번)은 그대로 유지 — 이번 문제만으로 전체 레이아웃 폭을
+      바꾸지 않기로 함(다른 화면에도 걸려있는 값이라).
+    - 별개로 논의된 것: `AppSidebar`를 공용 `layout.tsx`로 옮기지 않고 화면마다
+      (`week-board.tsx`/`para-board.tsx`/`container-detail-screen.tsx`) 각자 데이터 훅을 불러
+      배선하는 구조인 이유를 질문받음 — 답은 (a) 보관함의 `useDroppable`이 그 화면 자신의
+      `<DndContext>` 안에 있어야만 드래그가 되고, (b) 캘린더 화면을 먼저 만들고 PARA를 그 패턴
+      그대로 확장한 개발 순서 때문(11~12번 결정). todos/컨테이너 상태를 전역으로 한 번만
+      가져오게 리팩터하는 건 범위가 커서 **다음에 별도로 진행하기로 함** — 지금은 착수 안 함.
+
 ## 지금 구현된 것 (기능 목록)
 
 - Todo List(전역 보관함, 사이드 패널) + Mon~Sun **시간 단위 캘린더 그리드** (0~24시, 스크롤 가능)
