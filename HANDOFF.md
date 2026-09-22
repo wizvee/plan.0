@@ -383,6 +383,22 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
       그대로 확장한 개발 순서 때문(11~12번 결정). todos/컨테이너 상태를 전역으로 한 번만
       가져오게 리팩터하는 건 범위가 커서 **다음에 별도로 진행하기로 함** — 지금은 착수 안 함.
 
+24. **(2026-09-22 추가) `drive.file` 스코프의 진짜 한계 발견 + Google Picker 연동**: 사용자가
+    프로젝트를 만들고 Drive 폴더가 자동 생성된 뒤, 그 폴더에 Drive 웹사이트에서 직접 시트/PDF
+    파일을 넣었더니 앱의 자료 탭에서 안 보인다고 보고함. 원인은 버그가 아니라 `drive.file`
+    스코프의 정책 자체 — 이 스코프는 앱이 만들었거나 사용자가 Google Picker로 명시적으로 연
+    파일에만 접근을 허용해서, Drive 웹사이트에서 직접 얹은 파일은 API가 원천적으로 못 본다.
+    자세한 검토(스코프 확장 vs Picker vs 재업로드)와 구현 내용은 PLANNING.md 9.9 참고. 요약:
+    - `google-drive.ts`에 `getAccessToken`(refresh token → 단기 access token 교환,
+      **refresh token은 절대 브라우저로 안 나감**) + `addFileToFolder` 추가.
+    - `GET /api/drive/access-token`, `POST /api/drive/import` 두 라우트 추가.
+    - `src/lib/google-picker.ts`(클라이언트 전용) — Google Picker 로더 스크립트를 동적으로
+      불러와 그 컨테이너의 Drive 폴더를 시작 위치로 하는 다중 선택 Picker를 띄움.
+    - 자료 탭에 "Drive에서 가져오기" 버튼 추가(`files-tab.tsx`/`container-detail-screen.tsx`).
+    - 새 환경변수 `NEXT_PUBLIC_GOOGLE_API_KEY` 필요 — Google Cloud Console에서 "Google Picker
+      API" 활성화 + API 키 발급(HTTP 리퍼러 제한) 필요, README.md에 단계별로 정리해둠(사용자가
+      아직 안 해봄 — 이 설정 전까지는 "가져오기" 버튼을 눌러도 에러 메시지만 뜸).
+
 ## 지금 구현된 것 (기능 목록)
 
 - Todo List(전역 보관함, 사이드 패널) + Mon~Sun **시간 단위 캘린더 그리드** (0~24시, 스크롤 가능)
@@ -438,6 +454,8 @@ src/app/api/drive/folder/route.ts  컨테이너(project/area/resource) → Drive
 src/app/api/drive/files/route.ts   Drive 폴더 내 파일 목록 조회 / 바이너리 파일 업로드
 src/app/api/drive/notes/route.ts   마크다운 노트 파일 생성 / 내용 읽기(GET) / 내용 저장 + 리네임(PUT)
 src/app/api/drive/promote/route.ts 선택한 스크랩(들)을 노트로 승격(폴더 확보 + 마크다운 생성 + 원본 스크랩 삭제, 20번 결정)
+src/app/api/drive/access-token/route.ts  Google Picker용 단기 access token 발급 (24번 결정)
+src/app/api/drive/import/route.ts  Picker로 고른 기존 파일을 컨테이너 폴더의 자식으로 추가 (24번 결정)
 src/proxy.ts                    (구 middleware.ts) 인증 안 된 요청을 /login으로 리다이렉트 (/api/*는 제외)
 
 src/lib/supabase/client.ts      브라우저용 Supabase 클라이언트
@@ -458,6 +476,7 @@ src/lib/google-drive.ts         Google Drive API 서버 전용 래퍼 — 컨테
 src/lib/google-account.ts      google_accounts 조회/저장 + API route 공용 가드 requireGoogleAuth() (18번 결정)
 src/lib/frontmatter.ts         노트 Properties용 YAML frontmatter 파서/직렬화기 (손으로 구현, 20번 결정)
 src/lib/drive-file.ts          Drive 파일 종류 판별(md/pdf/pptx/image) + 수정일 포맷 (클라이언트에서도 씀)
+src/lib/google-picker.ts       클라이언트 전용 Google Picker 헬퍼 — 기존 Drive 파일을 골라 접근 권한을 부여받음 (24번 결정)
 
 src/components/week-board.tsx    메인 화면 전체 — 상태 관리, DnD 컨텍스트, 레이아웃 조립
 src/components/week-nav.tsx      주차 이동 버튼들

@@ -31,6 +31,18 @@ function getDrive(refreshToken: string): drive_v3.Drive {
   return google.drive({ version: "v3", auth: client });
 }
 
+/** 브라우저의 Google Picker(PLANNING.md 9.9 참고)에 넘겨줄 단기 액세스 토큰을 발급한다.
+ * refresh token 자체는 절대 클라이언트로 내려보내지 않고, 매번 여기서 새로 교환한 access token만
+ * (수명 ~1시간) 넘긴다. */
+export async function getAccessToken(refreshToken: string): Promise<string> {
+  const { clientId, clientSecret } = getAppOAuthClient();
+  const client = new google.auth.OAuth2(clientId, clientSecret);
+  client.setCredentials({ refresh_token: refreshToken });
+  const { token } = await client.getAccessToken();
+  if (!token) throw new Error("액세스 토큰을 발급받지 못했습니다.");
+  return token;
+}
+
 const KIND_FOLDER_NAME: Record<ParaKind, string> = {
   project: "1-Projects",
   area: "2-Areas",
@@ -138,6 +150,19 @@ export async function updateFileContent(refreshToken: string, fileId: string, co
 export async function renameFile(refreshToken: string, fileId: string, name: string): Promise<void> {
   const drive = getDrive(refreshToken);
   await drive.files.update({ fileId, requestBody: { name } });
+}
+
+/** Picker로 고른 기존 파일을 이 컨테이너 폴더의 자식으로 추가한다(기존 위치는 그대로 두고 추가만 함) —
+ * drive.file 스코프에서 앱이 만들지 않은 파일에 접근하려면 사용자가 Picker로 직접 골라야 하고,
+ * 그렇게 고른 파일이라도 이 폴더의 자식이어야 파일 목록(listFiles)에 나타난다. */
+export async function addFileToFolder(refreshToken: string, fileId: string, folderId: string): Promise<DriveFile> {
+  const drive = getDrive(refreshToken);
+  const res = await drive.files.update({
+    fileId,
+    addParents: folderId,
+    fields: "id, name, mimeType, webViewLink, iconLink, modifiedTime",
+  });
+  return toDriveFile(res.data);
 }
 
 export async function getFileContent(refreshToken: string, fileId: string): Promise<string> {

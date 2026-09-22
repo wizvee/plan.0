@@ -6,6 +6,7 @@ import {
   Check,
   ExternalLink,
   FileText,
+  FolderOpen,
   Image as ImageIcon,
   Plus,
   Presentation,
@@ -87,8 +88,10 @@ interface FilesTabProps {
   files: DriveFile[];
   showUpload: boolean;
   uploading: boolean;
+  importing: boolean;
   onToggleUpload: () => void;
   onUploadFile: (file: File) => void;
+  onImport: () => void;
   onOpenFile: (file: DriveFile) => void;
   onNewNote: () => void;
 
@@ -113,8 +116,10 @@ export function FilesTab({
   files,
   showUpload,
   uploading,
+  importing,
   onToggleUpload,
   onUploadFile,
+  onImport,
   onOpenFile,
   onNewNote,
   editingTitle,
@@ -225,6 +230,15 @@ export function FilesTab({
   return (
     <div>
       <div className="mb-3 flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={onImport}
+          disabled={importing}
+          className="flex items-center gap-1.5 rounded-md bg-secondary px-3 py-1.5 text-[13px] font-bold text-foreground disabled:opacity-50"
+        >
+          <FolderOpen className="size-3.5" />
+          {importing ? "가져오는 중…" : "Drive에서 가져오기"}
+        </button>
         <button
           type="button"
           onClick={onToggleUpload}

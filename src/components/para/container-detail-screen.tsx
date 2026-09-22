@@ -38,6 +38,7 @@ import { FilesTab } from "@/components/para/files-tab";
 import type { DriveFile } from "@/lib/google-drive";
 import { classifyDriveFile } from "@/lib/drive-file";
 import { parseNoteContent, serializeNoteContent, type NoteProperty } from "@/lib/frontmatter";
+import { pickDriveFiles } from "@/lib/google-picker";
 
 const KIND_ICON: Record<ParaKind, typeof Target> = {
   project: Target,
@@ -89,6 +90,7 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail, googleConne
   const [filesError, setFilesError] = useState<string | null>(null);
   const [showUpload, setShowUpload] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [editingFileId, setEditingFileId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [editingBody, setEditingBody] = useState("");
@@ -316,6 +318,43 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail, googleConne
       setFilesError(err instanceof Error ? err.message : "업로드에 실패했습니다.");
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function handleImportFromDrive() {
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
+    if (!apiKey) {
+      setFilesError("NEXT_PUBLIC_GOOGLE_API_KEY가 설정되지 않았습니다. README의 Google Drive 연동 설정을 참고하세요.");
+      return;
+    }
+    setImporting(true);
+    setFilesError(null);
+    try {
+      const folderId = await ensureDriveFolder();
+      const tokenRes = await fetch("/api/drive/access-token");
+      const tokenData = await tokenRes.json();
+      if (!tokenRes.ok) throw new Error(tokenData.error ?? "액세스 토큰을 가져오지 못했습니다.");
+
+      const picked = await pickDriveFiles(tokenData.accessToken as string, apiKey, folderId);
+      if (picked.length === 0) return;
+
+      const importRes = await fetch("/api/drive/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ folderId, fileIds: picked.map((f) => f.id) }),
+      });
+      const importData = await importRes.json();
+      if (!importRes.ok) throw new Error(importData.error ?? "가져오기에 실패했습니다.");
+
+      setDriveFiles((prev) => {
+        const byId = new Map(prev.map((f) => [f.id, f]));
+        for (const f of importData.files as DriveFile[]) byId.set(f.id, f);
+        return Array.from(byId.values());
+      });
+    } catch (err) {
+      setFilesError(err instanceof Error ? err.message : "가져오기에 실패했습니다.");
+    } finally {
+      setImporting(false);
     }
   }
 
@@ -678,8 +717,10 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail, googleConne
               files={driveFiles}
               showUpload={showUpload}
               uploading={uploading}
+              importing={importing}
               onToggleUpload={() => setShowUpload((v) => !v)}
               onUploadFile={(file) => void handleUploadFile(file)}
+              onImport={() => void handleImportFromDrive()}
               onOpenFile={(file) => void handleOpenFile(file)}
               onNewNote={handleNewNote}
               editingTitle={editingTitle}
