@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { startOfMonth } from "date-fns";
 import { useDroppable } from "@dnd-kit/core";
 import { Calendar, Cloud, LayoutGrid, LogOut, Plus, RefreshCw, X } from "lucide-react";
 
@@ -9,7 +10,7 @@ import { TodoCard } from "@/components/todo-card";
 import { AddTodoForm } from "@/components/add-todo-form";
 import { MiniCalendar } from "@/components/mini-calendar";
 import { cn } from "@/lib/utils";
-import { toDateKey } from "@/lib/week";
+import { mondayOf, parseDateKey, toDateKey } from "@/lib/week";
 import { BACKLOG, type Area, type Project, type Resource, type Todo, type TodoKind } from "@/lib/types";
 
 interface AppSidebarProps {
@@ -33,14 +34,6 @@ interface AppSidebarProps {
   onAdd: (content: string, kind: TodoKind) => void;
   /** PARA 목록 화면에서 재사용할 때, 이미 매핑된 항목에 보여줄 배지 텍스트 */
   getBadge?: (todo: Todo) => string | undefined;
-  /** 캘린더 화면에서만 넘겨준다 — 미니 캘린더가 이번 주를 강조하고, 날짜를 누르면 그 주로 이동한다 */
-  monday?: Date;
-  onSelectWeek?: (monday: Date) => void;
-  /** 캘린더 화면에서만 넘겨준다 — 미니 캘린더 월 라벨을 클릭 가능하게 만들고, 그 달의 월별 뷰로 전환한다 */
-  onSelectMonth?: (month: Date) => void;
-  /** 캘린더 화면에서만 넘겨준다 — 이미 캘린더 화면에 있을 때 "캘린더" 메뉴를 눌러도 페이지 이동 없이
-   * 바로 이번 주 주별 뷰로 전환할 수 있게 함. 없으면 기본값(다른 화면에서 넘어올 때)대로 "/"로 이동. */
-  onCalendarClick?: () => void;
 }
 
 /** 계정 영역의 아이콘 버튼 하나 + hover 시 뜨는 툴팁. `as="a"`면 링크(Google Drive 연결/재연결),
@@ -108,12 +101,10 @@ export function AppSidebar({
   onConvert,
   onAdd,
   getBadge,
-  monday,
-  onSelectWeek,
-  onSelectMonth,
-  onCalendarClick,
 }: AppSidebarProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { setNodeRef, isOver } = useDroppable({ id: BACKLOG });
   const backlogSectionRef = useRef<HTMLDivElement>(null);
 
@@ -121,13 +112,29 @@ export function AppSidebar({
     backlogSectionRef.current?.querySelector("input")?.focus();
   }
 
-  function handleSelectDate(date: Date) {
-    if (onSelectWeek) {
-      onSelectWeek(date);
-    } else {
-      router.push(`/?week=${toDateKey(date)}`);
-    }
+  // 캘린더 화면(/)에 이미 있으면 같은 히스토리 항목을 갱신(replace)하고, 다른 화면(PARA 등)에서
+  // 왔으면 새 항목으로 이동(push)한다 — 어느 화면에서 미니 캘린더를 쓰든 동작이 똑같다.
+  function navigateCalendar(url: string) {
+    if (pathname === "/") router.replace(url, { scroll: false });
+    else router.push(url);
   }
+
+  function handleSelectDate(date: Date) {
+    navigateCalendar(`/?week=${toDateKey(mondayOf(date))}`);
+  }
+
+  function handleSelectMonth(month: Date) {
+    navigateCalendar(`/?view=month&month=${toDateKey(startOfMonth(month))}`);
+  }
+
+  function handleCalendarNav() {
+    navigateCalendar(`/?week=${toDateKey(mondayOf(new Date()))}`);
+  }
+
+  const isCalendarWeekView = pathname === "/" && searchParams.get("view") !== "month";
+  const highlightWeekStart = isCalendarWeekView
+    ? mondayOf(parseDateKey(searchParams.get("week")) ?? new Date())
+    : undefined;
 
   const initials = userEmail.slice(0, 2).toUpperCase();
 
@@ -189,7 +196,7 @@ export function AppSidebar({
 
         {/* 데스크톱 전용: 미니 캘린더 */}
         <div className="hidden sm:block">
-          <MiniCalendar highlightWeekStart={monday} onSelectDate={handleSelectDate} onSelectMonth={onSelectMonth} />
+          <MiniCalendar highlightWeekStart={highlightWeekStart} onSelectDate={handleSelectDate} onSelectMonth={handleSelectMonth} />
         </div>
 
         {/* 보관함 — 모바일/데스크톱 공통 */}
@@ -227,7 +234,7 @@ export function AppSidebar({
         <div className="hidden flex-col gap-1 sm:flex">
           <button
             type="button"
-            onClick={() => (onCalendarClick ? onCalendarClick() : router.push("/"))}
+            onClick={handleCalendarNav}
             aria-pressed={activePage === "calendar"}
             className={cn(
               "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13.5px] font-medium",

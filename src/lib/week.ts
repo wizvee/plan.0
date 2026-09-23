@@ -35,3 +35,10 @@ export function dayKeyOf(date: Date): DayKey {
 export function isToday(dateKey: string): boolean {
   return dateKey === toDateKey(new Date());
 }
+
+/** URL 쿼리스트링의 yyyy-MM-dd 값을 Date로 파싱. 없거나 형식이 이상하면 null. */
+export function parseDateKey(key: string | null): Date | null {
+  if (!key) return null;
+  const parsed = new Date(`${key}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}

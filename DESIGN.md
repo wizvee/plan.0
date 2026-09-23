@@ -105,9 +105,16 @@ BACKLOG})`를 갖고 있는데, 같은 id를 가진 SortableContext가 동시에
 때문입니다. **새 화면을 만들 때도 `AppSidebar`를 그대로 재사용하세요** — 직접 사이드바를
 새로 만들지 말고.
 
-캘린더 페이지에서만 `monday`/`onSelectWeek` prop을 넘겨서 미니 캘린더가 이번 주를 강조하고
-날짜 클릭 시 그 주로 이동하게 되어 있습니다. PARA류 화면은 이 prop 없이 씁니다(날짜 클릭 시
-그냥 `/`로 이동).
+`AppSidebar`는 미니 캘린더 강조/이동을 **prop으로 받지 않고 스스로 처리**합니다 —
+`usePathname()`/`useSearchParams()`로 지금 캘린더 화면(`/`)의 주별 뷰에 있는지를 직접 읽어서
+그 주만 강조하고, 날짜·월 라벨 클릭도 항상 `/?week=`/`/?view=month&month=` 쿼리로 직접
+navigate합니다(캘린더 화면이면 `router.replace`, 다른 화면이면 `router.push`). 그래서 캘린더든
+PARA든 어느 화면에서 렌더링해도 동작이 완전히 똑같고, 화면마다 `monday`/`onSelectWeek`/
+`onSelectMonth`/`onCalendarClick` 같은 prop을 따로 연결해줄 필요가 없습니다 — 화면 쪽(`week-board.tsx`
+등)은 그냥 `<AppSidebar ... />`만 놓으면 됩니다. 캘린더 화면(`week-board.tsx`)도 이제 `monday`/
+`viewMode`/`displayMonth`를 state로 들고 있지 않고 매 렌더마다 URL(`useSearchParams()`)에서
+직접 계산합니다 — 그래야 `AppSidebar`가 URL만 바꿔도(같은 라우트라 리마운트가 안 돼도) 화면이
+바로 반응합니다.
 
 ## 6. 타이포그래피 / 아이콘
 

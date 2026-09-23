@@ -233,6 +233,31 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
       `week-calendar.tsx`/`app-sidebar.tsx`/`week-board.tsx`/`para-board.tsx`/`container-detail-screen.tsx`까지
       전부 prop을 새로 뚫어야 했음 — 특히 `week-board.tsx`는 이때 처음으로 `useSupabaseProjects/Areas/Resources`를
       불러오기 시작함(그전엔 캘린더 화면에 컨테이너 목록이 없었음).
+18. **(2026-09-23 추가) "진짜 뒤로가기" + 사이드바 화면별 하드코딩 제거**: 사용자가 실사용하면서 두 가지를
+    지적함 — (1) PARA에서 탭(Project/Area/Resource)을 바꾸거나 상세 화면에 들어갔다가 뒤로가기를 누르면
+    항상 Project 탭으로 리셋됨(탭 상태가 URL에 없어서 새로 마운트되면 기본값으로 돌아감), (2) 캘린더
+    화면에서만 되던 미니 캘린더의 "월 라벨 클릭 → 월별 뷰" 기능이 PARA 화면에서는 안 됨 —
+    `AppSidebar`가 화면마다 `monday`/`onSelectWeek`/`onSelectMonth`/`onCalendarClick` prop을 일일이
+    받아야 동작하는 구조였고, PARA 쪽 화면들은 그 prop을 안 넘겼으니 기능이 통째로 빠져 있었음.
+    - **PARA 탭/서브탭도 URL을 유일한 출처로**: `para-board.tsx`의 Project/Area/Resource 탭은
+      `?kind=`, `container-detail-screen.tsx`의 Overview/Tasks/Notes 탭은 `?tab=` 쿼리로 옮기고
+      (별도 state 없이 `searchParams`에서 직접 계산, 바뀔 때 `router.replace`), 상세 화면의 뒤로가기
+      화살표도 `router.push("/para")`(kind 정보 없이 하드코딩)에서 `router.push(`/para?kind=${kind}`)`로
+      고쳐서 어느 경로로 돌아가든 원래 보던 탭이 그대로 복원되게 함.
+    - **`AppSidebar`/`AppNavRail`을 화면 비의존적으로 리팩토링**: 두 컴포넌트가 `usePathname()`/
+      `useSearchParams()`로 "지금 캘린더 화면(`/`)에서 주별 뷰를 보고 있는지"를 스스로 판단해서 미니
+      캘린더 강조·날짜/월 클릭 내비게이션을 전부 자체 처리하도록 바꿈(캘린더 화면이면
+      `router.replace`, 다른 화면에서 왔으면 `router.push`). 그 결과 `monday`/`onSelectWeek`/
+      `onSelectMonth`/`onCalendarClick` prop 4개가 통째로 없어졌고, 어느 화면에 놓든(캘린더/PARA/PARA
+      상세) 완전히 동일하게 동작함 — 새 화면을 추가할 때도 이 prop들을 신경 쓸 필요가 없어짐.
+    - 이걸 가능하게 하려고 `week-board.tsx`도 `monday`/`viewMode`/`displayMonth`를 더 이상 `useState`로
+      들고 있지 않고, 매 렌더마다 `useSearchParams()`에서 직접 계산하도록 바꿈(변경 지점마다
+      `router.replace`/`router.push`로 URL을 직접 바꿈). 그래야 `AppSidebar`가 URL만 바꿔도(같은
+      라우트라 리마운트가 안 되는 경우에도) 캘린더 화면이 바로 반응함 — 16번 결정에서 남겨뒀던
+      "같은 라우트 재방문 시 리마운트가 안 된다" 문제를, `onCalendarClick` 같은 화면별 콜백으로
+      우회하는 대신 아예 상태의 출처를 URL 하나로 통일해서 근본적으로 없앤 것.
+    - `src/lib/week.ts`에 `parseDateKey(key)` 헬퍼 추가 — `yyyy-MM-dd` 쿼리값을 Date로 파싱하는
+      코드가 여러 파일에 중복돼 있던 것을 하나로 모음.
 
 17. **(2026-09-18 추가) 노트/자료를 Google Drive 파일로 관리하는 기능 — 백엔드만 우선 구현**:
     PLANNING.md 9번 기획에 따라, 회사(Windows) 환경에서도 plan.0 화면 안에서만 노트(마크다운)와
