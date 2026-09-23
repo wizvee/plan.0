@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { format, differenceInCalendarDays } from "date-fns";
 import { ArrowLeft, Bookmark, Compass, Target } from "lucide-react";
 import {
@@ -61,12 +61,21 @@ interface ContainerDetailScreenProps {
 
 export function ContainerDetailScreen({ kind, id, userId, userEmail }: ContainerDetailScreenProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { todos, setTodos, addTodo, addNote, updateTodo, removeTodo, persistPositions } = useSupabaseTodos(userId);
   const { projects, updateProject } = useSupabaseProjects(userId);
   const { areas, updateArea } = useSupabaseAreas(userId);
   const { resources, updateResource } = useSupabaseResources(userId);
 
-  const [tab, setTab] = useState<"overview" | "tasks" | "notes">("overview");
+  // 이 화면도 탭(Overview/Tasks/Notes)을 URL(`?tab=`)에서 직접 계산한다 — 다른 화면에 갔다가
+  // 뒤로가기를 눌러도 보고 있던 탭 그대로 돌아오게.
+  const tabParam = searchParams.get("tab");
+  const tab: "overview" | "tasks" | "notes" = tabParam === "tasks" || tabParam === "notes" ? tabParam : "overview";
+
+  function selectTab(next: "overview" | "tasks" | "notes") {
+    router.replace(`/para/${kind}/${id}?tab=${next}`, { scroll: false });
+  }
+
   const [panelOpen, setPanelOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState(false);
@@ -249,7 +258,7 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail }: Container
         >
           <button
             type="button"
-            onClick={() => router.push("/para")}
+            onClick={() => router.push(`/para?kind=${kind}`)}
             className="mb-4 flex items-center gap-1 text-[13px] font-medium text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="size-3.5" />
@@ -320,7 +329,7 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail }: Container
               <button
                 key={t}
                 type="button"
-                onClick={() => setTab(t)}
+                onClick={() => selectTab(t)}
                 className={cn(
                   "relative pb-3 text-[14.5px] font-bold text-muted-foreground",
                   tab === t &&

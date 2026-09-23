@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { addDays, addMonths, format, startOfMonth, subMonths } from "date-fns";
 import {
@@ -17,7 +17,16 @@ import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-ki
 import { useSupabaseTodos } from "@/lib/supabase/todos";
 import { useSupabaseAreas, useSupabaseProjects, useSupabaseResources } from "@/lib/supabase/containers";
 import { createClient } from "@/lib/supabase/client";
-import { dayDateKey, dayKeyOf, mondayOf, shiftWeeks, toDateKey, weekNumberLabel, weekRangeLabel } from "@/lib/week";
+import {
+  dayDateKey,
+  dayKeyOf,
+  mondayOf,
+  parseDateKey,
+  shiftWeeks,
+  toDateKey,
+  weekNumberLabel,
+  weekRangeLabel,
+} from "@/lib/week";
 import { preferSpecificTargetCollision } from "@/lib/dnd";
 import { cn } from "@/lib/utils";
 import { useTodayKey } from "@/lib/use-today";
@@ -49,35 +58,24 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
   const { projects } = useSupabaseProjects(userId);
   const { areas } = useSupabaseAreas(userId);
   const { resources } = useSupabaseResources(userId);
-  const [monday, setMonday] = useState(() => {
-    const weekParam = searchParams.get("week");
-    const parsed = weekParam ? new Date(`${weekParam}T00:00:00`) : null;
-    return mondayOf(parsed && !Number.isNaN(parsed.getTime()) ? parsed : new Date());
-  });
-  const [viewMode, setViewMode] = useState<"week" | "month">(() =>
-    searchParams.get("view") === "month" ? "month" : "week"
-  );
-  const [displayMonth, setDisplayMonth] = useState(() => {
-    const monthParam = searchParams.get("month");
-    const parsed = monthParam ? new Date(`${monthParam}T00:00:00`) : null;
-    return startOfMonth(parsed && !Number.isNaN(parsed.getTime()) ? parsed : monday);
-  });
+  // URL이 화면 상태의 유일한 출처다 — monday/viewMode/displayMonth를 별도 state로 들고 있다가
+  // router.replace로 동기화하는 대신, 매 렌더마다 searchParams에서 직접 계산한다. 이렇게 해야
+  // AppSidebar처럼 다른 컴포넌트가 URL만 바꿔도(같은 라우트에 있어도) 화면이 바로 반응한다.
+  const weekParam = searchParams.get("week");
+  const monday = useMemo(() => mondayOf(parseDateKey(weekParam) ?? new Date()), [weekParam]);
+  const viewMode: "week" | "month" = searchParams.get("view") === "month" ? "month" : "week";
+  const monthParam = searchParams.get("month");
+  const displayMonth = useMemo(() => startOfMonth(parseDateKey(monthParam) ?? monday), [monthParam, monday]);
+
   const [activeId, setActiveId] = useState<string | null>(null);
   const [mobileDay, setMobileDay] = useState<DayKey>("mon");
   const [panelOpen, setPanelOpen] = useState(false);
 
   const weekKey = toDateKey(monday);
-  const monthKey = toDateKey(displayMonth);
   const todayKey = useTodayKey();
 
-  useEffect(() => {
-    const url = viewMode === "month" ? `/?view=month&month=${monthKey}` : `/?week=${weekKey}`;
-    router.replace(url, { scroll: false });
-  }, [router, viewMode, weekKey, monthKey]);
-
   function goToWeek(date: Date) {
-    setViewMode("week");
-    setMonday(mondayOf(date));
+    router.replace(`/?week=${toDateKey(mondayOf(date))}`, { scroll: false });
   }
 
   const sensors = useSensors(
@@ -234,9 +232,9 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
               </div>
               <div className="flex w-full items-center justify-between gap-4 sm:w-auto">
                 <WeekNav
-                  onPrev={() => setMonday((m) => shiftWeeks(m, -1))}
-                  onNext={() => setMonday((m) => shiftWeeks(m, 1))}
-                  onToday={() => setMonday(mondayOf(new Date()))}
+                  onPrev={() => router.replace(`/?week=${toDateKey(shiftWeeks(monday, -1))}`, { scroll: false })}
+                  onNext={() => router.replace(`/?week=${toDateKey(shiftWeeks(monday, 1))}`, { scroll: false })}
+                  onToday={() => router.replace(`/?week=${toDateKey(mondayOf(new Date()))}`, { scroll: false })}
                 />
                 <Button
                   variant="ghost"
@@ -319,9 +317,15 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
               resources={resources}
               todayKey={todayKey}
               onSelectDay={goToWeek}
-              onPrevMonth={() => setDisplayMonth((m) => subMonths(m, 1))}
-              onNextMonth={() => setDisplayMonth((m) => addMonths(m, 1))}
-              onToday={() => setDisplayMonth(startOfMonth(new Date()))}
+              onPrevMonth={() =>
+                router.replace(`/?view=month&month=${toDateKey(subMonths(displayMonth, 1))}`, { scroll: false })
+              }
+              onNextMonth={() =>
+                router.replace(`/?view=month&month=${toDateKey(addMonths(displayMonth, 1))}`, { scroll: false })
+              }
+              onToday={() =>
+                router.replace(`/?view=month&month=${toDateKey(startOfMonth(new Date()))}`, { scroll: false })
+              }
               onEdit={handleEdit}
               onMemoEdit={handleMemoEdit}
               onUrlEdit={handleUrlEdit}
@@ -349,16 +353,6 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
               onAssignPara={handleAssignPara}
               onConvert={handleConvert}
               onAdd={handleAdd}
-              monday={monday}
-              onSelectWeek={goToWeek}
-              onSelectMonth={(month) => {
-                setViewMode("month");
-                setDisplayMonth(startOfMonth(month));
-              }}
-              onCalendarClick={() => {
-                setViewMode("week");
-                setMonday(mondayOf(new Date()));
-              }}
             />
           </SortableContext>
 
@@ -374,15 +368,7 @@ export function WeekBoard({ userId, userEmail }: WeekBoardProps) {
         </DndContext>
       </div>
 
-      <AppNavRail
-        activePage="calendar"
-        panelOpen={panelOpen}
-        onTogglePanel={() => setPanelOpen((open) => !open)}
-        onCalendarClick={() => {
-          setViewMode("week");
-          setMonday(mondayOf(new Date()));
-        }}
-      />
+      <AppNavRail activePage="calendar" panelOpen={panelOpen} onTogglePanel={() => setPanelOpen((open) => !open)} />
     </div>
   );
 }

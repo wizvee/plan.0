@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   DndContext,
   DragOverlay,
@@ -38,12 +38,21 @@ function nextPosition(items: Todo[]) {
 
 export function ParaBoard({ userId, userEmail }: { userId: string; userEmail: string }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { todos, setTodos, addTodo, addNote, updateTodo, removeTodo, persistPositions } = useSupabaseTodos(userId);
   const { projects, addProject } = useSupabaseProjects(userId);
   const { areas, addArea } = useSupabaseAreas(userId);
   const { resources, addResource } = useSupabaseResources(userId);
 
-  const [activeKind, setActiveKind] = useState<ParaKind>("project");
+  // 탭(Project/Area/Resource) 선택도 URL(`?kind=`)이 유일한 출처다 — 별도 state 없이 매 렌더마다
+  // 계산한다. 그래야 상세 화면에 들어갔다 브라우저 뒤로가기를 눌러도 보고 있던 탭 그대로 돌아온다.
+  const kindParam = searchParams.get("kind");
+  const activeKind: ParaKind = kindParam === "area" || kindParam === "resource" ? kindParam : "project";
+
+  function selectKind(kind: ParaKind) {
+    router.replace(`/para?kind=${kind}`, { scroll: false });
+  }
+
   const [panelOpen, setPanelOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -209,7 +218,7 @@ export function ParaBoard({ userId, userEmail }: { userId: string; userEmail: st
                 <button
                   key={kind}
                   type="button"
-                  onClick={() => setActiveKind(kind)}
+                  onClick={() => selectKind(kind)}
                   aria-pressed={selected}
                   className={cn(
                     "flex items-center gap-1.5 rounded-sm px-3.5 py-1.5 text-[13px] font-semibold transition-colors",
