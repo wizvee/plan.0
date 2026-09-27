@@ -15,15 +15,17 @@
 ## 저장소 / 브랜치
 
 - repo: `wizvee/plan.0`
-- 지금까지 작업한 브랜치: `claude/weekly-todo-webapp-plan-hx1le7`
+- **프로덕션 브랜치: `main`** (2026-09-27부터. GitHub 기본 브랜치이자 Vercel Production Branch —
+  이전에는 `claude/weekly-todo-webapp-plan-hx1le7`라는 긴 이름이었는데, 사용자 요청으로 GitHub
+  기본 브랜치 설정 + Vercel Production Branch 설정을 둘 다 `main`으로 바꿈. 옛 브랜치는 당분간
+  그대로 남겨둠 — 필요 없어지면 사용자가 정리하기로 함.)
 - 로컬로 가져오기:
   ```bash
   git clone https://github.com/wizvee/plan.0.git
   cd plan.0
-  git checkout claude/weekly-todo-webapp-plan-hx1le7
+  git checkout main
   npm install
   ```
-- 이 브랜치를 계속 쓸지, main으로 머지/새 브랜치로 옮길지는 사용자가 로컬에서 정하면 됩니다 (아직 PR 안 만듦).
 
 ## 프로젝트가 무엇인지 (한 줄 요약)
 
