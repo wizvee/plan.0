@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import { AppDataProvider } from "@/lib/app-data/app-data-provider";
 import { isGoogleConnected } from "@/lib/google-account";
 import { WeekBoard } from "@/components/week-board";
 
@@ -16,5 +17,9 @@ export default async function Home() {
 
   const googleConnected = await isGoogleConnected(supabase, user.id);
 
-  return <WeekBoard userId={user.id} userEmail={user.email ?? ""} googleConnected={googleConnected} />;
+  return (
+    <AppDataProvider userId={user.id}>
+      <WeekBoard userEmail={user.email ?? ""} googleConnected={googleConnected} />
+    </AppDataProvider>
+  );
 }

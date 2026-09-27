@@ -14,8 +14,9 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
 
-import { useSupabaseTodos } from "@/lib/supabase/todos";
-import { useSupabaseAreas, useSupabaseProjects, useSupabaseResources } from "@/lib/supabase/containers";
+import { nextPosition, useTodos } from "@/lib/app-data/use-todos";
+import { useContainers } from "@/lib/app-data/use-containers";
+import { useTodoActions } from "@/lib/app-data/todo-actions";
 import { createClient } from "@/lib/supabase/client";
 import {
   dayDateKey,
@@ -30,7 +31,7 @@ import {
 import { preferSpecificTargetCollision } from "@/lib/dnd";
 import { cn } from "@/lib/utils";
 import { useTodayKey } from "@/lib/use-today";
-import { BACKLOG, DAY_KEYS, DAY_LABELS_KO, isInboxVisible, type DayKey, type Todo, type TodoKind } from "@/lib/types";
+import { BACKLOG, DAY_KEYS, DAY_LABELS_KO, isInboxVisible, type DayKey, type Todo } from "@/lib/types";
 import { DEFAULT_DURATION_MINUTES, HOUR_HEIGHT, MINUTES_PER_DAY, clampMinutes, snapMinutes } from "@/lib/time";
 import { TodoCard } from "@/components/todo-card";
 import { CalendarBlock } from "@/components/calendar-block";
@@ -41,24 +42,17 @@ import { AppNavRail } from "@/components/app-nav-rail";
 import { WeekNav } from "@/components/week-nav";
 import { Button } from "@/components/ui/button";
 
-function nextPosition(items: Todo[]) {
-  return items.length === 0 ? 0 : Math.max(...items.map((t) => t.position)) + 1;
-}
-
 interface WeekBoardProps {
-  userId: string;
   userEmail: string;
   googleConnected: boolean;
 }
 
-export function WeekBoard({ userId, userEmail, googleConnected }: WeekBoardProps) {
+export function WeekBoard({ userEmail, googleConnected }: WeekBoardProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { todos, setTodos, addTodo, addNote, updateTodo, removeTodo, persistPositions } =
-    useSupabaseTodos(userId);
-  const { projects } = useSupabaseProjects(userId);
-  const { areas } = useSupabaseAreas(userId);
-  const { resources } = useSupabaseResources(userId);
+  const { todos, setTodos, backlogItems, updateTodo, persistPositions } = useTodos();
+  const { projects, areas, resources } = useContainers();
+  const actions = useTodoActions();
   // URL이 화면 상태의 유일한 출처다 — monday/viewMode/displayMonth를 별도 state로 들고 있다가
   // router.replace로 동기화하는 대신, 매 렌더마다 searchParams에서 직접 계산한다. 이렇게 해야
   // AppSidebar처럼 다른 컴포넌트가 URL만 바꿔도(같은 라우트에 있어도) 화면이 바로 반응한다.
@@ -81,11 +75,6 @@ export function WeekBoard({ userId, userEmail, googleConnected }: WeekBoardProps
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
-  );
-
-  const backlogItems = useMemo(
-    () => todos.filter(isInboxVisible).sort((a, b) => a.position - b.position),
-    [todos]
   );
 
   const scheduledByDay = useMemo(() => {
@@ -156,58 +145,6 @@ export function WeekBoard({ userId, userEmail, googleConnected }: WeekBoardProps
     void persistPositions(
       ordered.map((t) => ({ id: t.id, position: normalizedById.get(t.id)! }))
     );
-  }
-
-  function handleAdd(content: string, kind: TodoKind) {
-    if (kind === "note") void addNote(content, nextPosition(backlogItems));
-    else void addTodo(content, nextPosition(backlogItems));
-  }
-
-  function handleConvert(id: string, kind: TodoKind) {
-    if (kind === "note") {
-      void updateTodo(id, {
-        kind,
-        scheduledDate: null,
-        startMinutes: null,
-        durationMinutes: null,
-        completed: false,
-      });
-    } else {
-      void updateTodo(id, { kind });
-    }
-  }
-
-  function handleResize(id: string, durationMinutes: number) {
-    void updateTodo(id, { durationMinutes });
-  }
-
-  function handleToggle(id: string) {
-    const current = todos.find((t) => t.id === id);
-    if (!current) return;
-    void updateTodo(id, { completed: !current.completed });
-  }
-
-  function handleRemove(id: string) {
-    void removeTodo(id);
-  }
-
-  function handleEdit(id: string, content: string) {
-    void updateTodo(id, { content });
-  }
-
-  function handleMemoEdit(id: string, memo: string) {
-    void updateTodo(id, { memo: memo || null });
-  }
-
-  function handleUrlEdit(id: string, url: string | null) {
-    void updateTodo(id, { url });
-  }
-
-  function handleAssignPara(
-    id: string,
-    patch: { projectId: string | null; areaId: string | null; resourceId: string | null }
-  ) {
-    void updateTodo(id, patch);
   }
 
   async function handleSignOut() {
@@ -301,13 +238,13 @@ export function WeekBoard({ userId, userEmail, googleConnected }: WeekBoardProps
               projects={projects}
               areas={areas}
               resources={resources}
-              onToggle={handleToggle}
-              onRemove={handleRemove}
-              onEdit={handleEdit}
-              onMemoEdit={handleMemoEdit}
-              onUrlEdit={handleUrlEdit}
-              onAssignPara={handleAssignPara}
-              onResize={handleResize}
+              onToggle={actions.toggle}
+              onRemove={actions.remove}
+              onEdit={actions.edit}
+              onMemoEdit={actions.editMemo}
+              onUrlEdit={actions.editUrl}
+              onAssignPara={actions.assignPara}
+              onResize={actions.resize}
             />
           ) : (
             <MonthCalendar
@@ -327,11 +264,11 @@ export function WeekBoard({ userId, userEmail, googleConnected }: WeekBoardProps
               onToday={() =>
                 router.replace(`/?view=month&month=${toDateKey(startOfMonth(new Date()))}`, { scroll: false })
               }
-              onEdit={handleEdit}
-              onMemoEdit={handleMemoEdit}
-              onUrlEdit={handleUrlEdit}
-              onAssignPara={handleAssignPara}
-              onRemove={handleRemove}
+              onEdit={actions.edit}
+              onMemoEdit={actions.editMemo}
+              onUrlEdit={actions.editUrl}
+              onAssignPara={actions.assignPara}
+              onRemove={actions.remove}
             />
           )}
 
@@ -347,14 +284,14 @@ export function WeekBoard({ userId, userEmail, googleConnected }: WeekBoardProps
               projects={projects}
               areas={areas}
               resources={resources}
-              onToggle={handleToggle}
-              onRemove={handleRemove}
-              onEdit={handleEdit}
-              onMemoEdit={handleMemoEdit}
-              onUrlEdit={handleUrlEdit}
-              onAssignPara={handleAssignPara}
-              onConvert={handleConvert}
-              onAdd={handleAdd}
+              onToggle={actions.toggle}
+              onRemove={actions.remove}
+              onEdit={actions.edit}
+              onMemoEdit={actions.editMemo}
+              onUrlEdit={actions.editUrl}
+              onAssignPara={actions.assignPara}
+              onConvert={actions.convert}
+              onAdd={actions.addToInbox}
             />
           </SortableContext>
 

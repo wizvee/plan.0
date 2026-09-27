@@ -159,3 +159,15 @@ OAuth 콜백이 돌려주는 `?google=` 결과는 `DriveStatusToast`가 어느 �
 - **Realtime 채널 이름**(`todos-${userId}` 등)은 구독이 1회가 되므로 그대로 유지 가능.
 - 이 세션 환경에는 Supabase 키가 없어 브라우저 실동작 확인이 안 됨(HANDOFF 11번과 동일) — 5단계
   회귀 점검은 로컬에서 필요.
+
+## 진행 상황
+
+- [x] 0단계 준비 — Next 16.3 문서(Context providers, Route Groups) 확인
+- [x] 1단계 데이터 단일화 — `src/lib/app-data/` (`AppDataProvider`, `useTodos`, `useContainers`, `useTodoActions`).
+  세 화면의 복붙 핸들러 · Inbox 계산 · 이름 조회를 제거. Provider는 임시로 각 `page.tsx`에서 감싸고 있고,
+  2단계에서 `(app)/layout.tsx`로 올라가면 화면 이동 시 재조회도 없어진다. 화면 모습 · 동작 변화 없음.
+- [ ] 2단계 라우트 그룹 + 공통 레이아웃
+- [ ] 3단계 DnD 단일화
+- [ ] 4단계 셸 이전
+- [ ] 5단계 회귀 점검
+- [ ] 6단계 새 디자인 적용

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format, differenceInCalendarDays } from "date-fns";
 import { ArrowLeft, Bookmark, Compass, Target } from "lucide-react";
@@ -17,8 +17,9 @@ import {
 import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
 
 import { createClient } from "@/lib/supabase/client";
-import { useSupabaseTodos } from "@/lib/supabase/todos";
-import { useSupabaseAreas, useSupabaseProjects, useSupabaseResources } from "@/lib/supabase/containers";
+import { useTodos } from "@/lib/app-data/use-todos";
+import { useContainers } from "@/lib/app-data/use-containers";
+import { useTodoActions } from "@/lib/app-data/todo-actions";
 import { preferSpecificTargetCollision } from "@/lib/dnd";
 import { cn } from "@/lib/utils";
 import {
@@ -27,8 +28,6 @@ import {
   isInboxVisible,
   type ParaContainer,
   type ParaKind,
-  type Todo,
-  type TodoKind,
 } from "@/lib/types";
 import { TodoCard } from "@/components/todo-card";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -52,25 +51,19 @@ function daysLeftLabel(dueDate: string): string {
   return `D+${Math.abs(diff)}`;
 }
 
-function nextPosition(items: Todo[]) {
-  return items.length === 0 ? 0 : Math.max(...items.map((t) => t.position)) + 1;
-}
-
 interface ContainerDetailScreenProps {
   kind: ParaKind;
   id: string;
-  userId: string;
   userEmail: string;
   googleConnected: boolean;
 }
 
-export function ContainerDetailScreen({ kind, id, userId, userEmail, googleConnected }: ContainerDetailScreenProps) {
+export function ContainerDetailScreen({ kind, id, userEmail, googleConnected }: ContainerDetailScreenProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { todos, setTodos, addTodo, addNote, updateTodo, removeTodo, persistPositions } = useSupabaseTodos(userId);
-  const { projects, updateProject } = useSupabaseProjects(userId);
-  const { areas, updateArea } = useSupabaseAreas(userId);
-  const { resources, updateResource } = useSupabaseResources(userId);
+  const { todos, setTodos, backlogItems, updateTodo, persistPositions } = useTodos();
+  const { projects, updateProject, areas, updateArea, resources, updateResource, containerNameOf } = useContainers();
+  const actions = useTodoActions();
 
   // 이 화면도 탭(Overview/Tasks/자료)을 URL(`?tab=`)에서 직접 계산한다 — 다른 화면에 갔다가
   // 뒤로가기를 눌러도 보고 있던 탭 그대로 돌아오게.
@@ -109,29 +102,11 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail, googleConne
   const { setNodeRef, isOver } = useDroppable({ id: dropId });
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
-  const backlogItems = useMemo(
-    () => todos.filter(isInboxVisible).sort((a, b) => a.position - b.position),
-    [todos]
-  );
-
   const containerMapping = {
     projectId: kind === "project" ? id : null,
     areaId: kind === "area" ? id : null,
     resourceId: kind === "resource" ? id : null,
   };
-
-  const nameById = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const p of projects) map.set(p.id, p.name);
-    for (const a of areas) map.set(a.id, a.name);
-    for (const r of resources) map.set(r.id, r.name);
-    return map;
-  }, [projects, areas, resources]);
-
-  function badgeFor(todo: Todo): string | undefined {
-    const mappedId = todo.projectId ?? todo.areaId ?? todo.resourceId;
-    return mappedId ? nameById.get(mappedId) : undefined;
-  }
 
   const project = kind === "project" ? projects.find((p) => p.id === id) : undefined;
   const container =
@@ -240,27 +215,6 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail, googleConne
     if (kind === "project") void updateProject(id, { name: trimmed });
     else if (kind === "area") void updateArea(id, { name: trimmed });
     else void updateResource(id, { name: trimmed });
-  }
-
-  function handleConvert(tid: string, newKind: TodoKind) {
-    if (newKind === "note") {
-      void updateTodo(tid, {
-        kind: newKind,
-        scheduledDate: null,
-        startMinutes: null,
-        durationMinutes: null,
-        completed: false,
-      });
-    } else {
-      void updateTodo(tid, { kind: newKind });
-    }
-  }
-
-  function handleAssignPara(
-    tid: string,
-    patch: { projectId: string | null; areaId: string | null; resourceId: string | null }
-  ) {
-    void updateTodo(tid, patch);
   }
 
   function setContainerDriveFolderId(folderId: string) {
@@ -645,13 +599,13 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail, googleConne
                       projects={projects}
                       areas={areas}
                       resources={resources}
-                      onToggle={(tid) => void updateTodo(tid, { completed: !todo.completed })}
-                      onRemove={(tid) => void removeTodo(tid)}
-                      onEdit={(tid, content) => void updateTodo(tid, { content })}
-                      onMemoEdit={(tid, memo) => void updateTodo(tid, { memo: memo || null })}
-                      onUrlEdit={(tid, url) => void updateTodo(tid, { url })}
-                      onAssignPara={handleAssignPara}
-                      onConvert={handleConvert}
+                      onToggle={actions.toggle}
+                      onRemove={actions.remove}
+                      onEdit={actions.edit}
+                      onMemoEdit={actions.editMemo}
+                      onUrlEdit={actions.editUrl}
+                      onAssignPara={actions.assignPara}
+                      onConvert={actions.convert}
                     />
                   ))
                 )}
@@ -669,12 +623,12 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail, googleConne
                 onCancelSelect={handleCancelScrapSelect}
                 onToggleSelect={handleToggleScrapSelect}
                 onPromote={() => void handlePromoteScraps()}
-                onRemove={(tid) => void removeTodo(tid)}
-                onEdit={(tid, content) => void updateTodo(tid, { content })}
-                onMemoEdit={(tid, memo) => void updateTodo(tid, { memo: memo || null })}
-                onUrlEdit={(tid, url) => void updateTodo(tid, { url })}
-                onAssignPara={handleAssignPara}
-                onConvert={handleConvert}
+                onRemove={actions.remove}
+                onEdit={actions.edit}
+                onMemoEdit={actions.editMemo}
+                onUrlEdit={actions.editUrl}
+                onAssignPara={actions.assignPara}
+                onConvert={actions.convert}
               />
             </div>
           ) : null}
@@ -720,22 +674,15 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail, googleConne
           projects={projects}
           areas={areas}
           resources={resources}
-          onToggle={(tid) => {
-            const current = todos.find((t) => t.id === tid);
-            if (current) void updateTodo(tid, { completed: !current.completed });
-          }}
-          onRemove={(tid) => void removeTodo(tid)}
-          onEdit={(tid, content) => void updateTodo(tid, { content })}
-          onMemoEdit={(tid, memo) => void updateTodo(tid, { memo: memo || null })}
-          onUrlEdit={(tid, url) => void updateTodo(tid, { url })}
-          onAssignPara={handleAssignPara}
-          onConvert={handleConvert}
-          onAdd={(content, itemKind) =>
-            itemKind === "note"
-              ? void addNote(content, nextPosition(backlogItems))
-              : void addTodo(content, nextPosition(backlogItems))
-          }
-          getBadge={badgeFor}
+          onToggle={actions.toggle}
+          onRemove={actions.remove}
+          onEdit={actions.edit}
+          onMemoEdit={actions.editMemo}
+          onUrlEdit={actions.editUrl}
+          onAssignPara={actions.assignPara}
+          onConvert={actions.convert}
+          onAdd={actions.addToInbox}
+          getBadge={containerNameOf}
         />
       </SortableContext>
 

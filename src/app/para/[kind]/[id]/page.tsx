@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import { AppDataProvider } from "@/lib/app-data/app-data-provider";
 import { isGoogleConnected } from "@/lib/google-account";
 import { ContainerDetailScreen } from "@/components/para/container-detail-screen";
 import { PARA_KINDS, type ParaKind } from "@/lib/types";
@@ -28,12 +29,13 @@ export default async function ParaDetailPage({ params }: ParaDetailPageProps) {
   const googleConnected = await isGoogleConnected(supabase, user.id);
 
   return (
-    <ContainerDetailScreen
-      kind={kind as ParaKind}
-      id={id}
-      userId={user.id}
-      userEmail={user.email ?? ""}
-      googleConnected={googleConnected}
-    />
+    <AppDataProvider userId={user.id}>
+      <ContainerDetailScreen
+        kind={kind as ParaKind}
+        id={id}
+        userEmail={user.email ?? ""}
+        googleConnected={googleConnected}
+      />
+    </AppDataProvider>
   );
 }

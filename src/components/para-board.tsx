@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   DndContext,
@@ -15,11 +15,12 @@ import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-ki
 import { AlertCircle, Bookmark, CheckCircle2, Compass, Target, X } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
-import { useSupabaseTodos } from "@/lib/supabase/todos";
-import { useSupabaseAreas, useSupabaseProjects, useSupabaseResources } from "@/lib/supabase/containers";
+import { useTodos } from "@/lib/app-data/use-todos";
+import { useContainers } from "@/lib/app-data/use-containers";
+import { useTodoActions } from "@/lib/app-data/todo-actions";
 import { preferSpecificTargetCollision } from "@/lib/dnd";
 import { cn } from "@/lib/utils";
-import { BACKLOG, PARA_KIND_LABELS, PARA_KINDS, isInboxVisible, type ParaKind, type Todo, type TodoKind } from "@/lib/types";
+import { BACKLOG, PARA_KIND_LABELS, PARA_KINDS, isInboxVisible, type ParaKind } from "@/lib/types";
 import { TodoCard } from "@/components/todo-card";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppNavRail } from "@/components/app-nav-rail";
@@ -32,25 +33,18 @@ const KIND_ICON: Record<ParaKind, typeof Target> = {
   resource: Bookmark,
 };
 
-function nextPosition(items: Todo[]) {
-  return items.length === 0 ? 0 : Math.max(...items.map((t) => t.position)) + 1;
-}
-
 export function ParaBoard({
-  userId,
   userEmail,
   googleConnected,
 }: {
-  userId: string;
   userEmail: string;
   googleConnected: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { todos, setTodos, addTodo, addNote, updateTodo, removeTodo, persistPositions } = useSupabaseTodos(userId);
-  const { projects, addProject } = useSupabaseProjects(userId);
-  const { areas, addArea } = useSupabaseAreas(userId);
-  const { resources, addResource } = useSupabaseResources(userId);
+  const { todos, setTodos, backlogItems, updateTodo, persistPositions } = useTodos();
+  const { projects, addProject, areas, addArea, resources, addResource, containerNameOf } = useContainers();
+  const actions = useTodoActions();
 
   // 탭(Project/Area/Resource) 선택도 URL(`?kind=`)이 유일한 출처다 — 별도 state 없이 매 렌더마다
   // 계산한다. 그래야 상세 화면에 들어갔다 브라우저 뒤로가기를 눌러도 보고 있던 탭 그대로 돌아온다.
@@ -74,24 +68,6 @@ export function ParaBoard({
   }, [searchParams, router, activeKind]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
-
-  const backlogItems = useMemo(
-    () => todos.filter(isInboxVisible).sort((a, b) => a.position - b.position),
-    [todos]
-  );
-
-  const nameById = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const p of projects) map.set(p.id, p.name);
-    for (const a of areas) map.set(a.id, a.name);
-    for (const r of resources) map.set(r.id, r.name);
-    return map;
-  }, [projects, areas, resources]);
-
-  function badgeFor(todo: Todo): string | undefined {
-    const mappedId = todo.projectId ?? todo.areaId ?? todo.resourceId;
-    return mappedId ? nameById.get(mappedId) : undefined;
-  }
 
   function handleDragStart(event: DragStartEvent) {
     setActiveId(String(event.active.id));
@@ -155,32 +131,6 @@ export function ParaBoard({
     if (activeKind === "project") void addProject(name);
     else if (activeKind === "area") void addArea(name);
     else void addResource(name);
-  }
-
-  function handleAdd(content: string, kind: TodoKind) {
-    if (kind === "note") void addNote(content, nextPosition(backlogItems));
-    else void addTodo(content, nextPosition(backlogItems));
-  }
-
-  function handleConvert(id: string, kind: TodoKind) {
-    if (kind === "note") {
-      void updateTodo(id, {
-        kind,
-        scheduledDate: null,
-        startMinutes: null,
-        durationMinutes: null,
-        completed: false,
-      });
-    } else {
-      void updateTodo(id, { kind });
-    }
-  }
-
-  function handleAssignPara(
-    id: string,
-    patch: { projectId: string | null; areaId: string | null; resourceId: string | null }
-  ) {
-    void updateTodo(id, patch);
   }
 
   const activeTodo = activeId ? todos.find((t) => t.id === activeId) ?? null : null;
@@ -313,18 +263,15 @@ export function ParaBoard({
               projects={projects}
               areas={areas}
               resources={resources}
-              onToggle={(id) => {
-                const current = todos.find((t) => t.id === id);
-                if (current) void updateTodo(id, { completed: !current.completed });
-              }}
-              onRemove={(id) => void removeTodo(id)}
-              onEdit={(id, content) => void updateTodo(id, { content })}
-              onMemoEdit={(id, memo) => void updateTodo(id, { memo: memo || null })}
-              onUrlEdit={(id, url) => void updateTodo(id, { url })}
-              onAssignPara={handleAssignPara}
-              onConvert={handleConvert}
-              onAdd={handleAdd}
-              getBadge={badgeFor}
+              onToggle={actions.toggle}
+              onRemove={actions.remove}
+              onEdit={actions.edit}
+              onMemoEdit={actions.editMemo}
+              onUrlEdit={actions.editUrl}
+              onAssignPara={actions.assignPara}
+              onConvert={actions.convert}
+              onAdd={actions.addToInbox}
+              getBadge={containerNameOf}
             />
           </SortableContext>
 
