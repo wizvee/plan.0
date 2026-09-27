@@ -13,30 +13,13 @@ import { MiniCalendar } from "@/components/mini-calendar";
 import { cn } from "@/lib/utils";
 import type { DropTargetData } from "@/lib/dnd/drop-targets";
 import { mondayOf, parseDateKey, toDateKey } from "@/lib/week";
-import { BACKLOG, type Area, type Project, type Resource, type Todo, type TodoKind } from "@/lib/types";
-
-interface AppSidebarProps {
-  activePage: "calendar" | "para";
-  userEmail: string;
-  googleConnected: boolean;
-  onSignOut: () => void;
-  panelOpen: boolean;
-  onClosePanel: () => void;
-  items: Todo[];
-  projects?: Project[];
-  areas?: Area[];
-  resources?: Resource[];
-  onToggle: (id: string) => void;
-  onRemove: (id: string) => void;
-  onEdit: (id: string, content: string) => void;
-  onMemoEdit: (id: string, memo: string) => void;
-  onUrlEdit?: (id: string, url: string | null) => void;
-  onAssignPara?: (id: string, patch: { projectId: string | null; areaId: string | null; resourceId: string | null }) => void;
-  onConvert?: (id: string, kind: TodoKind) => void;
-  onAdd: (content: string, kind: TodoKind) => void;
-  /** PARA 목록 화면에서 재사용할 때, 이미 매핑된 항목에 보여줄 배지 텍스트 */
-  getBadge?: (todo: Todo) => string | undefined;
-}
+import { BACKLOG } from "@/lib/types";
+import { useSession } from "@/lib/app-data/app-data-provider";
+import { useTodos } from "@/lib/app-data/use-todos";
+import { useContainers } from "@/lib/app-data/use-containers";
+import { useTodoActions } from "@/lib/app-data/todo-actions";
+import { useSignOut } from "@/lib/app-data/use-sign-out";
+import { useShellUI } from "@/components/shell/shell-ui-context";
 
 /** 계정 영역의 아이콘 버튼 하나 + hover 시 뜨는 툴팁. `as="a"`면 링크(Google Drive 연결/재연결),
  * 기본은 버튼(로그아웃)으로 렌더링한다. */
@@ -78,34 +61,25 @@ function AccountIconButton({
 }
 
 /**
+ * 앱 셸의 일부 — `AppShell`이 레이아웃에서 한 번만 렌더링하며 props를 받지 않는다(화면이 모양/동작을 바꿀 수 없음).
  * 데스크톱에서는 왼쪽에 고정된 사이드바(브랜드 · 미니 캘린더 · 보관함 · 내비게이션 · 계정),
  * 모바일에서는 하단 탭의 "Todo" 버튼으로 여닫는 바텀시트로 렌더링되는 반응형 컴포넌트.
  * 보관함 SortableContext/드롭 영역은 항상 하나만 마운트된다 — sm: 클래스가 모바일용
  * fixed/hidden 상태를 데스크톱에서 덮어써서 항상 보이게 만드는 방식.
  */
-export function AppSidebar({
-  activePage,
-  userEmail,
-  googleConnected,
-  onSignOut,
-  panelOpen,
-  onClosePanel,
-  items,
-  projects,
-  areas,
-  resources,
-  onToggle,
-  onRemove,
-  onEdit,
-  onMemoEdit,
-  onUrlEdit,
-  onAssignPara,
-  onConvert,
-  onAdd,
-  getBadge,
-}: AppSidebarProps) {
+export function AppSidebar() {
+  const { userEmail, googleConnected } = useSession();
+  const { backlogItems: items } = useTodos();
+  const { projects, areas, resources, containerNameOf } = useContainers();
+  const actions = useTodoActions();
+  const signOut = useSignOut();
+  const { inboxOpen: panelOpen, setInboxOpen } = useShellUI();
+  const onClosePanel = () => setInboxOpen(false);
   const router = useRouter();
   const pathname = usePathname();
+  const activePage: "calendar" | "para" = pathname.startsWith("/para") ? "para" : "calendar";
+  // Drive 연결 후 지금 보던 화면으로 돌아오게 한다 (결과는 DriveStatusBanner가 표시).
+  const googleAuthHref = `/api/auth/google?next=${encodeURIComponent(pathname)}`;
   const searchParams = useSearchParams();
   const { setNodeRef, isOver } = useDroppable({ id: BACKLOG, data: { type: "inbox" } satisfies DropTargetData });
   const backlogSectionRef = useRef<HTMLDivElement>(null);
@@ -221,18 +195,18 @@ export function AppSidebar({
                 projects={projects}
                 areas={areas}
                 resources={resources}
-                onToggle={onToggle}
-                onRemove={onRemove}
-                onEdit={onEdit}
-                onMemoEdit={onMemoEdit}
-                onUrlEdit={onUrlEdit}
-                onAssignPara={onAssignPara}
-                onConvert={onConvert}
-                badge={getBadge?.(todo)}
+                onToggle={actions.toggle}
+                onRemove={actions.remove}
+                onEdit={actions.edit}
+                onMemoEdit={actions.editMemo}
+                onUrlEdit={actions.editUrl}
+                onAssignPara={actions.assignPara}
+                onConvert={actions.convert}
+                badge={containerNameOf(todo)}
               />
             ))}
           </SortableContext>
-          <AddTodoForm onAdd={onAdd} />
+          <AddTodoForm onAdd={actions.addToInbox} />
         </div>
 
         {/* 데스크톱 전용: 내비게이션 전환 */}
@@ -276,17 +250,17 @@ export function AppSidebar({
                   <AccountIconButton label="Google Drive 연결됨" active>
                     <Cloud className="size-3.5" />
                   </AccountIconButton>
-                  <AccountIconButton as="a" href="/api/auth/google" label="재연결">
+                  <AccountIconButton as="a" href={googleAuthHref} label="재연결">
                     <RefreshCw className="size-3.5" />
                   </AccountIconButton>
                 </>
               ) : (
-                <AccountIconButton as="a" href="/api/auth/google" label="Google Drive 연결">
+                <AccountIconButton as="a" href={googleAuthHref} label="Google Drive 연결">
                   <Cloud className="size-3.5" />
                 </AccountIconButton>
               )}
               <span className="mx-1 h-3.5 w-px bg-border" aria-hidden="true" />
-              <AccountIconButton onClick={onSignOut} label="로그아웃">
+              <AccountIconButton onClick={() => void signOut()} label="로그아웃">
                 <LogOut className="size-3.5" />
               </AccountIconButton>
             </div>

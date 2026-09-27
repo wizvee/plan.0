@@ -3,19 +3,16 @@
 import { usePathname, useRouter } from "next/navigation";
 import { Calendar, Check, LayoutGrid } from "lucide-react";
 
-import { IconRail } from "@/components/icon-rail";
+import { IconRail } from "@/components/shell/icon-rail";
+import { useShellUI } from "@/components/shell/shell-ui-context";
 import { mondayOf, toDateKey } from "@/lib/week";
 
-interface AppNavRailProps {
-  activePage: "calendar" | "para";
-  panelOpen: boolean;
-  onTogglePanel: () => void;
-}
-
 /** 캘린더 화면과 PARA 화면에서 공유하는 아이콘 레일 — Todo List 토글 + 두 화면 사이 이동. */
-export function AppNavRail({ activePage, panelOpen, onTogglePanel }: AppNavRailProps) {
+export function AppNavRail() {
   const router = useRouter();
   const pathname = usePathname();
+  const { inboxOpen: panelOpen, toggleInbox: onTogglePanel } = useShellUI();
+  const activePage: "calendar" | "para" = pathname.startsWith("/para") ? "para" : "calendar";
 
   function handleCalendarNav() {
     const url = `/?week=${toDateKey(mondayOf(new Date()))}`;

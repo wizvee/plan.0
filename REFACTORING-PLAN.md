@@ -175,6 +175,12 @@ OAuth 콜백이 돌려주는 `?google=` 결과는 `DriveStatusToast`가 어느 �
   보관함 `SortableContext`는 `AppSidebar` 안으로 이동. 세 화면의 DndContext · sensors · DragOverlay · handleDragEnd 제거.
   동작 변화 1건: PARA 화면에서 이미 매핑된 Inbox 항목을 Inbox 안에서 끌면 예전엔 매핑이 풀렸는데, 이제 캘린더
   화면과 똑같이 순서만 바뀜(매핑 해제는 상세 화면 목록 → Inbox 드래그 또는 상세 팝업의 "없음").
-- [ ] 4단계 셸 이전
+- [x] 4단계 셸 이전(현재 디자인 유지) — `src/components/shell/` (`AppShell`, props 없는 `AppSidebar` · `AppNavRail`,
+  `DriveStatusBanner`, `ShellUIProvider`)을 `(app)/layout.tsx`에서 한 번만 렌더링. 세 화면에서 사이드바 · 하단 탭 ·
+  보관함 열림 state · 로그아웃 함수 · 본문 왼쪽 여백 제거(로그아웃은 `useSignOut()` 하나로). ESLint
+  `no-restricted-imports`로 화면에서 `components/shell/*` import 금지(레이아웃만 예외).
+  동작 변화: ① Inbox 항목 표시를 모든 화면에서 "소속 이름 배지"로 통일(캘린더 화면도 PARA 화면과 같게),
+  ② 모바일 보관함 열림 상태가 화면을 옮겨도 유지, ③ Drive 연결/재연결 후 PARA 목록이 아니라 연결을 누른 화면으로
+  돌아오고 결과 배너도 그 화면에 표시.
 - [ ] 5단계 회귀 점검
 - [ ] 6단계 새 디자인 적용

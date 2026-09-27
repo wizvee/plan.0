@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isGoogleConnected } from "@/lib/google-account";
 import { AppDataProvider } from "@/lib/app-data/app-data-provider";
 import { DndProvider } from "@/lib/dnd/dnd-provider";
+import { AppShell } from "@/components/shell/app-shell";
 
 /**
  * 로그인 후 화면 전체(캘린더 · PARA 목록 · PARA 상세)가 공유하는 레이아웃.
@@ -24,7 +25,9 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 
   return (
     <AppDataProvider userId={user.id} userEmail={user.email ?? ""} googleConnected={googleConnected}>
-      <DndProvider>{children}</DndProvider>
+      <DndProvider>
+        <AppShell>{children}</AppShell>
+      </DndProvider>
     </AppDataProvider>
   );
 }
