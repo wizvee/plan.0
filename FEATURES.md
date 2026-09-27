@@ -1,0 +1,182 @@
+# 현재 기능 목록 (FEATURES)
+
+2026-09-27 기준, 코드에 실제로 구현돼 있는 사용자 기능을 화면별로 정리한 문서입니다.
+새 UI 시안을 그리거나 리디자인할 때 **빠뜨린 기능이 없는지 대조하는 체크리스트**로 씁니다.
+개념/기획은 [PLANNING.md](./PLANNING.md), 결정 이력은 [HANDOFF.md](./HANDOFF.md),
+시각 규칙은 [DESIGN.md](./DESIGN.md) 참고.
+
+맨 아래 [부록](#부록-2026-09-27-apple-스타일-시안-대조표)에 2026-09-27 Apple 스타일 시안
+(https://claude.ai/artifact/EAnz3ttkMqj676NhTXjP7b)과의 대조 결과가 있습니다.
+
+## 1. 인증 · 계정
+
+| # | 기능 | 위치 (코드) |
+|---|---|---|
+| A1 | 이메일/비밀번호 로그인. 가입 버튼은 의도적으로 숨김 | `app/login/page.tsx` |
+| A2 | 로그아웃 — 데스크톱은 사이드바 계정 영역 아이콘, 모바일은 헤더 "로그아웃" 텍스트 버튼 | `app-sidebar.tsx`, `week-board.tsx` |
+| A3 | 계정 표시 — 이메일 앞 2글자 이니셜 아바타 + 이메일 | `app-sidebar.tsx` |
+| A4 | **Google Drive 연결** — 미연결 시 구름 아이콘 링크(`/api/auth/google`) | `app-sidebar.tsx`, `api/auth/google` |
+| A5 | **Google Drive 연결 상태 + 재연결** — 연결됨이면 활성 구름 아이콘 + 재연결(↻) 링크 | `app-sidebar.tsx` |
+| A6 | Drive 연결 결과 배너 — 연결됨 / refresh token 없음 / 실패, 닫기 가능 (PARA 화면 상단) | `para-board.tsx` |
+
+## 2. 내비게이션 · 레이아웃
+
+| # | 기능 | 위치 |
+|---|---|---|
+| N1 | 캘린더 ↔ PARA 이동. "캘린더"는 항상 이번 주 주 보기로 | `app-sidebar.tsx`, `app-nav-rail.tsx` |
+| N2 | 브랜드 표시 ("주간 Todo Planner") | `app-sidebar.tsx` |
+| N3 | "+ 새 할 일" 버튼 — 보관함 입력창에 포커스 | `app-sidebar.tsx` |
+| N4 | **미니 캘린더** — 이전/다음 달, 날짜 클릭 → 그 주로 이동, 월 라벨 클릭 → 월 보기, 지금 보는 주 강조 | `mini-calendar.tsx` |
+| N5 | 모바일 하단 탭바 (Todo / 캘린더 / PARA) + Todo 탭 → 보관함 바텀시트 | `icon-rail.tsx`, `app-nav-rail.tsx` |
+| N6 | 화면 상태가 URL에 저장됨 (`?week=`, `?view=month&month=`, `?kind=`, `?tab=`) — 뒤로가기로 복원 | 각 화면 |
+
+## 3. 할 일 보관함 (Inbox / Todo List)
+
+| # | 기능 | 위치 |
+|---|---|---|
+| I1 | 보관함 목록 — 날짜 없는 할 일 + 어디에도 매핑 안 된 노트. 주차와 무관한 전역 목록 | `app-sidebar.tsx`, `lib/types.ts` `isInboxVisible` |
+| I2 | 인라인 추가 입력창 | `add-todo-form.tsx` |
+| I3 | **할일/노트 전환 토글** (추가 입력창 오른쪽) | `add-todo-form.tsx` |
+| I4 | 항목 종류별 표시 — 할 일은 체크박스, 노트는 노트 아이콘(체크박스 없음) | `todo-card.tsx` |
+| I5 | 완료 체크 | `todo-card.tsx` |
+| I6 | 드래그 핸들 · 보관함 안 순서 변경 | `todo-card.tsx`, dnd-kit |
+| I7 | 보관함 → 캘린더 드래그로 날짜·시간 배치 (15분 스냅, 기본 1시간) | `week-board.tsx` |
+| I8 | 캘린더 → 보관함 드래그로 배치 해제 (보관함 전체가 드롭 영역, 드래그 중 강조) | `app-sidebar.tsx` |
+| I9 | 보관함 → PARA 카드/상세 화면 드래그로 매핑 | `para-board.tsx`, `container-detail-screen.tsx` |
+| I10 | 카테고리 색 점 (PARA 배지가 없을 때만) | `todo-card.tsx` |
+| I11 | PARA 배지 (PARA 화면 안 보관함에서 소속 이름) | `todo-card.tsx` `badge` |
+| I12 | URL 칩 — 파비콘 + 도메인, 새 탭으로 열기 | `url-chip.tsx` |
+| I13 | 예약 날짜 표시, 지난 날짜면 빨간색 (PARA Tasks 탭 등) | `todo-card.tsx` |
+| I14 | 항목 텍스트 클릭 → 할 일 상세 팝업 (6번) | `todo-card.tsx` |
+
+## 4. 캘린더 — 주 보기
+
+| # | 기능 | 위치 |
+|---|---|---|
+| W1 | 월~일 7일 × 0~24시 시간 그리드, 처음 열 때 오전 7시로 스크롤 | `week-calendar.tsx` |
+| W2 | 헤더 — 주차 번호("39주") + 기간 | `week-board.tsx` |
+| W3 | 이전 주 / 다음 주 / 오늘 | `week-nav.tsx` |
+| W4 | 오늘 날짜 강조 + 현재 시각 선 (클라이언트에서만 계산) | `week-calendar.tsx`, `lib/use-today.ts` |
+| W5 | 일정 블록 — 카테고리 색, 제목 + 시간 범위, 짧으면 한 줄 compact | `calendar-block.tsx` |
+| W6 | 블록 안 **완료 체크박스**, 완료 시 muted + 취소선 | `calendar-block.tsx` |
+| W7 | 블록 드래그로 다른 요일/시간 이동 | `calendar-block.tsx` |
+| W8 | 블록 하단 모서리 드래그로 소요 시간 조절 | `calendar-block.tsx` |
+| W9 | 블록 제목 클릭 → 상세 팝업 | `calendar-block.tsx` |
+| W10 | 모바일: 요일+날짜 원형 스트립으로 하루씩 보기 + "39주 · 날짜 요일" 요약 줄 | `week-board.tsx` |
+
+## 5. 캘린더 — 월 보기
+
+| # | 기능 | 위치 |
+|---|---|---|
+| M1 | 7×5~6 월 그리드, 칸마다 최대 2개 + "+N개 더보기" | `month-calendar.tsx` |
+| M2 | 이전 달 / 다음 달 / 오늘 | `month-calendar.tsx` |
+| M3 | 날짜 칸 클릭 → 그 주의 주 보기 | `month-calendar.tsx` |
+| M4 | 일정 칩 클릭 → 상세 팝업 | `month-calendar.tsx` |
+| M5 | 월 보기로 들어가는 방법: 미니 캘린더 월 라벨 클릭 (주/월 전환 버튼은 없음) | `mini-calendar.tsx` |
+
+## 6. 할 일 상세 팝업
+
+| # | 기능 | 위치 |
+|---|---|---|
+| D1 | 제목 편집 | `todo-detail-modal.tsx` |
+| D2 | PARA 매핑 속성 — 팝오버에서 검색 + 없음(해제) + 종류별 목록 | `todo-detail-modal.tsx` |
+| D3 | 메모 편집 | `todo-detail-modal.tsx` |
+| D4 | URL 입력/수정 + 새 탭 열기 | `todo-detail-modal.tsx` |
+| D5 | 할 일 ↔ 노트 전환 (노트로 바꾸면 날짜·완료 초기화) | `todo-detail-modal.tsx` |
+| D6 | 삭제 | `todo-detail-modal.tsx` |
+
+## 7. PARA 목록
+
+| # | 기능 | 위치 |
+|---|---|---|
+| P1 | Project / Area / Resource 세그먼트 전환 (`?kind=`) | `para-board.tsx` |
+| P2 | 컨테이너 카드 그리드 — 종류별 색 상단 보더, 상태, 할 일 개수, 진행률(Project) | `container-card.tsx` |
+| P3 | 새 컨테이너 만들기 | `add-container-form.tsx` |
+| P4 | 카드 클릭 → 상세 화면 | `para-board.tsx` |
+| P5 | 보관함 항목을 카드로 드래그해 매핑 (I9) | `para-board.tsx` |
+
+## 8. PARA 상세
+
+| # | 기능 | 위치 |
+|---|---|---|
+| C1 | 목록으로 돌아가기 (보던 종류 탭 유지) | `container-detail-screen.tsx` |
+| C2 | 이름 클릭해서 편집 | `container-detail-screen.tsx` |
+| C3 | 요약 줄 — Status 토글, Due date · Progress (Project만) | `container-detail-screen.tsx` |
+| C4 | 탭: Overview / Tasks / 자료 (`?tab=`) | `container-detail-screen.tsx` |
+| C5 | Overview — Start / Due / Completion date 편집, Days left (Project) | `container-detail-screen.tsx` |
+| C6 | Tasks — 매핑된 할 일 목록 | `container-detail-screen.tsx` |
+| C7 | 스크랩(매핑된 노트) 섹션 — 여러 개 골라 **Drive 노트로 승격**(원본은 삭제) | `scrap-section.tsx`, `api/drive/promote` |
+| C8 | 자료 탭 — 컨테이너별 **Drive 폴더**의 파일 목록 (종류 아이콘, 수정일) | `files-tab.tsx`, `api/drive/folder`, `api/drive/files` |
+| C9 | 자료 탭 — 파일 업로드 (드래그 앤 드롭 / 클릭) | `files-tab.tsx` |
+| C10 | 자료 탭 — 새 마크다운 노트 + 인앱 편집기 (제목, 태그/링크 속성, 본문, 저장) | `files-tab.tsx`, `api/drive/notes` |
+| C11 | 자료 탭 — md가 아닌 파일은 Drive에서 새 탭으로 열기 | `files-tab.tsx` |
+| C12 | 상세 화면 전체가 드롭 영역 — 보관함에서 끌어오면 이 컨테이너로 매핑 | `container-detail-screen.tsx` |
+
+## 9. 화면이 없는 기능
+
+| # | 기능 | 위치 |
+|---|---|---|
+| X1 | 애플 단축어 "공유하기 → 스크랩" API — 보관함에 URL 항목 생성 | `api/clip/route.ts` |
+| X2 | Supabase Realtime으로 여러 기기 실시간 동기화 | `lib/supabase` 훅 |
+
+---
+
+## 부록: 2026-09-27 Apple 스타일 시안 대조표
+
+시안 보드: ① 주 보기 ② Inbox 열림 ③ 월 보기 + 드롭다운 ④ 팔레트.
+시안이 캘린더 화면 데스크톱만 그렸으므로 PARA · 모바일 · 상세 팝업은 "그리지 않음"으로 분류합니다.
+
+범례: ✅ 반영 · △ 일부만 / 암시만 · ✕ 빠짐 · — 이번 시안 범위 밖
+
+### 캘린더 화면에서 빠졌거나 부족한 것 (시안 수정 필요)
+
+| # | 기능 | 판정 | 비고 |
+|---|---|---|---|
+| A2 | 로그아웃 | ✕ | 레일 하단 아바타만 있고 동작 없음 |
+| A3 | 이메일 · 이니셜 | △ | 이니셜 없는 기본 아바타 |
+| A4 | Google Drive 연결 | ✕ | **고려 안 됨** |
+| A5 | Drive 연결 상태 · 재연결 | ✕ | **고려 안 됨** |
+| N2 | 브랜드 | △ | "p." 마크만 |
+| N3 | + 새 할 일 | △ | 툴바에 + 버튼은 있지만 무엇을 하는지 미정 |
+| N4 | 미니 캘린더 | ✕ | **통째로 빠짐** — 날짜 점프 · 주 강조 기능이 사라짐 |
+| I3 | 할일/노트 전환 토글 | ✕ | 입력창에 토글 없음 |
+| I4 | 노트 표시 | ✕ | 모든 항목을 체크박스 할 일로 그림 |
+| I6 | 드래그 핸들 · 순서 변경 | △ | grab 커서 + 하단 안내 문구뿐 |
+| I8 | 캘린더 → 보관함 되돌리기 | ✕ | Inbox가 닫혀 있으면 되돌릴 곳이 없음 — 구조 문제(아래) |
+| I12 | URL 칩 | ✕ | |
+| W2 | 주차 + 기간 | △ | "39주"는 있고 기간(9.21–27)은 빠짐 |
+| W6 | 블록 완료 체크박스 | ✕ | 블록에 체크박스 없음 |
+| W8 | 리사이즈 | △ | 호버 때만 보이는 것이라 정적 시안에선 판단 보류 |
+| W9 · M4 · I14 | 상세 팝업 진입 | △ | 클릭 커서만, 팝업은 안 그림 |
+| M1 | 월 칸 최대 개수 | △ | 시안은 3개, 코드는 2개 — 둘 중 하나로 맞춰야 함 |
+
+### 반영된 것
+
+N1(캘린더/PARA 메뉴 — 단 시안에서 PARA 버튼은 동작 안 함), I1, I2, I5, I7(안내 문구), I10, I11(Inbox 항목 아래 컨테이너 이름),
+W1, W3, W4, W5, W7, M1, M2, M3(동작 암시 없음), M5 → **월/주 드롭다운으로 대체(개선)**.
+
+### 그리지 않은 것 (범위 밖)
+
+A1 로그인, A6 Drive 배너, N5 · W10 모바일, D1–D6 상세 팝업, P1–P5 PARA 목록, C1–C12 PARA 상세(Drive 자료 탭 포함), X1–X2.
+이 중 **A6 · C7–C11은 Drive 연결(A4/A5)이 전제**라서, 연결 진입점이 사라지면 PARA 자료 탭 전체가 쓸 수 없게 됩니다.
+
+### 시안에만 있고 앱에는 없는 것 (새로 넣을지 결정 필요)
+
+| 항목 | 설명 |
+|---|---|
+| 검색 버튼 | 레일 하단 — 검색 기능 자체가 앱에 없음 |
+| 종일(All-day) 행 | 앱 데이터 모델에 "종일" 개념이 없음 (`scheduled_date` + 시작 시간 구조) |
+| ⌘1 / ⌘2 단축키 표시 | 단축키 미구현 |
+| Inbox 개수 빨간 배지 | 새 요소 (구현 쉬움) |
+| 오늘 빨간 원 | DESIGN.md는 primary로 정해져 있음 — 바꾸면 문서도 수정 |
+
+### 구조적으로 짚어야 할 점
+
+1. **보관함이 "항상 보임" → "열고 닫는 패널"로 바뀜.** 지금은 데스크톱에서 보관함이 늘 떠 있어서
+   ① 캘린더 블록을 보관함으로 끌어 되돌리기(I8), ② PARA 화면에서 보관함 → 카드 매핑(I9)이 바로 됩니다.
+   새 시안에서 Inbox가 닫혀 있으면 두 동작 모두 먼저 Inbox를 열어야 합니다. 대안: 드래그를 시작하면
+   레일의 Inbox 아이콘을 드롭 영역으로 쓰기, PARA 화면에서는 Inbox를 기본으로 열어두기.
+2. **계정 · Drive 메뉴 자리.** 레일 하단 아바타를 누르면 뜨는 팝오버(이메일 / Drive 연결 상태 · 연결 ·
+   재연결 / 로그아웃)로 A2–A5를 모으는 안을 제안합니다. Drive 미연결이면 아바타에 작은 경고 점.
+3. **미니 캘린더 자리.** 툴바의 "2026년 9월" 제목을 누르면 미니 캘린더 팝오버(Apple 캘린더 방식) 또는
+   Inbox 패널 상단에 접이식으로 두는 안 중에서 골라야 합니다.
