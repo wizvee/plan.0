@@ -15,6 +15,7 @@ import {
 import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
 
 import { nextPosition, useTodos } from "@/lib/app-data/use-todos";
+import { useSession } from "@/lib/app-data/app-data-provider";
 import { useContainers } from "@/lib/app-data/use-containers";
 import { useTodoActions } from "@/lib/app-data/todo-actions";
 import { createClient } from "@/lib/supabase/client";
@@ -42,12 +43,8 @@ import { AppNavRail } from "@/components/app-nav-rail";
 import { WeekNav } from "@/components/week-nav";
 import { Button } from "@/components/ui/button";
 
-interface WeekBoardProps {
-  userEmail: string;
-  googleConnected: boolean;
-}
-
-export function WeekBoard({ userEmail, googleConnected }: WeekBoardProps) {
+export function WeekBoard() {
+  const { userEmail, googleConnected } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { todos, setTodos, backlogItems, updateTodo, persistPositions } = useTodos();

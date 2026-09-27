@@ -18,6 +18,7 @@ import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-ki
 
 import { createClient } from "@/lib/supabase/client";
 import { useTodos } from "@/lib/app-data/use-todos";
+import { useSession } from "@/lib/app-data/app-data-provider";
 import { useContainers } from "@/lib/app-data/use-containers";
 import { useTodoActions } from "@/lib/app-data/todo-actions";
 import { preferSpecificTargetCollision } from "@/lib/dnd";
@@ -54,11 +55,10 @@ function daysLeftLabel(dueDate: string): string {
 interface ContainerDetailScreenProps {
   kind: ParaKind;
   id: string;
-  userEmail: string;
-  googleConnected: boolean;
 }
 
-export function ContainerDetailScreen({ kind, id, userEmail, googleConnected }: ContainerDetailScreenProps) {
+export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) {
+  const { userEmail, googleConnected } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { todos, setTodos, backlogItems, updateTodo, persistPositions } = useTodos();

@@ -166,7 +166,9 @@ OAuth 콜백이 돌려주는 `?google=` 결과는 `DriveStatusToast`가 어느 �
 - [x] 1단계 데이터 단일화 — `src/lib/app-data/` (`AppDataProvider`, `useTodos`, `useContainers`, `useTodoActions`).
   세 화면의 복붙 핸들러 · Inbox 계산 · 이름 조회를 제거. Provider는 임시로 각 `page.tsx`에서 감싸고 있고,
   2단계에서 `(app)/layout.tsx`로 올라가면 화면 이동 시 재조회도 없어진다. 화면 모습 · 동작 변화 없음.
-- [ ] 2단계 라우트 그룹 + 공통 레이아웃
+- [x] 2단계 라우트 그룹 + 공통 레이아웃 — `src/app/(app)/layout.tsx`가 사용자 · Drive 연결 여부를 한 번 조회하고
+  `AppDataProvider`를 한 번만 마운트. 세 `page.tsx`는 본문 컴포넌트만 렌더링(URL은 그대로). 화면은
+  `userEmail`/`googleConnected`를 props 대신 `useSession()`으로 읽음 → 화면 이동 시 재조회 · 재구독 없음.
 - [ ] 3단계 DnD 단일화
 - [ ] 4단계 셸 이전
 - [ ] 5단계 회귀 점검

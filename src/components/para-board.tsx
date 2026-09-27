@@ -16,6 +16,7 @@ import { AlertCircle, Bookmark, CheckCircle2, Compass, Target, X } from "lucide-
 
 import { createClient } from "@/lib/supabase/client";
 import { useTodos } from "@/lib/app-data/use-todos";
+import { useSession } from "@/lib/app-data/app-data-provider";
 import { useContainers } from "@/lib/app-data/use-containers";
 import { useTodoActions } from "@/lib/app-data/todo-actions";
 import { preferSpecificTargetCollision } from "@/lib/dnd";
@@ -33,13 +34,8 @@ const KIND_ICON: Record<ParaKind, typeof Target> = {
   resource: Bookmark,
 };
 
-export function ParaBoard({
-  userEmail,
-  googleConnected,
-}: {
-  userEmail: string;
-  googleConnected: boolean;
-}) {
+export function ParaBoard() {
+  const { userEmail, googleConnected } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { todos, setTodos, backlogItems, updateTodo, persistPositions } = useTodos();
