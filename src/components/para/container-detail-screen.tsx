@@ -503,7 +503,7 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
           <div className="flex flex-col divide-y divide-border/70">
             {mappedTasks.length === 0 ? (
               <p className="py-6 text-[14px] text-muted-foreground">
-                아직 매핑된 할 일이 없습니다. 오른쪽(모바일은 하단) &ldquo;할 일 보관함&rdquo;을 열어서 이{" "}
+                아직 매핑된 할 일이 없습니다. 왼쪽 사이드바(모바일은 하단 Todo 탭)의 &ldquo;할 일 보관함&rdquo;에서 이{" "}
                 {PARA_KIND_LABELS[kind]}로 드래그해보세요.
               </p>
             ) : (
