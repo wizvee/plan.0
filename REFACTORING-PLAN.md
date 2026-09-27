@@ -169,7 +169,12 @@ OAuth 콜백이 돌려주는 `?google=` 결과는 `DriveStatusToast`가 어느 �
 - [x] 2단계 라우트 그룹 + 공통 레이아웃 — `src/app/(app)/layout.tsx`가 사용자 · Drive 연결 여부를 한 번 조회하고
   `AppDataProvider`를 한 번만 마운트. 세 `page.tsx`는 본문 컴포넌트만 렌더링(URL은 그대로). 화면은
   `userEmail`/`googleConnected`를 props 대신 `useSession()`으로 읽음 → 화면 이동 시 재조회 · 재구독 없음.
-- [ ] 3단계 DnD 단일화
+- [x] 3단계 DnD 단일화 — `src/lib/dnd/` (`DndProvider`를 `(app)/layout.tsx`에 한 번, `handle-drop.ts` 단일 처리,
+  `drop-targets.ts` 데이터 타입, `collision.ts`는 기존 `lib/dnd.ts` 이동). 드롭 영역은 `data`로 자신을 선언
+  (Inbox · 캘린더 하루 칸(실제 날짜) · PARA 카드/상세), 끄는 카드는 출처(`inbox`/`container`/`calendar`)를 선언.
+  보관함 `SortableContext`는 `AppSidebar` 안으로 이동. 세 화면의 DndContext · sensors · DragOverlay · handleDragEnd 제거.
+  동작 변화 1건: PARA 화면에서 이미 매핑된 Inbox 항목을 Inbox 안에서 끌면 예전엔 매핑이 풀렸는데, 이제 캘린더
+  화면과 똑같이 순서만 바뀜(매핑 해제는 상세 화면 목록 → Inbox 드래그 또는 상세 팝업의 "없음").
 - [ ] 4단계 셸 이전
 - [ ] 5단계 회귀 점검
 - [ ] 6단계 새 디자인 적용

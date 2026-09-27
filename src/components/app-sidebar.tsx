@@ -4,12 +4,14 @@ import { useRef, type ReactNode } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { startOfMonth } from "date-fns";
 import { useDroppable } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Calendar, Cloud, LayoutGrid, LogOut, Plus, RefreshCw, X } from "lucide-react";
 
 import { TodoCard } from "@/components/todo-card";
 import { AddTodoForm } from "@/components/add-todo-form";
 import { MiniCalendar } from "@/components/mini-calendar";
 import { cn } from "@/lib/utils";
+import type { DropTargetData } from "@/lib/dnd/drop-targets";
 import { mondayOf, parseDateKey, toDateKey } from "@/lib/week";
 import { BACKLOG, type Area, type Project, type Resource, type Todo, type TodoKind } from "@/lib/types";
 
@@ -105,7 +107,7 @@ export function AppSidebar({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { setNodeRef, isOver } = useDroppable({ id: BACKLOG });
+  const { setNodeRef, isOver } = useDroppable({ id: BACKLOG, data: { type: "inbox" } satisfies DropTargetData });
   const backlogSectionRef = useRef<HTMLDivElement>(null);
 
   function focusQuickAdd() {
@@ -210,23 +212,26 @@ export function AppSidebar({
             isOver && "bg-accent/30"
           )}
         >
-          {items.map((todo) => (
-            <TodoCard
-              key={todo.id}
-              todo={todo}
-              projects={projects}
-              areas={areas}
-              resources={resources}
-              onToggle={onToggle}
-              onRemove={onRemove}
-              onEdit={onEdit}
-              onMemoEdit={onMemoEdit}
-              onUrlEdit={onUrlEdit}
-              onAssignPara={onAssignPara}
-              onConvert={onConvert}
-              badge={getBadge?.(todo)}
-            />
-          ))}
+          <SortableContext items={items.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+            {items.map((todo) => (
+              <TodoCard
+                key={todo.id}
+                todo={todo}
+                dragSource="inbox"
+                projects={projects}
+                areas={areas}
+                resources={resources}
+                onToggle={onToggle}
+                onRemove={onRemove}
+                onEdit={onEdit}
+                onMemoEdit={onMemoEdit}
+                onUrlEdit={onUrlEdit}
+                onAssignPara={onAssignPara}
+                onConvert={onConvert}
+                badge={getBadge?.(todo)}
+              />
+            ))}
+          </SortableContext>
           <AddTodoForm onAdd={onAdd} />
         </div>
 

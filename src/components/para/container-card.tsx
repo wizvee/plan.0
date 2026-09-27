@@ -5,6 +5,7 @@ import { useDroppable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
 import { CATEGORY_COLOR_VAR } from "@/lib/category";
 import type { ParaKind } from "@/lib/types";
+import type { DropTargetData } from "@/lib/dnd/drop-targets";
 
 interface ContainerCardProps {
   kind: ParaKind;
@@ -19,7 +20,10 @@ interface ContainerCardProps {
 }
 
 export function ContainerCard({ kind, id, name, statusLabel, statusDone, count, progress, onClick }: ContainerCardProps) {
-  const { setNodeRef, isOver } = useDroppable({ id: `para:${kind}:${id}` });
+  const { setNodeRef, isOver } = useDroppable({
+    id: `para:${kind}:${id}`,
+    data: { type: "para-container", kind, id } satisfies DropTargetData,
+  });
 
   const colorVar = `var(${CATEGORY_COLOR_VAR[kind]})`;
 

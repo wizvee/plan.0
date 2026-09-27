@@ -2,16 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  DndContext,
-  DragOverlay,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type DragStartEvent,
-} from "@dnd-kit/core";
-import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { AlertCircle, Bookmark, CheckCircle2, Compass, Target, X } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
@@ -19,10 +9,8 @@ import { useTodos } from "@/lib/app-data/use-todos";
 import { useSession } from "@/lib/app-data/app-data-provider";
 import { useContainers } from "@/lib/app-data/use-containers";
 import { useTodoActions } from "@/lib/app-data/todo-actions";
-import { preferSpecificTargetCollision } from "@/lib/dnd";
 import { cn } from "@/lib/utils";
-import { BACKLOG, PARA_KIND_LABELS, PARA_KINDS, isInboxVisible, type ParaKind } from "@/lib/types";
-import { TodoCard } from "@/components/todo-card";
+import { PARA_KIND_LABELS, PARA_KINDS, type ParaKind } from "@/lib/types";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppNavRail } from "@/components/app-nav-rail";
 import { ContainerCard } from "@/components/para/container-card";
@@ -38,7 +26,7 @@ export function ParaBoard() {
   const { userEmail, googleConnected } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { todos, setTodos, backlogItems, updateTodo, persistPositions } = useTodos();
+  const { todos, backlogItems } = useTodos();
   const { projects, addProject, areas, addArea, resources, addResource, containerNameOf } = useContainers();
   const actions = useTodoActions();
 
@@ -52,7 +40,6 @@ export function ParaBoard() {
   }
 
   const [panelOpen, setPanelOpen] = useState(false);
-  const [activeId, setActiveId] = useState<string | null>(null);
   // "Google Drive 연결" 버튼(app-sidebar.tsx)이 /api/auth/google/callback을 거쳐 여기로 돌아올 때
   // 붙는 ?google= 결과를 배너로 보여준다 — 이전엔 성공/실패 여부를 화면에 아무것도 보여주지 않아서,
   // 실패해도(예: Google이 refresh token을 안 줌) 사용자가 알아챌 방법이 없었다. 초기값은 마운트
@@ -62,59 +49,6 @@ export function ParaBoard() {
   useEffect(() => {
     if (searchParams.get("google")) router.replace(`/para?kind=${activeKind}`, { scroll: false });
   }, [searchParams, router, activeKind]);
-
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
-
-  function handleDragStart(event: DragStartEvent) {
-    setActiveId(String(event.active.id));
-  }
-
-  function handleDragEnd(event: DragEndEvent) {
-    setActiveId(null);
-    const { active, over } = event;
-    if (!over) return;
-    const activeIdStr = String(active.id);
-    const overIdStr = String(over.id);
-    const todo = todos.find((t) => t.id === activeIdStr);
-    if (!todo) return;
-
-    if (overIdStr.startsWith("para:")) {
-      const [, kind, containerId] = overIdStr.split(":");
-      const patch = {
-        projectId: kind === "project" ? containerId : null,
-        areaId: kind === "area" ? containerId : null,
-        resourceId: kind === "resource" ? containerId : null,
-      };
-      setTodos((prev) => prev.map((t) => (t.id === activeIdStr ? { ...t, ...patch } : t)));
-      void updateTodo(activeIdStr, patch);
-      return;
-    }
-
-    const isOverBacklogItem = todos.some((t) => t.id === overIdStr && isInboxVisible(t));
-    if (overIdStr !== BACKLOG && !isOverBacklogItem) return;
-
-    if (todo.projectId || todo.areaId || todo.resourceId) {
-      const patch = { projectId: null, areaId: null, resourceId: null };
-      setTodos((prev) => prev.map((t) => (t.id === activeIdStr ? { ...t, ...patch } : t)));
-      void updateTodo(activeIdStr, patch);
-      return;
-    }
-
-    const oldIndex = backlogItems.findIndex((t) => t.id === activeIdStr);
-    const overIndex = backlogItems.findIndex((t) => t.id === overIdStr);
-    const ordered =
-      oldIndex !== -1 && overIndex !== -1 && oldIndex !== overIndex
-        ? arrayMove(backlogItems, oldIndex, overIndex)
-        : backlogItems;
-
-    const normalizedById = new Map(ordered.map((t, index) => [t.id, index]));
-    setTodos((prev) =>
-      prev.map((t) => (normalizedById.has(t.id) ? { ...t, position: normalizedById.get(t.id)! } : t))
-    );
-    void persistPositions(
-      ordered.map((t) => ({ id: t.id, position: normalizedById.get(t.id)! }))
-    );
-  }
 
   async function handleSignOut() {
     const supabase = createClient();
@@ -128,8 +62,6 @@ export function ParaBoard() {
     else if (activeKind === "area") void addArea(name);
     else void addResource(name);
   }
-
-  const activeTodo = activeId ? todos.find((t) => t.id === activeId) ?? null : null;
 
   const containerRows =
     activeKind === "project"
@@ -221,12 +153,7 @@ export function ParaBoard() {
           </div>
         </div>
 
-        <DndContext
-          sensors={sensors}
-          collisionDetection={preferSpecificTargetCollision}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-        >
+        <>
           <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
             {containerRows.map((row) => (
               <ContainerCard
@@ -247,7 +174,6 @@ export function ParaBoard() {
             />
           </div>
 
-          <SortableContext items={backlogItems.map((t) => t.id)} strategy={verticalListSortingStrategy}>
             <AppSidebar
               activePage="para"
               userEmail={userEmail}
@@ -269,10 +195,7 @@ export function ParaBoard() {
               onAdd={actions.addToInbox}
               getBadge={containerNameOf}
             />
-          </SortableContext>
-
-          <DragOverlay>{activeTodo ? <TodoCard todo={activeTodo} overlay /> : null}</DragOverlay>
-        </DndContext>
+        </>
       </div>
 
       <AppNavRail activePage="para" panelOpen={panelOpen} onTogglePanel={() => setPanelOpen((open) => !open)} />

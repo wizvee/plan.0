@@ -6,6 +6,7 @@ import { useDroppable } from "@dnd-kit/core";
 
 import { CalendarBlock } from "@/components/calendar-block";
 import { cn } from "@/lib/utils";
+import type { DropTargetData } from "@/lib/dnd/drop-targets";
 import { useTodayKey } from "@/lib/use-today";
 import { DAY_KEYS, DAY_LABELS_KO, type Area, type DayKey, type Project, type Resource, type Todo } from "@/lib/types";
 import {
@@ -65,6 +66,7 @@ function CurrentTimeLine() {
 
 function DayGridColumn({
   day,
+  date,
   items,
   isToday,
   projects,
@@ -79,6 +81,8 @@ function DayGridColumn({
   onResize,
 }: {
   day: DayKey;
+  /** 이 칸의 실제 날짜 (yyyy-MM-dd) — 드롭하면 이 날짜로 배치된다 */
+  date: string;
   items: Todo[];
   isToday: boolean;
   projects: Project[];
@@ -92,7 +96,10 @@ function DayGridColumn({
   onAssignPara: (id: string, patch: { projectId: string | null; areaId: string | null; resourceId: string | null }) => void;
   onResize: (id: string, durationMinutes: number) => void;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: `grid:${day}` });
+  const { setNodeRef, isOver } = useDroppable({
+    id: `grid:${day}`,
+    data: { type: "calendar-day", date } satisfies DropTargetData,
+  });
 
   return (
     <div
@@ -201,6 +208,7 @@ export function WeekCalendar({
               <div key={day} className={cn(mobileDay !== day && "hidden", "sm:block")}>
                 <DayGridColumn
                   day={day}
+                  date={format(date, "yyyy-MM-dd")}
                   items={itemsByDay[day]}
                   isToday={isToday}
                   projects={projects}

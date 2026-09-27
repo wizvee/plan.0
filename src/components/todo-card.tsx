@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { UrlChip } from "@/components/url-chip";
 import { TodoDetailModal } from "@/components/todo-detail-modal";
 import { cn } from "@/lib/utils";
+import type { DragSource, DraggedTodoData } from "@/lib/dnd/drop-targets";
 import { CATEGORY_COLOR_VAR, getParaCategory } from "@/lib/category";
 import type { Area, Project, Resource, Todo, TodoKind } from "@/lib/types";
 
@@ -32,6 +33,8 @@ interface TodoCardProps {
   overlay?: boolean;
   /** PARA 매핑 표시용 — 이 할 일이 속한 Project/Area/Resource 이름 */
   badge?: string;
+  /** 이 카드가 놓인 곳 — Inbox 목록인지 PARA 상세 목록인지 (드롭 처리에서 사용) */
+  dragSource?: Extract<DragSource, "inbox" | "container">;
 }
 
 export function TodoCard({
@@ -48,6 +51,7 @@ export function TodoCard({
   onConvert,
   overlay,
   badge,
+  dragSource = "container",
 }: TodoCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
   const category = !badge ? getParaCategory(todo) : null;
@@ -57,6 +61,7 @@ export function TodoCard({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: todo.id,
     disabled: overlay,
+    data: { type: "todo", source: dragSource } satisfies DraggedTodoData,
   });
 
   const style = overlay

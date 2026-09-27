@@ -3,24 +3,13 @@
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { addDays, addMonths, format, startOfMonth, subMonths } from "date-fns";
-import {
-  DndContext,
-  DragOverlay,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type DragStartEvent,
-} from "@dnd-kit/core";
-import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
 
-import { nextPosition, useTodos } from "@/lib/app-data/use-todos";
+import { useTodos } from "@/lib/app-data/use-todos";
 import { useSession } from "@/lib/app-data/app-data-provider";
 import { useContainers } from "@/lib/app-data/use-containers";
 import { useTodoActions } from "@/lib/app-data/todo-actions";
 import { createClient } from "@/lib/supabase/client";
 import {
-  dayDateKey,
   dayKeyOf,
   mondayOf,
   parseDateKey,
@@ -29,13 +18,9 @@ import {
   weekNumberLabel,
   weekRangeLabel,
 } from "@/lib/week";
-import { preferSpecificTargetCollision } from "@/lib/dnd";
 import { cn } from "@/lib/utils";
 import { useTodayKey } from "@/lib/use-today";
-import { BACKLOG, DAY_KEYS, DAY_LABELS_KO, isInboxVisible, type DayKey, type Todo } from "@/lib/types";
-import { DEFAULT_DURATION_MINUTES, HOUR_HEIGHT, MINUTES_PER_DAY, clampMinutes, snapMinutes } from "@/lib/time";
-import { TodoCard } from "@/components/todo-card";
-import { CalendarBlock } from "@/components/calendar-block";
+import { DAY_KEYS, DAY_LABELS_KO, type DayKey, type Todo } from "@/lib/types";
 import { WeekCalendar } from "@/components/week-calendar";
 import { MonthCalendar } from "@/components/month-calendar";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -47,7 +32,7 @@ export function WeekBoard() {
   const { userEmail, googleConnected } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { todos, setTodos, backlogItems, updateTodo, persistPositions } = useTodos();
+  const { todos, backlogItems } = useTodos();
   const { projects, areas, resources } = useContainers();
   const actions = useTodoActions();
   // URL이 화면 상태의 유일한 출처다 — monday/viewMode/displayMonth를 별도 state로 들고 있다가
@@ -59,7 +44,6 @@ export function WeekBoard() {
   const monthParam = searchParams.get("month");
   const displayMonth = useMemo(() => startOfMonth(parseDateKey(monthParam) ?? monday), [monthParam, monday]);
 
-  const [activeId, setActiveId] = useState<string | null>(null);
   const [mobileDay, setMobileDay] = useState<DayKey>("mon");
   const [panelOpen, setPanelOpen] = useState(false);
 
@@ -69,10 +53,6 @@ export function WeekBoard() {
   function goToWeek(date: Date) {
     router.replace(`/?week=${toDateKey(mondayOf(date))}`, { scroll: false });
   }
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
-  );
 
   const scheduledByDay = useMemo(() => {
     const grouped: Record<DayKey, Todo[]> = { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] };
@@ -85,73 +65,12 @@ export function WeekBoard() {
     return grouped;
   }, [todos, weekKey, monday]);
 
-  function handleDragStart(event: DragStartEvent) {
-    setActiveId(String(event.active.id));
-  }
-
-  function handleDragEnd(event: DragEndEvent) {
-    setActiveId(null);
-    const { active, over } = event;
-    if (!over) return;
-    const activeIdStr = String(active.id);
-    const overIdStr = String(over.id);
-    const todo = todos.find((t) => t.id === activeIdStr);
-    if (!todo) return;
-
-    if (overIdStr.startsWith("grid:")) {
-      const day = overIdStr.slice("grid:".length) as DayKey;
-      const duration = todo.durationMinutes ?? DEFAULT_DURATION_MINUTES;
-      const gridTop = over.rect.top;
-      const itemTop = active.rect.current.translated?.top ?? gridTop;
-      const rawMinutes = ((itemTop - gridTop) / HOUR_HEIGHT) * 60;
-      const startMinutes = clampMinutes(snapMinutes(rawMinutes), 0, MINUTES_PER_DAY - duration);
-      const scheduledDate = dayDateKey(monday, DAY_KEYS.indexOf(day));
-      const patch = { scheduledDate, startMinutes, durationMinutes: duration };
-      setTodos((prev) => prev.map((t) => (t.id === activeIdStr ? { ...t, ...patch } : t)));
-      void updateTodo(activeIdStr, patch);
-      return;
-    }
-
-    const isOverBacklogItem = todos.some((t) => t.id === overIdStr && isInboxVisible(t));
-    if (overIdStr !== BACKLOG && !isOverBacklogItem) return;
-
-    if (todo.scheduledDate !== null) {
-      const patch = {
-        scheduledDate: null,
-        startMinutes: null,
-        durationMinutes: null,
-        position: nextPosition(backlogItems),
-      };
-      setTodos((prev) => prev.map((t) => (t.id === activeIdStr ? { ...t, ...patch } : t)));
-      void updateTodo(activeIdStr, patch);
-      return;
-    }
-
-    const oldIndex = backlogItems.findIndex((t) => t.id === activeIdStr);
-    const overIndex = backlogItems.findIndex((t) => t.id === overIdStr);
-    const ordered =
-      oldIndex !== -1 && overIndex !== -1 && oldIndex !== overIndex
-        ? arrayMove(backlogItems, oldIndex, overIndex)
-        : backlogItems;
-
-    const normalizedById = new Map(ordered.map((t, index) => [t.id, index]));
-    setTodos((prev) =>
-      prev.map((t) => (normalizedById.has(t.id) ? { ...t, position: normalizedById.get(t.id)! } : t))
-    );
-
-    void persistPositions(
-      ordered.map((t) => ({ id: t.id, position: normalizedById.get(t.id)! }))
-    );
-  }
-
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
     router.replace("/login");
     router.refresh();
   }
-
-  const activeTodo = activeId ? todos.find((t) => t.id === activeId) ?? null : null;
 
   return (
     <div className="min-h-screen pb-14 sm:pb-0 sm:pl-[260px]">
@@ -221,12 +140,7 @@ export function WeekBoard() {
           </header>
         ) : null}
 
-        <DndContext
-          sensors={sensors}
-          collisionDetection={preferSpecificTargetCollision}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-        >
+        <>
           {viewMode === "week" ? (
             <WeekCalendar
               monday={monday}
@@ -269,7 +183,6 @@ export function WeekBoard() {
             />
           )}
 
-          <SortableContext items={backlogItems.map((t) => t.id)} strategy={verticalListSortingStrategy}>
             <AppSidebar
               activePage="calendar"
               userEmail={userEmail}
@@ -290,18 +203,7 @@ export function WeekBoard() {
               onConvert={actions.convert}
               onAdd={actions.addToInbox}
             />
-          </SortableContext>
-
-          <DragOverlay>
-            {activeTodo ? (
-              activeTodo.scheduledDate === null ? (
-                <TodoCard todo={activeTodo} overlay />
-              ) : (
-                <CalendarBlock todo={activeTodo} overlay />
-              )
-            ) : null}
-          </DragOverlay>
-        </DndContext>
+        </>
       </div>
 
       <AppNavRail activePage="calendar" panelOpen={panelOpen} onTogglePanel={() => setPanelOpen((open) => !open)} />

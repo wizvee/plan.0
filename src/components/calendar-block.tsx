@@ -21,6 +21,7 @@ import {
   snapMinutes,
 } from "@/lib/time";
 import type { Area, Project, Resource, Todo } from "@/lib/types";
+import type { DraggedTodoData } from "@/lib/dnd/drop-targets";
 
 interface CalendarBlockProps {
   todo: Todo;
@@ -62,6 +63,7 @@ export function CalendarBlock({
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: todo.id,
     disabled: overlay,
+    data: { type: "todo", source: "calendar" } satisfies DraggedTodoData,
   });
 
   function handleResizePointerDown(e: ReactPointerEvent<HTMLDivElement>) {

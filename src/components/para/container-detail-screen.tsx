@@ -4,29 +4,17 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format, differenceInCalendarDays } from "date-fns";
 import { ArrowLeft, Bookmark, Compass, Target } from "lucide-react";
-import {
-  DndContext,
-  DragOverlay,
-  PointerSensor,
-  useDroppable,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type DragStartEvent,
-} from "@dnd-kit/core";
-import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { useDroppable } from "@dnd-kit/core";
 
 import { createClient } from "@/lib/supabase/client";
 import { useTodos } from "@/lib/app-data/use-todos";
 import { useSession } from "@/lib/app-data/app-data-provider";
 import { useContainers } from "@/lib/app-data/use-containers";
 import { useTodoActions } from "@/lib/app-data/todo-actions";
-import { preferSpecificTargetCollision } from "@/lib/dnd";
+import type { DropTargetData } from "@/lib/dnd/drop-targets";
 import { cn } from "@/lib/utils";
 import {
-  BACKLOG,
   PARA_KIND_LABELS,
-  isInboxVisible,
   type ParaContainer,
   type ParaKind,
 } from "@/lib/types";
@@ -61,7 +49,7 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
   const { userEmail, googleConnected } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { todos, setTodos, backlogItems, updateTodo, persistPositions } = useTodos();
+  const { todos, setTodos, backlogItems } = useTodos();
   const { projects, updateProject, areas, updateArea, resources, updateResource, containerNameOf } = useContainers();
   const actions = useTodoActions();
 
@@ -75,7 +63,6 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
   }
 
   const [panelOpen, setPanelOpen] = useState(false);
-  const [activeId, setActiveId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
 
@@ -98,64 +85,14 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
   const [promotedBanner, setPromotedBanner] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const dropId = `para:${kind}:${id}`;
-  const { setNodeRef, isOver } = useDroppable({ id: dropId });
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
-
-  const containerMapping = {
-    projectId: kind === "project" ? id : null,
-    areaId: kind === "area" ? id : null,
-    resourceId: kind === "resource" ? id : null,
-  };
+  const { setNodeRef, isOver } = useDroppable({
+    id: `para:${kind}:${id}`,
+    data: { type: "para-container", kind, id } satisfies DropTargetData,
+  });
 
   const project = kind === "project" ? projects.find((p) => p.id === id) : undefined;
   const container =
     kind === "project" ? project : kind === "area" ? areas.find((a) => a.id === id) : resources.find((r) => r.id === id);
-
-  function handleDragStart(event: DragStartEvent) {
-    setActiveId(String(event.active.id));
-  }
-
-  function handleDragEnd(event: DragEndEvent) {
-    setActiveId(null);
-    const { active, over } = event;
-    if (!over) return;
-    const activeIdStr = String(active.id);
-    const overIdStr = String(over.id);
-    const todo = todos.find((t) => t.id === activeIdStr);
-    if (!todo) return;
-
-    if (overIdStr === dropId) {
-      setTodos((prev) => prev.map((t) => (t.id === activeIdStr ? { ...t, ...containerMapping } : t)));
-      void updateTodo(activeIdStr, containerMapping);
-      return;
-    }
-
-    const isOverBacklogItem = todos.some((t) => t.id === overIdStr && isInboxVisible(t));
-    if (overIdStr !== BACKLOG && !isOverBacklogItem) return;
-
-    if (todo.projectId || todo.areaId || todo.resourceId) {
-      const patch = { projectId: null, areaId: null, resourceId: null };
-      setTodos((prev) => prev.map((t) => (t.id === activeIdStr ? { ...t, ...patch } : t)));
-      void updateTodo(activeIdStr, patch);
-      return;
-    }
-
-    const oldIndex = backlogItems.findIndex((t) => t.id === activeIdStr);
-    const overIndex = backlogItems.findIndex((t) => t.id === overIdStr);
-    const ordered =
-      oldIndex !== -1 && overIndex !== -1 && oldIndex !== overIndex
-        ? arrayMove(backlogItems, oldIndex, overIndex)
-        : backlogItems;
-
-    const normalizedById = new Map(ordered.map((t, index) => [t.id, index]));
-    setTodos((prev) =>
-      prev.map((t) => (normalizedById.has(t.id) ? { ...t, position: normalizedById.get(t.id)! } : t))
-    );
-    void persistPositions(
-      ordered.map((t) => ({ id: t.id, position: normalizedById.get(t.id)! }))
-    );
-  }
 
   if (!container) {
     return (
@@ -420,15 +357,8 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
     }
   }
 
-  const activeTodo = activeId ? todos.find((t) => t.id === activeId) ?? null : null;
-
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={preferSpecificTargetCollision}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-    >
+    <>
       <div className="min-h-screen pb-14 sm:pb-0 sm:pl-[260px]">
         <div
           ref={setNodeRef}
@@ -662,7 +592,6 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
         </div>
       </div>
 
-      <SortableContext items={backlogItems.map((t) => t.id)} strategy={verticalListSortingStrategy}>
         <AppSidebar
           activePage="para"
           userEmail={userEmail}
@@ -684,11 +613,8 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
           onAdd={actions.addToInbox}
           getBadge={containerNameOf}
         />
-      </SortableContext>
-
-      <DragOverlay>{activeTodo ? <TodoCard todo={activeTodo} overlay /> : null}</DragOverlay>
 
       <AppNavRail activePage="para" panelOpen={panelOpen} onTogglePanel={() => setPanelOpen((open) => !open)} />
-    </DndContext>
+    </>
   );
 }
