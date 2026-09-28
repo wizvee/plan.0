@@ -148,6 +148,7 @@ src/components/subtask/subtask-list.tsx      체크리스트 + "하위 할 일 �
 - `month-calendar.tsx`: 일정 한 줄 끝(시작 시각 앞)에 작은 `2/4` 텍스트만. 링 · 바는 공간이 없어 생략.
 
 ### 6단계 — PARA 상세 할 일 탭 펼치기 (시안 ②)
+> ✅ 완료 (2026-09-28) — `TodoCard`에 `expandable`(PARA 상세 할 일 목록만 넘김). 하위가 있으면 ›, 없으면 같은 폭 빈칸. 펼침 상태는 카드 로컬 state(저장 안 함). 펼친 목록은 정렬 노드 안에 있어 드래그 시 카드와 같이 움직임. tsc · eslint · build 통과.
 - `TodoCard`에 `expandable?: boolean` prop 추가 — **PARA 상세 화면만** 넘긴다(Inbox는 개수만, 시안 합의대로).
   셸 컴포넌트에 props를 넘기는 게 아니라 화면이 자기 목록 카드 모양을 고르는 것이라 셸 규칙과 무관.
 - 행 왼쪽 24px 셰브런(›/⌄): 하위가 있는 할 일만 보이고, 없으면 자리만 비워서 줄 정렬 유지.
