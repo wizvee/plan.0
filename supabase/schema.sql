@@ -1,5 +1,7 @@
 -- Weekly Todo Planner schema.
 -- Run this once in the Supabase dashboard: SQL Editor > New query > paste > Run.
+-- 2026-09-28부터 이 파일은 더 늘리지 않는다. 이후 변경은 supabase/migrations/에 날짜별 파일로 추가하고,
+-- 기존 프로젝트는 새 마이그레이션 파일만, 새 프로젝트는 이 파일 → migrations/ 파일을 날짜순으로 실행한다.
 
 create table if not exists public.todos (
   id uuid primary key default gen_random_uuid(),
@@ -231,60 +233,13 @@ create policy "Users can delete their own resources"
   on public.resources for delete
   using (auth.uid() = user_id);
 
--- 하위 할 일(서브 할 일) — SUBTASKS-PLAN.md. 할 일 하나 아래의 체크리스트(한 단계만).
--- 체크 하나가 다른 기기의 체크를 덮어쓰지 않도록 todos의 jsonb 컬럼이 아니라 행 단위 테이블로 둔다.
--- 부모 할 일을 지우면 함께 지워진다(on delete cascade).
--- ⚠️ 2026-09-28 추가 — 기존 Supabase 프로젝트는 이 파일 전체를 SQL Editor에서 다시 실행해야 한다.
-create table if not exists public.todo_subtasks (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users (id) on delete cascade,
-  todo_id uuid not null references public.todos (id) on delete cascade,
-  content text not null check (length(btrim(content)) > 0),
-  completed boolean not null default false,
-  position double precision not null default 0,
-  created_at timestamptz not null default now()
-);
-
-create index if not exists todo_subtasks_todo_id_idx on public.todo_subtasks (todo_id);
-create index if not exists todo_subtasks_user_id_idx on public.todo_subtasks (user_id);
-
-alter table public.todo_subtasks enable row level security;
-
--- insert/update는 부모 할 일도 내 것인지 확인한다 — 남의 할 일 id로 하위 할 일을 끼워 넣지 못하게.
-drop policy if exists "Users can view their own subtasks" on public.todo_subtasks;
-create policy "Users can view their own subtasks"
-  on public.todo_subtasks for select
-  using (auth.uid() = user_id);
-
-drop policy if exists "Users can insert their own subtasks" on public.todo_subtasks;
-create policy "Users can insert their own subtasks"
-  on public.todo_subtasks for insert
-  with check (
-    auth.uid() = user_id
-    and exists (select 1 from public.todos t where t.id = todo_id and t.user_id = auth.uid())
-  );
-
-drop policy if exists "Users can update their own subtasks" on public.todo_subtasks;
-create policy "Users can update their own subtasks"
-  on public.todo_subtasks for update
-  using (auth.uid() = user_id)
-  with check (
-    auth.uid() = user_id
-    and exists (select 1 from public.todos t where t.id = todo_id and t.user_id = auth.uid())
-  );
-
-drop policy if exists "Users can delete their own subtasks" on public.todo_subtasks;
-create policy "Users can delete their own subtasks"
-  on public.todo_subtasks for delete
-  using (auth.uid() = user_id);
-
 -- Enables realtime sync (INSERT/UPDATE/DELETE events) across devices.
 -- Guarded because ALTER PUBLICATION ... ADD TABLE has no IF NOT EXISTS either.
 do $$
 declare
   t text;
 begin
-  foreach t in array array['todos', 'projects', 'areas', 'resources', 'todo_subtasks']
+  foreach t in array array['todos', 'projects', 'areas', 'resources']
   loop
     if not exists (
       select 1 from pg_publication_tables

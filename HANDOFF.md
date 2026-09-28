@@ -488,6 +488,7 @@ DESIGN.md                      디자인 가이드 — 컬러 토큰/radius/레�
 
 supabase/schema.sql            todos + projects/areas/resources 테이블 + RLS 정책 + realtime publication (Supabase SQL Editor에서 1회 실행,
                                 재실행해도 안전)
+supabase/migrations/            2026-09-28 이후 DB 변경. 날짜별 파일, 기존 프로젝트는 새 파일만 SQL Editor에서 실행
 .env.local.example             필요한 환경변수 템플릿 (진짜 키는 절대 커밋 안 함)
 
 src/app/(app)/layout.tsx        로그인 후 화면 공통 레이아웃 — user · Drive 연결 1회 조회 → AppDataProvider → DndProvider → AppShell (25번)
@@ -569,7 +570,10 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
 6. Supabase 프로젝트에 이미 `schema.sql`을 실행해둔 상태라면, 새로 추가된 컬럼(`start_minutes`/
    `duration_minutes`, 그리고 이번에 추가된 `url`/`memo`)을 쓰려면 **`supabase/schema.sql`을
    SQL Editor에서 다시 한 번 실행**해야 함 (전체 스크립트가 재실행해도 안전하도록 작성돼 있음).
-   **2026-09-28: 하위 할 일 테이블 `todo_subtasks` 추가 — 다시 실행 필요** (SUBTASKS-PLAN.md 1단계).
+   **2026-09-28부터 schema.sql은 더 늘리지 않는다**(SQL Editor가 약 249줄까지만 붙여넣기됨). 이후 DB 변경은
+   `supabase/migrations/YYYYMMDD_이름.sql`로 따로 만들고, 기존 프로젝트는 **그 파일만** 실행.
+   새 프로젝트는 schema.sql → migrations/ 파일을 날짜순으로 실행.
+   - `20260928_todo_subtasks.sql` — 하위 할 일 테이블 (SUBTASKS-PLAN.md 1단계) **실행 필요**
 7. `/api/clip` 기능을 실제로 쓰려면 `SUPABASE_SECRET_KEY`/`CLIP_API_SECRET`/`CLIP_USER_ID` 세
    환경변수를 로컬(`.env.local`)과 Vercel 양쪽에 아직 등록 안 함 — README의 해당 섹션 참고해서
    설정하고 애플 단축어까지 만들어야 실제로 동작함. 코드/스키마는 준비 완료 상태.
