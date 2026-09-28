@@ -440,6 +440,26 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
   저장. Tasks 탭 안 스크랩을 여러 개 골라 하나의 노트로 승격 가능, 노트는 옵시디언 Properties
   스타일의 링크형/태그형 속성을 지원 (PLANNING.md 9번, 20번 결정 참고)
 
+24. **(2026-09-27~28 추가) 공통 앱 셸 리팩토링 + 애플 스타일 리디자인**: 23번에서 미뤄둔 "사이드바를 화면마다
+    배선하는 구조"를 사용자가 직접 지적 — "사이드바는 모든 화면 공통인데 왜 화면별로 따로 그리려 하냐,
+    화면별로 달라질 수 있는 코드라면 리팩토링하라". 계획은 [REFACTORING-PLAN.md](./REFACTORING-PLAN.md)
+    (단계별 진행 상황 · 코드 대조 결과 포함), 시안은 https://claude.ai/artifact/EAnz3ttkMqj676NhTXjP7b.
+    - **1단계 데이터 단일화** `src/lib/app-data/` — `AppDataProvider` + `useTodos`/`useContainers`/`useTodoActions`/`useSession`.
+    - **2단계** `src/app/(app)/layout.tsx` 라우트 그룹 — 사용자 · Drive 연결 조회와 데이터 구독을 한 번만(화면 이동 시 재조회 없음).
+    - **3단계 DnD 단일화** `src/lib/dnd/` — `DndProvider` 하나 + `handle-drop.ts` 한 곳. 드롭 영역은 `data`로 자신을 선언.
+      동작 변화: PARA 화면에서 매핑된 Inbox 항목을 Inbox 안에서 끌면 매핑 해제 → 순서 변경.
+    - **4단계 셸 이전** `src/components/shell/` — 레이아웃에서 한 번만 렌더링, props 없음. **ESLint `no-restricted-imports`로
+      화면에서 셸 import 금지**(DESIGN.md 5번). 이제 화면별로 사이드바가 달라질 수 있는 구조 자체가 없음.
+    - **5단계 코드 대조** — FEATURES.md 기준 누락 없음 확인. 대조 중 Google OAuth 콜백의 오픈 리다이렉트(`state`를 검사 없이
+      redirect에 사용)를 발견해 앱 내부 경로만 허용하도록 수정.
+    - **6단계 리디자인** — 사용자 요구: ① 메뉴에 캘린더 · PARA · Inbox, ② 오른쪽 상단 드롭다운으로 월/주 전환,
+      ③ Inbox는 PC에서 팝업이 아니라 본문을 밀어내서 월요일 등 왼쪽 영역을 가리지 않게, ④ 애플 디자인 + 팔레트를 애플스럽게,
+      ⑤ 미니 캘린더는 애플 캘린더 방식(제목 클릭 팝오버). 260px 사이드바 → 76px 레일 + 밀어내는 Inbox 패널 + 계정 메뉴
+      (Drive 연결/재연결 · 로그아웃), 캘린더 툴바(`calendar-header.tsx`), PARA 목록/상세 재디자인, 팔레트 교체(토큰 이름 유지).
+      자세한 규칙은 DESIGN.md(전면 갱신).
+    - **확인 못 한 것**: 이 세션 환경엔 Supabase 키가 없어 브라우저에서 실제로 띄워보지 못함(타입 검사 · 린트 · `next build`만
+      통과). 드래그 앤 드롭 · 모바일 바텀시트 · Drive 재연결 복귀는 로컬에서 손으로 확인 필요 — REFACTORING-PLAN.md 5단계 목록 참고.
+
 ## 파일 맵
 
 ```
@@ -452,11 +472,12 @@ supabase/schema.sql            todos + projects/areas/resources 테이블 + RLS 
                                 재실행해도 안전)
 .env.local.example             필요한 환경변수 템플릿 (진짜 키는 절대 커밋 안 함)
 
-src/app/page.tsx                서버 컴포넌트: 로그인 체크 후 WeekBoard 렌더 (userId/userEmail 전달)
+src/app/(app)/layout.tsx        로그인 후 화면 공통 레이아웃 — user · Drive 연결 1회 조회 → AppDataProvider → DndProvider → AppShell (24번)
+src/app/(app)/page.tsx          캘린더 화면 (WeekBoard 본문만)
 src/app/login/page.tsx          로그인 폼 (가입 전환 버튼은 주석 처리됨)
 src/app/api/clip/route.ts       공유하기 스크랩용 API — 비밀키 헤더 인증 → Todo List에 새 항목 insert
-src/app/para/page.tsx           서버 컴포넌트: 로그인 체크 후 ParaBoard 렌더
-src/app/para/[kind]/[id]/page.tsx 서버 컴포넌트: kind 검증 + 로그인 체크 후 ContainerDetailScreen 렌더
+src/app/(app)/para/page.tsx     PARA 목록 (ParaBoard 본문만)
+src/app/(app)/para/[kind]/[id]/page.tsx kind 검증 후 ContainerDetailScreen 본문만
 src/app/api/auth/google/route.ts        로그인 사용자를 Google 동의 화면으로 리다이렉트 (18번 결정)
 src/app/api/auth/google/callback/route.ts  인가 코드를 토큰으로 교환해서 google_accounts에 저장
 src/app/api/drive/folder/route.ts  컨테이너(project/area/resource) → Drive 폴더 조회, 없으면 생성 후 drive_folder_id 저장
@@ -472,7 +493,11 @@ src/lib/supabase/todos.ts       useSupabaseTodos 훅 — fetch + realtime 구독
 src/lib/supabase/containers.ts  useSupabaseProjects/Areas/Resources 훅 — projects/areas/resources 테이블 CRUD + realtime
 src/lib/types.ts                Todo/Project/Area/Resource 타입, TodoKind, ParaKind, isInboxVisible(), 요일 키, 라벨
 src/lib/category.ts             getParaCategory() + 카테고리별 CSS 변수 맵 (DESIGN.md 3번 참고)
-src/lib/dnd.ts                  preferSpecificTargetCollision — 보관함 패널과 다른 드롭 영역이 겹칠 때 충돌 우선순위
+src/lib/app-data/               데이터 단일 출처: AppDataProvider, useTodos, useContainers, useTodoActions, useSession, useSignOut (24번)
+src/lib/dnd/                    DndProvider(앱에 1개), handle-drop.ts(드롭 처리 단일 구현), drop-targets.ts(드롭 data 타입),
+                                collision.ts(preferSpecificTargetCollision — 보관함과 다른 드롭 영역이 겹칠 때 우선순위)
+src/lib/shell-ui.tsx            셸 UI 상태(Inbox 열림 · localStorage 기억, "+"로 열고 입력창 포커스)
+src/lib/use-dismiss.ts          팝오버 바깥 클릭 / Esc로 닫기
 src/lib/week.ts                 주차 계산(월요일 시작, ISO 주차, 오늘 여부 등)
 src/lib/time.ts                 시간 캘린더 계산(시간→px 변환, 스냅, 시간 라벨 포맷, BLOCK_GAP 등)
 src/lib/use-today.ts            "오늘 날짜"를 client-only로 계산하는 훅 (SSR 시간대 버그 방지)
@@ -484,21 +509,19 @@ src/lib/google-account.ts      google_accounts 조회/저장 + API route 공용 
 src/lib/frontmatter.ts         노트 Properties용 YAML frontmatter 파서/직렬화기 (손으로 구현, 20번 결정)
 src/lib/drive-file.ts          Drive 파일 종류 판별(md/pdf/pptx/image) + 수정일 포맷 (클라이언트에서도 씀)
 
-src/components/week-board.tsx    메인 화면 전체 — 상태 관리, DnD 컨텍스트, 레이아웃 조립
-src/components/week-nav.tsx      주차 이동 버튼들
+src/components/shell/           앱 셸 — 레이아웃에서만 렌더링, 화면에서 import 금지(ESLint). app-shell / app-rail(레일 · 모바일 탭) /
+                                inbox-panel(밀어내는 패널 · 바텀시트) / account-menu / drive-status-banner (24번, DESIGN.md 5번)
+src/components/week-board.tsx    캘린더 화면 본문 — URL에서 주/월 계산, 툴바 + 주/월 그리드 조립
+src/components/calendar-header.tsx 캘린더 툴바 — 제목 → 미니 캘린더 팝오버, 보기 드롭다운(주/월), +, 이전/오늘/다음
 src/components/week-calendar.tsx Mon~Sun 시간 단위 캘린더 그리드(요일 헤더 + 0~24시 스크롤 영역 + 현재 시각 라인)
 src/components/calendar-block.tsx 캘린더에 예약된 할 일 블록(드래그로 이동, 하단 핸들로 리사이즈, PARA 카테고리 색상 코딩)
-src/components/app-sidebar.tsx  데스크톱 사이드바 겸 모바일 보관함 바텀시트 (구 todo-panel.tsx 대체, DESIGN.md 5번 참고).
-                                 단일 컴포넌트를 sm: 반응형 클래스로만 전환 — JS 미디어쿼리 훅 없음
-src/components/mini-calendar.tsx 사이드바용 월 그리드 위젯 (오늘/이번 주 강조, 날짜 클릭 이동)
-src/components/icon-rail.tsx    모바일 전용 하단 탭바 저수준 컴포넌트 (items 배열 받아서 렌더만 함)
-src/components/app-nav-rail.tsx 캘린더/PARA 화면이 공유하는 하단 탭바 (Todo List·PARA·캘린더 3개 고정 항목,
-                                 데스크톱 내비게이션은 AppSidebar가 맡음)
+src/components/month-calendar.tsx 월 보기 그리드 (칸 클릭 → 그 주, 일정 클릭 → 상세 팝업)
+src/components/mini-calendar.tsx 애플식 미니 달력 (calendar-header 팝오버 안, 보는 주 띠 강조)
 src/components/todo-card.tsx    할 일/노트 한 줄(할 일=체크박스, 노트=아이콘만 + 텍스트 + 드래그 핸들 +
                                  삭제 + URL이 있으면 파비콘 임베드 카드 + 전환 버튼)
 src/components/todo-detail-modal.tsx  할 일/노트 상세 팝업 (제목/메모 수정, 할일↔노트 전환, 삭제)
 src/components/add-todo-form.tsx  할 일/노트 추가 입력 행 (토글로 종류 선택)
-src/components/para-board.tsx   PARA 목록 화면 — 가로 세그먼트 컨트롤 + 컨테이너 카드 그리드 + 재사용된 AppSidebar
+src/components/para-board.tsx   PARA 목록 화면 본문 — 세그먼트 컨트롤 + 컨테이너 카드 그리드
 src/components/para/container-card.tsx        Project/Area/Resource 카드 (droppable, 클릭 시 상세로 이동)
 src/components/para/add-container-form.tsx    Project/Area/Resource 생성 입력 행 (Notes 탭의 "새 노트 추가"에도 재사용)
 src/components/para/container-detail-screen.tsx  상세 화면 (헤더 + 요약 줄 + Overview/Tasks/자료 탭, 20번 결정)

@@ -27,10 +27,13 @@ export function InboxPanel() {
   const { inboxOpen, setInboxOpen, focusRequest } = useShellUI();
   const { setNodeRef, isOver } = useDroppable({ id: BACKLOG, data: { type: "inbox" } satisfies DropTargetData });
   const panelRef = useRef<HTMLElement>(null);
+  const handledFocusRequest = useRef(0);
 
-  // 캘린더 툴바의 "+"로 열었으면 입력창에 포커스
+  // 캘린더 툴바의 "+"로 열었을 때만 입력창에 포커스 (레일로 열 때는 포커스하지 않음 — 모바일 키보드 방지)
   useEffect(() => {
-    if (focusRequest > 0) panelRef.current?.querySelector<HTMLInputElement>("[data-add-input]")?.focus();
+    if (!inboxOpen || focusRequest === handledFocusRequest.current) return;
+    handledFocusRequest.current = focusRequest;
+    panelRef.current?.querySelector<HTMLInputElement>("[data-add-input]")?.focus();
   }, [focusRequest, inboxOpen]);
 
   if (!inboxOpen) return null;
@@ -42,8 +45,8 @@ export function InboxPanel() {
         ref={panelRef}
         aria-label="Inbox"
         className={cn(
-          "fixed inset-x-0 bottom-16 z-40 flex h-[62vh] flex-col rounded-t-xl border border-border bg-panel shadow-lg",
-          "sm:sticky sm:top-0 sm:bottom-auto sm:z-auto sm:h-screen sm:w-[320px] sm:shrink-0 sm:rounded-none sm:border-0 sm:border-r sm:shadow-none"
+          "fixed bottom-16 left-0 right-0 z-40 flex h-[62vh] flex-col rounded-t-xl border border-border bg-panel shadow-lg",
+          "sm:sticky sm:top-0 sm:bottom-auto sm:right-auto sm:z-auto sm:h-screen sm:w-[320px] sm:shrink-0 sm:rounded-none sm:border-0 sm:border-r sm:shadow-none"
         )}
       >
         <div className="flex justify-center pt-2 sm:hidden">

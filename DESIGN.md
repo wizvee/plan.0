@@ -1,141 +1,135 @@
 # 디자인 가이드 (DESIGN)
 
-이 문서는 **2026-09 리디자인**(Claude Design 캔버스 목업 → 컨펌 → 코드 반영, 커밋 `a7072f5`
-"Redesign UI to a minimal calendar style with left sidebar nav")에서 정한 디자인 맥락을
-정리한 문서입니다. 새 세션에서 화면/컴포넌트를 추가하거나 수정할 때는 **이 문서를 먼저 읽고
+이 문서는 **2026-09-27 애플 스타일 리디자인**(Claude Design 캔버스 목업 → 컨펌 → 공통 셸 리팩토링 → 코드 반영)에서
+정한 디자인 맥락을 정리한 문서입니다. 새 세션에서 화면/컴포넌트를 추가하거나 수정할 때는 **이 문서를 먼저 읽고
 아래 방향을 그대로 따라주세요.** 개념/기능 기획은 [PLANNING.md](./PLANNING.md), 작업 이력은
-[HANDOFF.md](./HANDOFF.md) 참고.
+[HANDOFF.md](./HANDOFF.md), 현재 기능 목록은 [FEATURES.md](./FEATURES.md), 셸 구조를 바꾼 이유는
+[REFACTORING-PLAN.md](./REFACTORING-PLAN.md) 참고.
 
-> 원본 목업(Claude Design 캔버스, 편집 가능): https://claude.ai/artifact/Y1VejC9HJ92DevUks9pjzp
-> 5개 화면(로그인 / 주간 캘린더 / PARA 보드 / PARA 상세 / 모바일 캘린더 / 모바일 보관함 바텀시트)이
-> 같은 캔버스에 있습니다. 큰 레이아웃을 다시 논의할 일이 있으면 여기서 먼저 시안을 그려보고
-> 컨펌받은 뒤 코드로 옮기는 걸 권장합니다(HANDOFF.md의 "UI는 코드로 바로 만들지 않는다" 규칙과 동일한 이유).
+> 원본 목업(Claude Design 캔버스): https://claude.ai/artifact/EAnz3ttkMqj676NhTXjP7b
+> 주 보기 · Inbox 열림 · 미니 캘린더 · 월 보기 드롭다운 · 계정 메뉴(Drive 연결/미연결) · PARA 목록 ·
+> PARA 상세(Project/Area/Resource 각 탭) · 팔레트 보드가 있습니다. 큰 레이아웃을 다시 논의할 일이 있으면 여기서 먼저
+> 시안을 그려보고 컨펌받은 뒤 코드로 옮기세요(HANDOFF.md의 "UI는 코드로 바로 만들지 않는다" 규칙).
+>
+> 이전 디자인(2026-09 미니멀 캘린더형, 260px 사이드바 · 웜 크림 팔레트)은 커밋 `a7072f5` 기준 이 문서의 이전 버전 참고.
 
 ## 1. 방향
 
-**미니멀 캘린더형** — Notion Calendar / Google Calendar를 참고 레퍼런스로 삼았습니다.
-Apple 미리알림 스타일이었던 이전 버전 대비 다음이 바뀌었습니다:
+**애플 캘린더 / 미리알림 스타일** — 참고 레퍼런스는 macOS·iOS 캘린더와 사용자가 준 캘린더 앱 스크린샷.
+이전 버전 대비:
 
-- 내비게이션이 오른쪽 아이콘 레일 → **왼쪽 사이드바**(데스크톱)로 이동
-- 모서리 radius를 전반적으로 **더 각지게** 축소
-- 로그인 화면이 박스형 카드 → **가볍고 중앙 정렬된 레이아웃**(밑줄 인풋)으로 변경
-- PARA 매핑(Project/Area/Resource)에 따라 캘린더 블록/카드에 **색상 코딩**이 생김
-
-색 팔레트 자체(웜 크림 배경 + 블루그레이 프라이머리)는 **바꾸지 않고 유지**했습니다 —
-사용자가 기존 팔레트를 마음에 들어 했고, radius·레이아웃·정보 구조만 새로 짰습니다.
+- 왼쪽 260px 사이드바 → **76px 아이콘 레일**(캘린더 · PARA · Inbox · 계정) + **밀어내는 Inbox 패널**
+- Inbox는 팝업이 아니라 레일 옆에 열리면서 **본문을 오른쪽으로 밀어냄** — 월요일 등 본문 왼쪽을 절대 가리지 않는다
+- 월/주 전환은 캘린더 오른쪽 상단 **보기 드롭다운**, 미니 캘린더는 **제목("2026년 9월 ⌄")을 누르면 뜨는 팝오버**(애플 캘린더 방식)
+- 팔레트를 웜 크림 + 블루그레이 → **뉴트럴 그레이 + 시스템 블루**로. "오늘"과 현재 시각은 애플처럼 **빨강**
+- 목록은 iOS 설정 앱 같은 **흰 카드 안 헤어라인 구분 리스트**, 전환 컨트롤은 **세그먼트 컨트롤**
 
 ## 2. 컬러 토큰
 
-모두 `src/app/globals.css`의 CSS 변수. `@theme inline` 블록에서 Tailwind 유틸리티
-(`bg-primary`, `text-muted-foreground` 등)로 매핑되어 있으니, **컴포넌트에서는 항상 시맨틱
-토큰으로 참조하고 새 hex 값을 직접 쓰지 마세요.**
+모두 `src/app/globals.css`의 CSS 변수. `@theme inline`에서 Tailwind 유틸리티(`bg-primary`, `text-today` 등)로
+매핑되어 있으니, **컴포넌트에서는 항상 시맨틱 토큰으로 참조하고 새 hex 값을 직접 쓰지 마세요.**
+중립 틴트가 필요하면 `bg-black/[0.06]`처럼 검정의 투명도로 쓰는 건 괜찮습니다(애플 방식, 새 색이 아님).
 
 | 토큰 | 라이트 | 다크 | 용도 |
 |---|---|---|---|
-| `--background` | `#F6F4F0` | `#1C1A17` | 페이지 배경 (웜 크림) |
-| `--foreground` | `#3B3632` | `#EAE5DD` | 기본 텍스트 |
-| `--card` | `#FFFEFB` | `#262320` | 카드/패널 배경 |
-| `--primary` | `#5C7599` | `#90A6C7` | 브랜드 액센트, 버튼, "오늘" 표시 |
-| `--secondary` / `--muted` | `#ECE8E2` | `#33302B` | 사이드바 배경, 중립 톤 배경 |
-| `--muted-foreground` | `#8B8377` | `#A39B8D` | 보조 텍스트, "매핑 없음" 카테고리 색 |
-| `--accent` | `#E7ECF2` | `#2B3542` | primary의 연한 틴트 (project 카테고리 배경으로도 재사용) |
-| `--accent-foreground` | `#4D6584` | `#9FB4D4` | accent 위에 올라가는 텍스트/아이콘 |
-| `--destructive` | `#C1685C` | `#D98A7E` | 삭제, 현재 시각 라인 |
-| `--category-area` / `-tint` | `oklch(54% 0.07 155)` / `oklch(94% 0.014 155)` | `oklch(72% 0.09 155)` / `oklch(28% 0.035 155)` | Area 카테고리 |
-| `--category-resource` / `-tint` | `oklch(54% 0.075 320)` / `oklch(94% 0.014 320)` | `oklch(72% 0.1 320)` / `oklch(28% 0.035 320)` | Resource 카테고리 |
+| `--background` | `#FFFFFF` | `#1C1C1E` | 본문 배경 |
+| `--foreground` | `#1D1D1F` | `#F5F5F7` | 기본 텍스트 |
+| `--card` / `--popover` | `#FFFFFF` | `#2C2C2E` | 카드 · 리스트 · 팝오버 |
+| `--primary` | `#0071E3` | `#0A84FF` | 액센트, 선택 상태, 주요 버튼, Project 카테고리 |
+| `--secondary` / `--muted` | `#F5F5F7` | `#2C2C2E` | 레일 배경, 요약 줄 · 빈 상태 배경 |
+| `--panel` | `#FBFBFD` | `#232325` | Inbox 패널 배경 |
+| `--muted-foreground` | `#6E6E73` | `#98989D` | 보조 텍스트(흰 배경 4.9:1) |
+| `--accent` | `#E8F1FE` | `#10304F` | primary 틴트 (Project 카테고리 배경으로도 재사용) |
+| `--accent-foreground` | `#0A4A9E` | `#64A8FF` | accent 위 텍스트 |
+| `--destructive` | `#FF3B30` | `#FF453A` | 삭제, 오류 |
+| `--today` | `#FF3B30` | `#FF453A` | 오늘 날짜 원 · 현재 시각 선 · Inbox 개수 배지 |
+| `--warning` | `#FF9500` | `#FF9F0A` | Drive 미연결 경고 점 등 |
+| `--border` | `rgba(0,0,0,.08)` | `rgba(255,255,255,.12)` | 헤어라인 |
+| `--category-area` / `-tint` | `#2E9E5B` / `#E5F5EB` | `#30D158` / `#173A24` | Area 카테고리 |
+| `--category-resource` / `-tint` | `#A550D6` / `#F4EAFB` | `#BF5AF2` / `#34203F` | Resource 카테고리 |
 
-**Project 카테고리는 별도 토큰이 없습니다** — `--primary`/`--accent`를 그대로 재사용합니다
-(3개 카테고리 중 가장 자주 쓰이는 게 Project라서 기존 브랜드 컬러를 그대로 씀).
-
-새 카테고리 컬러가 필요하면(향후 확장 시) 같은 방식으로 만드세요: `--primary`의 oklch
-lightness(~54~56%)·chroma(~0.06~0.075)는 그대로 두고 **hue만 바꿔서** 톤을 통일하고,
-라이트는 `L 94% / C ~0.014`, 다크는 `L 72%(본색) / L 28%(틴트)`로 파생.
+**Project 카테고리는 별도 토큰이 없습니다** — `--primary`/`--accent`를 그대로 재사용합니다.
+새 카테고리 색이 필요하면 애플 시스템 컬러 계열에서 고르고, 틴트는 라이트 `L≈94%`, 다크 `L≈25%` 정도로 파생하세요.
+(앱에 다크 모드를 실제로 켜는 로직은 아직 없음 — 토큰만 준비돼 있음.)
 
 ## 3. 카테고리 색상 코딩
 
-`src/lib/category.ts`:
-
-```ts
-getParaCategory(todo): "project" | "area" | "resource" | null
-```
-
-`todo.projectId`/`areaId`/`resourceId` 중 뭐가 채워져 있는지로 판정합니다(DB에
-`todos_para_single_mapping` CHECK 제약으로 최대 1개만 값을 가짐이 보장됨 — `supabase/schema.sql`
-참고). `CATEGORY_COLOR_VAR`/`CATEGORY_TINT_VAR`가 카테고리 → CSS 변수 이름 맵입니다.
+`src/lib/category.ts`의 `getParaCategory(todo)` · `CATEGORY_COLOR_VAR` · `CATEGORY_TINT_VAR`를 재사용하세요.
+색을 `bg-blue-500`처럼 하드코딩하지 말고 `style={{ backgroundColor: `var(${CATEGORY_TINT_VAR[category]})` }}` 형태로.
 
 적용된 곳:
-- `calendar-block.tsx` — 블록 배경/왼쪽 보더가 카테고리 색. 매핑 없으면 `--muted-foreground`/`--secondary`
-  (완료된 항목은 카테고리와 무관하게 항상 muted 톤).
-- `todo-card.tsx` — PARA 배지(`badge` prop)가 없는 컨텍스트(사이드바 보관함 등)에서만 카테고리 점(dot) 표시.
-  이미 컨테이너 이름 배지가 있으면(예: PARA 화면 안 보관함) 점은 안 그림 — 중복 정보라서.
-- `container-card.tsx` — 카드 상단 3px 액센트 보더가 종류(project/area/resource)별 색.
-
-새로운 곳에 카테고리 색을 쓸 일이 생기면 이 헬퍼를 재사용하세요. 색을 직접 `bg-blue-500`처럼
-하드코딩하지 말고 `style={{ backgroundColor: `var(${CATEGORY_TINT_VAR[category]})` }}` 형태로.
+- `calendar-block.tsx` — 틴트 배경 + 왼쪽 3px 카테고리 바(`box-shadow: inset`) + 카테고리 색 작은 원형 체크. 완료되면 색은 유지하고 블록 전체를 50%로 흐리게. 매핑 없으면 회색.
+- `month-calendar.tsx` — 일정 한 줄 = 카테고리 색 점 + 제목 + 시작 시각.
+- `todo-card.tsx` — 소속 이름(`badge`) 앞에 카테고리 점. Inbox는 모든 화면에서 이름을 보여준다.
+- `container-card.tsx` / PARA 상세 — 카드 상단 3px 보더, 상태 칩 배경, 진행률 바, 아이콘 타일이 종류별 색.
 
 ## 4. Radius
 
-`--radius: 0.5rem`(8px)가 기준값이고, `rounded-sm/md/lg/xl`이 여기서 자동 파생됩니다
-(`--radius-sm` 4px / `-md` 6px / `-lg` 8px / `-xl` 12px). **주의**: Tailwind 기본
-`rounded-2xl`/`rounded-3xl`/`rounded-full`은 이 변수에 안 묶여 있습니다.
+`--radius: 0.625rem`(10px) 기준, `rounded-sm/md/lg/xl` = 6 / 8 / 10 / 14px. 실제로는 애플 수치를 그대로 쓰는 곳이 많습니다:
 
-- 카드·모달·패널: `rounded-lg`(8px) 또는 `rounded-xl`(12px, 좀 더 큰 컨테이너)
-- 버튼·인풋·칩·배지: `rounded-sm`(4px)~`rounded-md`(6px)
-- 아바타·체크박스·오늘 날짜 원·FAB·점(dot) 등 **의도적으로 원형인 요소는 `rounded-full` 그대로 유지** —
-  "radius가 너무 둥글다"는 피드백은 사각형 카드/버튼 얘기였지, 체크박스나 아바타 같은 원형
-  요소를 각지게 하라는 뜻이 아니었습니다. 상태 배지(진행중/완료 등)는 예전엔 pill(`rounded-full`)이었지만
-  지금은 작은 사각 칩(`rounded-sm`)으로 바뀌었습니다 — 이건 사각형이 맞습니다.
-- `rounded-2xl`을 새로 쓰지 마세요. 기존에 남아있던 `rounded-2xl`은 전부 `rounded-lg`/`rounded-xl`로
-  낮춰뒀습니다.
+- 패널 · 카드 · 그룹 리스트 · 팝오버: `rounded-xl`(14px) 또는 `rounded-[10px]`~`rounded-[12px]`
+- 버튼 · 입력창 · 세그먼트: `rounded-[7px]`~`rounded-lg`, 세그먼트 안 선택 조각은 `rounded-md`/`rounded-[5px]`
+- 캘린더 블록: `rounded-md`, 칩 · 태그: `rounded-[5px]`
+- 체크박스 · 아바타 · 오늘 날짜 · 점 · 개수 배지는 **원형(`rounded-full`) 유지**
+- `rounded-2xl`은 쓰지 마세요.
 
-## 5. 레이아웃 — 데스크톱 사이드바 / 모바일 바텀 내비게이션
+## 5. 레이아웃 — 공통 앱 셸 (가장 중요)
 
-**데스크톱(`sm:` 이상)**: 왼쪽에 고정된 260px 사이드바(`app-sidebar.tsx`) — 브랜드,
-"+ 새 할 일", 미니 캘린더(`mini-calendar.tsx`), 할 일 보관함(항상 펼쳐진 상태), 캘린더/PARA
-전환, 계정(이메일+로그아웃). 본문은 `sm:pl-[260px]`로 공간을 확보합니다.
+로그인 후 화면(캘린더 · PARA 목록 · PARA 상세)은 전부 `src/app/(app)/layout.tsx` 아래에 있고, 이 레이아웃이
+**셸을 한 번만** 렌더링합니다. 셸은 화면을 옮겨도 언마운트되지 않습니다.
 
-**모바일(`sm:` 미만)**: 하단 탭바(`icon-rail.tsx`, 3개 고정 항목: Todo/캘린더/PARA)와,
-"Todo" 탭을 누르면 열리는 보관함 바텀시트.
+```
+(app)/layout.tsx  → AppDataProvider → DndProvider → AppShell
+AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBanner + 화면 본문] + AccountMenu
+```
 
-`AppSidebar`는 **모바일/데스크톱 공용 단일 컴포넌트**이고 항상 마운트되어 있습니다 —
-`panelOpen` 상태에 따라 모바일에서 `hidden`↔바텀시트로 바뀌고, `sm:` 프리픽스가 데스크톱에서
-그 상태를 덮어써서 항상 사이드바로 보이게 만드는 순수 Tailwind 반응형 트릭입니다(별도 JS
-미디어쿼리 훅 없음). 이렇게 한 이유: 보관함은 dnd-kit `SortableContext` + `useDroppable({id:
-BACKLOG})`를 갖고 있는데, 같은 id를 가진 SortableContext가 동시에 두 개 마운트되면 안 되기
-때문입니다. **새 화면을 만들 때도 `AppSidebar`를 그대로 재사용하세요** — 직접 사이드바를
-새로 만들지 말고.
+- **`AppRail`**(`components/shell/app-rail.tsx`) — 데스크톱은 왼쪽 76px 세로 레일, 모바일(`sm:` 미만)은 하단 탭바.
+  한 컴포넌트가 반응형으로 모양만 바꿈. 항목: 캘린더 · PARA · Inbox(열기/닫기, 개수 배지) · 계정(아바타, Drive 미연결이면 주황 점).
+- **`InboxPanel`** — 데스크톱은 레일 옆 320px 패널이 **본문을 밀어냄**(sticky, 팝업 아님), 모바일은 하단 탭 위 바텀시트.
+  보관함 드롭 영역 · `SortableContext`는 앱에 하나만 있어야 하므로 이 컴포넌트가 유일한 보관함입니다.
+  열림 여부는 `localStorage`에 기억(`src/lib/shell-ui.tsx`).
+- **`AccountMenu`** — 이메일 · Google Drive 연결됨/재연결 또는 연결 · 로그아웃. Drive 링크는 지금 화면으로 돌아오도록 `next`를 붙임.
+- **`DriveStatusBanner`** — OAuth 콜백의 `?google=` 결과를 어느 화면에서든 표시.
 
-`AppSidebar`는 미니 캘린더 강조/이동을 **prop으로 받지 않고 스스로 처리**합니다 —
-`usePathname()`/`useSearchParams()`로 지금 캘린더 화면(`/`)의 주별 뷰에 있는지를 직접 읽어서
-그 주만 강조하고, 날짜·월 라벨 클릭도 항상 `/?week=`/`/?view=month&month=` 쿼리로 직접
-navigate합니다(캘린더 화면이면 `router.replace`, 다른 화면이면 `router.push`). 그래서 캘린더든
-PARA든 어느 화면에서 렌더링해도 동작이 완전히 똑같고, 화면마다 `monday`/`onSelectWeek`/
-`onSelectMonth`/`onCalendarClick` 같은 prop을 따로 연결해줄 필요가 없습니다 — 화면 쪽(`week-board.tsx`
-등)은 그냥 `<AppSidebar ... />`만 놓으면 됩니다. 캘린더 화면(`week-board.tsx`)도 이제 `monday`/
-`viewMode`/`displayMonth`를 state로 들고 있지 않고 매 렌더마다 URL(`useSearchParams()`)에서
-직접 계산합니다 — 그래야 `AppSidebar`가 URL만 바꿔도(같은 라우트라 리마운트가 안 돼도) 화면이
-바로 반응합니다.
+**규칙 (ESLint로 강제됨):**
+1. 화면(page · 화면 컴포넌트)은 `@/components/shell/*`을 import할 수 없습니다(`eslint.config.mjs`의 `no-restricted-imports`,
+   `(app)/layout.tsx`만 예외). 새 화면은 `src/app/(app)/` 아래에 `page.tsx`를 만들고 **본문만** 그리세요 —
+   사이드바/레일/Inbox를 직접 렌더링하거나 props로 조립하지 않습니다.
+2. 셸 컴포넌트는 화면에서 props를 받지 않습니다. 데이터는 `useTodos()` · `useContainers()` · `useTodoActions()` ·
+   `useSession()`(`src/lib/app-data/`), 현재 화면은 `usePathname()`으로 스스로 읽습니다.
+3. 화면이 Inbox를 열어야 하면(예: 캘린더 툴바 "+") `useShellUI().openInboxForAdd()`(`src/lib/shell-ui.tsx`)만 씁니다.
+4. 드래그 앤 드롭은 `DndProvider` 하나. 새 드롭 영역은 `useDroppable({ id, data })`의 `data`(`src/lib/dnd/drop-targets.ts`)로
+   "나는 무엇인지"만 선언하고, 처리는 `src/lib/dnd/handle-drop.ts` 한 곳에 추가하세요.
+5. 캘린더 화면 상태(주/월, 보고 있는 주/달)는 URL 쿼리(`?week=` / `?view=month&month=`)가 유일한 출처입니다.
 
-## 6. 타이포그래피 / 아이콘
+## 6. 화면별 패턴
 
-- 폰트: `Wanted Sans Variable`(CDN, `layout.tsx`) → 실패 시 `-apple-system, BlinkMacSystemFont,
-  ...` 순으로 폴백. 구글 폰트 새로 추가하지 마세요.
-- 아이콘: `lucide-react`만 사용. 이모지를 아이콘 대용으로 쓰지 마세요.
+- **캘린더 툴바**(`calendar-header.tsx`): 왼쪽 제목 버튼 → 미니 캘린더 팝오버(보는 주는 줄 전체 파란 띠, 오늘 빨간 원,
+  날짜 → 그 주, 월 라벨 → 월 보기) · "39주 · 9월 21일 – 27일". 오른쪽 `+`(Inbox 열고 입력창 포커스) · 보기 드롭다운(주/월,
+  체크 표시 메뉴) · `‹ 오늘 ›` 세그먼트.
+- **주 보기**: 요일 머리글의 오늘은 빨간 원, 시간 라벨 "오전 9시 / 정오 / 오후 1시", 현재 시각 빨간 선, 주말 열은 아주 옅은 틴트.
+- **PARA 목록**: 제목 + 설명, 오른쪽 Project/Area/Resource 세그먼트, 카드 그리드.
+- **PARA 상세**: `‹ Project` 뒤로가기(파란 텍스트), 카테고리 아이콘 타일 + 이름(클릭해서 수정), 회색 요약 줄
+  (상태 · 마감일 또는 만든 날 · 진행률), 세그먼트 탭(개요 / 할 일 / 자료), 흰 카드 그룹 리스트. Drive 미연결이면 자료 탭은 연결 안내.
+- **팝오버/메뉴**: 흰 반투명 + `backdrop-blur` + 큰 그림자, 메뉴 항목은 hover 시 primary 배경 · 흰 글자(macOS 메뉴).
 
-## 7. 로그인 화면
+## 7. 타이포그래피 / 아이콘
 
-`src/app/login/page.tsx` — 박스형 카드(`rounded-2xl bg-card p-6 shadow ring-1`)를 걷어내고
-페이지 배경 위에 중앙 정렬된 좁은 컬럼(340px)만 놓는 방식으로 바꿨습니다. 인풋도 테두리 박스
-대신 밑줄(`border-0 border-b`)만. 왼쪽 상단에 작은 브랜드 마크. **가입(`가입하기`) 버튼은
-의도적으로 비활성 상태입니다**(개인용 앱이라 사용자가 막아둔 것 — `mode` state와 커밋된 토글
-버튼은 코드에 남아있지만 렌더링 안 함). 다시 열어달라는 요청이 없는 한 건드리지 마세요.
+- 폰트: `-apple-system, BlinkMacSystemFont, "SF Pro Text", "Apple SD Gothic Neo"` → `Wanted Sans Variable`(CDN, `layout.tsx`) 순.
+  애플 기기에선 SF Pro, 그 외에선 Wanted Sans. 구글 폰트 새로 추가하지 마세요.
+- 제목 22–28px bold · 자간 약간 좁게(`tracking-[-0.4px]`), 본문 14px, 보조 12–13px.
+- 아이콘: `lucide-react`만, `strokeWidth={1.8}` 정도로 가늘게. 이모지를 아이콘 대용으로 쓰지 마세요.
 
-## 8. 새 화면을 추가할 때 체크리스트
+## 8. 로그인 화면
 
-1. 레이아웃이 걸린 작업이면 먼저 캘린더 캔버스(위 링크)나 새 Claude Design 캔버스에 시안을
-   그려서 컨펌받기 — 코드부터 짜지 않기.
-2. 색은 위 2번 표의 시맨틱 토큰만 사용. 새 색이 필요하면 3번 방식(oklch, hue만 교체)으로 파생.
-3. radius는 4번 표 기준(`rounded-2xl` 금지, 원형 요소는 예외).
-4. 데스크톱 내비게이션이 필요하면 `AppSidebar` 재사용, 새로 만들지 않기.
-5. PARA 매핑과 관련된 색이면 `lib/category.ts`의 `getParaCategory`/`CATEGORY_*_VAR` 재사용.
+`src/app/login/page.tsx` — 셸 밖(`(app)` 그룹 밖)에 있습니다. 중앙 정렬 좁은 컬럼 + 밑줄 인풋 구조는 그대로이고,
+색은 토큰을 따라 새 팔레트로 바뀌었습니다. **가입(`가입하기`) 버튼은 의도적으로 비활성**입니다 — 요청 없으면 건드리지 마세요.
+
+## 9. 새 화면을 추가할 때 체크리스트
+
+1. 레이아웃이 걸린 작업이면 먼저 캔버스(위 링크)에 시안을 그려 컨펌받기 — 코드부터 짜지 않기.
+2. `src/app/(app)/<경로>/page.tsx`에 **본문만**. 셸(레일 · Inbox · 계정)은 건드리지 않기(ESLint가 막음).
+3. 색은 2번 표의 시맨틱 토큰만. PARA 관련 색은 `lib/category.ts` 재사용.
+4. radius는 4번 기준(`rounded-2xl` 금지, 원형 요소는 예외).
+5. 드롭 영역이 필요하면 `data`로 선언하고 `handle-drop.ts`에 처리 추가.
 6. 아이콘은 `lucide-react`, 이모지 금지.

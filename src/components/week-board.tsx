@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { addDays, addMonths, format, startOfMonth, subMonths } from "date-fns";
+import { addDays, addMonths, format, isSameMonth, startOfMonth, subMonths } from "date-fns";
 
 import { useTodos } from "@/lib/app-data/use-todos";
 import { useContainers } from "@/lib/app-data/use-containers";
@@ -70,7 +70,14 @@ export function WeekBoard() {
         onPrev={() => replace(viewMode === "week" ? weekUrl(shiftWeeks(monday, -1)) : monthUrl(subMonths(displayMonth, 1)))}
         onNext={() => replace(viewMode === "week" ? weekUrl(shiftWeeks(monday, 1)) : monthUrl(addMonths(displayMonth, 1)))}
         onToday={() => replace(viewMode === "week" ? weekUrl(new Date()) : monthUrl(new Date()))}
-        onSelectView={(mode) => replace(mode === "week" ? weekUrl(displayMonth) : monthUrl(addDays(monday, 3)))}
+        onSelectView={(mode) =>
+          replace(
+            mode === "month"
+              ? monthUrl(addDays(monday, 3))
+              : // 월 → 주: 보고 있던 달이 이번 달이면 이번 주, 아니면 그 달 첫 주
+                weekUrl(isSameMonth(displayMonth, new Date()) ? new Date() : displayMonth)
+          )
+        }
         onSelectDate={(date) => replace(weekUrl(date))}
         onSelectMonth={(month) => replace(monthUrl(month))}
       />

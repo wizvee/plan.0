@@ -1,6 +1,6 @@
 # 현재 기능 목록 (FEATURES)
 
-2026-09-27 기준, 코드에 실제로 구현돼 있는 사용자 기능을 화면별로 정리한 문서입니다.
+2026-09-28 기준(애플 스타일 리디자인 반영), 코드에 실제로 구현돼 있는 사용자 기능을 화면별로 정리한 문서입니다.
 새 UI 시안을 그리거나 리디자인할 때 **빠뜨린 기능이 없는지 대조하는 체크리스트**로 씁니다.
 개념/기획은 [PLANNING.md](./PLANNING.md), 결정 이력은 [HANDOFF.md](./HANDOFF.md),
 시각 규칙은 [DESIGN.md](./DESIGN.md) 참고.
@@ -13,35 +13,35 @@
 | # | 기능 | 위치 (코드) |
 |---|---|---|
 | A1 | 이메일/비밀번호 로그인. 가입 버튼은 의도적으로 숨김 | `app/login/page.tsx` |
-| A2 | 로그아웃 — 데스크톱은 사이드바 계정 영역 아이콘, 모바일은 헤더 "로그아웃" 텍스트 버튼 | `app-sidebar.tsx`, `week-board.tsx` |
-| A3 | 계정 표시 — 이메일 앞 2글자 이니셜 아바타 + 이메일 | `app-sidebar.tsx` |
-| A4 | **Google Drive 연결** — 미연결 시 구름 아이콘 링크(`/api/auth/google`) | `app-sidebar.tsx`, `api/auth/google` |
-| A5 | **Google Drive 연결 상태 + 재연결** — 연결됨이면 활성 구름 아이콘 + 재연결(↻) 링크 | `app-sidebar.tsx` |
-| A6 | Drive 연결 결과 배너 — 연결됨 / refresh token 없음 / 실패, 닫기 가능 (PARA 화면 상단) | `para-board.tsx` |
+| A2 | 로그아웃 — 레일 하단 아바타(모바일 "계정" 탭) → 계정 메뉴 | `shell/account-menu.tsx`, `lib/app-data/use-sign-out.ts` |
+| A3 | 계정 표시 — 이메일 앞 2글자 이니셜 아바타(레일) + 계정 메뉴의 이메일 | `shell/app-rail.tsx`, `shell/account-menu.tsx` |
+| A4 | **Google Drive 연결** — 미연결이면 아바타에 주황 점, 계정 메뉴의 "연결" · PARA 자료 탭 안내의 "Google Drive 연결". 연결 후 누른 화면으로 복귀 | `shell/account-menu.tsx`, `para/container-detail-screen.tsx`, `api/auth/google` |
+| A5 | **Google Drive 연결 상태 + 재연결** — 계정 메뉴에 "연결됨" + 재연결 버튼 | `shell/account-menu.tsx` |
+| A6 | Drive 연결 결과 배너 — 연결됨 / refresh token 없음 / 실패, 닫기 가능 (어느 화면이든 본문 상단) | `shell/drive-status-banner.tsx` |
 
 ## 2. 내비게이션 · 레이아웃
 
 | # | 기능 | 위치 |
 |---|---|---|
-| N1 | 캘린더 ↔ PARA 이동. "캘린더"는 항상 이번 주 주 보기로 | `app-sidebar.tsx`, `app-nav-rail.tsx` |
-| N2 | 브랜드 표시 ("주간 Todo Planner") | `app-sidebar.tsx` |
-| N3 | "+ 새 할 일" 버튼 — 보관함 입력창에 포커스 | `app-sidebar.tsx` |
-| N4 | **미니 캘린더** — 이전/다음 달, 날짜 클릭 → 그 주로 이동, 월 라벨 클릭 → 월 보기, 지금 보는 주 강조 | `mini-calendar.tsx` |
-| N5 | 모바일 하단 탭바 (Todo / 캘린더 / PARA) + Todo 탭 → 보관함 바텀시트 | `icon-rail.tsx`, `app-nav-rail.tsx` |
+| N1 | 캘린더 ↔ PARA 이동(레일, 모바일 하단 탭). "캘린더"는 항상 이번 주 주 보기로 | `shell/app-rail.tsx` |
+| N2 | 브랜드 마크 (레일 맨 위 체크 아이콘) | `shell/app-rail.tsx` |
+| N3 | "+" 버튼 (캘린더 툴바) — Inbox를 열고 입력창에 포커스 | `calendar-header.tsx`, `lib/shell-ui.tsx` |
+| N4 | **미니 캘린더** — 캘린더 제목("2026년 9월 ⌄")을 누르면 팝오버. 이전/다음 달, 날짜 → 그 주, 월 라벨 → 월 보기, 보는 주 강조 | `mini-calendar.tsx`, `calendar-header.tsx` |
+| N5 | 모바일 하단 탭바 (캘린더 / PARA / Inbox / 계정) + Inbox 탭 → 바텀시트. Inbox 열림 상태는 기억됨 | `shell/app-rail.tsx`, `shell/inbox-panel.tsx` |
 | N6 | 화면 상태가 URL에 저장됨 (`?week=`, `?view=month&month=`, `?kind=`, `?tab=`) — 뒤로가기로 복원 | 각 화면 |
 
 ## 3. 할 일 보관함 (Inbox / Todo List)
 
 | # | 기능 | 위치 |
 |---|---|---|
-| I1 | 보관함 목록 — 날짜 없는 할 일 + 어디에도 매핑 안 된 노트. 주차와 무관한 전역 목록 | `app-sidebar.tsx`, `lib/types.ts` `isInboxVisible` |
+| I1 | 보관함(Inbox) 목록 — 날짜 없는 할 일 + 어디에도 매핑 안 된 노트. 데스크톱은 본문을 밀어내는 패널 | `shell/inbox-panel.tsx`, `lib/types.ts` `isInboxVisible` |
 | I2 | 인라인 추가 입력창 | `add-todo-form.tsx` |
 | I3 | **할일/노트 전환 토글** (추가 입력창 오른쪽) | `add-todo-form.tsx` |
 | I4 | 항목 종류별 표시 — 할 일은 체크박스, 노트는 노트 아이콘(체크박스 없음) | `todo-card.tsx` |
 | I5 | 완료 체크 | `todo-card.tsx` |
 | I6 | 드래그 핸들 · 보관함 안 순서 변경 | `todo-card.tsx`, dnd-kit |
 | I7 | 보관함 → 캘린더 드래그로 날짜·시간 배치 (15분 스냅, 기본 1시간) | `week-board.tsx` |
-| I8 | 캘린더 → 보관함 드래그로 배치 해제 (보관함 전체가 드롭 영역, 드래그 중 강조) | `app-sidebar.tsx` |
+| I8 | 캘린더 → 보관함 드래그로 배치 해제 (Inbox를 연 상태에서, 드래그 중 강조) | `shell/inbox-panel.tsx`, `lib/dnd/handle-drop.ts` |
 | I9 | 보관함 → PARA 카드/상세 화면 드래그로 매핑 | `para-board.tsx`, `container-detail-screen.tsx` |
 | I10 | 카테고리 색 점 (PARA 배지가 없을 때만) | `todo-card.tsx` |
 | I11 | PARA 배지 (PARA 화면 안 보관함에서 소속 이름) | `todo-card.tsx` `badge` |
@@ -55,7 +55,7 @@
 |---|---|---|
 | W1 | 월~일 7일 × 0~24시 시간 그리드, 처음 열 때 오전 7시로 스크롤 | `week-calendar.tsx` |
 | W2 | 헤더 — 주차 번호("39주") + 기간 | `week-board.tsx` |
-| W3 | 이전 주 / 다음 주 / 오늘 | `week-nav.tsx` |
+| W3 | 이전 / 오늘 / 다음 (주 보기는 주 단위, 월 보기는 달 단위) | `calendar-header.tsx` |
 | W4 | 오늘 날짜 강조 + 현재 시각 선 (클라이언트에서만 계산) | `week-calendar.tsx`, `lib/use-today.ts` |
 | W5 | 일정 블록 — 카테고리 색, 제목 + 시간 범위, 짧으면 한 줄 compact | `calendar-block.tsx` |
 | W6 | 블록 안 **완료 체크박스**, 완료 시 muted + 취소선 | `calendar-block.tsx` |
@@ -72,7 +72,7 @@
 | M2 | 이전 달 / 다음 달 / 오늘 | `month-calendar.tsx` |
 | M3 | 날짜 칸 클릭 → 그 주의 주 보기 | `month-calendar.tsx` |
 | M4 | 일정 칩 클릭 → 상세 팝업 | `month-calendar.tsx` |
-| M5 | 월 보기로 들어가는 방법: 미니 캘린더 월 라벨 클릭 (주/월 전환 버튼은 없음) | `mini-calendar.tsx` |
+| M5 | 주/월 전환: 툴바 오른쪽 보기 드롭다운, 또는 미니 캘린더 월 라벨 | `calendar-header.tsx` |
 
 ## 6. 할 일 상세 팝업
 
@@ -122,6 +122,8 @@
 ---
 
 ## 부록: 2026-09-27 Apple 스타일 시안 대조표
+
+> 기록용 — 첫 시안(v1)을 평가한 당시의 표입니다. 여기서 지적한 누락(계정 · Drive · 미니 캘린더 · 노트 토글 등)은 시안 v2와 6단계 구현에서 반영됐습니다.
 
 시안 보드: ① 주 보기 ② Inbox 열림 ③ 월 보기 + 드롭다운 ④ 팔레트.
 시안이 캘린더 화면 데스크톱만 그렸으므로 PARA · 모바일 · 상세 팝업은 "그리지 않음"으로 분류합니다.
