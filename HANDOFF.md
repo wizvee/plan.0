@@ -445,6 +445,20 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
       자세한 규칙은 DESIGN.md(전면 갱신).
     - **확인 못 한 것**: 이 세션 환경엔 Supabase 키가 없어 브라우저에서 실제로 띄워보지 못함(타입 검사 · 린트 · `next build`만
       통과). 드래그 앤 드롭 · 모바일 바텀시트 · Drive 재연결 복귀는 로컬에서 손으로 확인 필요 — REFACTORING-PLAN.md 5단계 목록 참고.
+26. **(2026-09-28 추가) 할 일 상세 팝업 z-index 버그 수정 + 하위 할 일(서브 할 일)**: 사용자가 Inbox에서 할 일을 눌러 연
+    팝업이 캘린더 뒤에 깔려 클릭 · 수정이 안 된다고 제보 — 팝업이 sticky인 Inbox 패널(자체 쌓임 맥락) 안에서 그려져
+    캘린더의 현재 시각 선 · 블록이 위로 올라온 것. `createPortal`로 `document.body`에 띄워 해결. 이어서 요구: "업무" 같은 할 일
+    아래 체크박스로 하위 할 일을 관리하고 진행률을 할 일에 표시. 시안 https://claude.ai/artifact/7Wfuo8WtjAY2TQrgX5GavY 컨펌 →
+    계획 [SUBTASKS-PLAN.md](./SUBTASKS-PLAN.md) → 1~8단계 구현.
+    - **합의 규칙**: 한 단계만, 하위는 내용 · 완료 · 순서만(날짜/PARA 없음), 완료 자동 연동 없음, 노트엔 UI 없음(데이터는 유지),
+      PARA 진행률은 할 일 개수 기준 그대로.
+    - **DB**: `todo_subtasks` 별도 테이블(jsonb 컬럼이면 두 기기 동시 체크 시 덮어씀) + RLS(부모 할 일도 내 것인지 확인) + cascade + Realtime.
+    - **DB 변경 방식 변경**: SQL Editor가 약 249줄까지만 붙여넣기돼서 **schema.sql은 더 늘리지 않고** `supabase/migrations/날짜_이름.sql`로
+      분리(사용자 요청). `20260928_todo_subtasks.sql`은 사용자가 실행 완료.
+    - **표시**: Inbox · PARA 카드 링 + `2/4`, 주 보기 블록(개수 · 바 · 남는 높이만큼 목록, 바로 체크), 월 보기 `2/4`,
+      상세 팝업 체크리스트, PARA 상세 Tasks에서 › 펼치기, 그립으로 순서 변경(같은 할 일 안에서만 — `collision.ts`에서 제한).
+    - **확인 못 한 것**: 브라우저 실사용(Supabase 키 없음). tsc · eslint · build, 로컬 PostgreSQL로 마이그레이션 · RLS, 스크립트로
+      드롭/충돌 로직만 확인. 실사용 체크리스트는 SUBTASKS-PLAN.md 7번.
 
 ## 지금 구현된 것 (기능 목록)
 
@@ -477,6 +491,8 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
 - 노트/자료(Google Drive 연동) — 컨테이너별 Drive 폴더에 마크다운 노트 + PPT/PDF/이미지 등 첨부를
   저장. Tasks 탭 안 스크랩을 여러 개 골라 하나의 노트로 승격 가능, 노트는 옵시디언 Properties
   스타일의 링크형/태그형 속성을 지원 (PLANNING.md 9번, 20번 결정 참고)
+- 하위 할 일(체크리스트) + 진행률 — 상세 팝업에서 관리, Inbox/PARA 카드 · 캘린더 블록 · 월 보기에 `2/4` 표시,
+  PARA 상세에서 펼쳐 체크, 드래그로 순서 변경 (26번 결정, SUBTASKS-PLAN.md)
 
 ## 파일 맵
 
@@ -514,7 +530,9 @@ src/lib/supabase/todos.ts       useSupabaseTodos 훅 — fetch + realtime 구독
 src/lib/supabase/containers.ts  useSupabaseProjects/Areas/Resources 훅 — projects/areas/resources 테이블 CRUD + realtime
 src/lib/types.ts                Todo/Project/Area/Resource 타입, TodoKind, ParaKind, isInboxVisible(), 요일 키, 라벨
 src/lib/category.ts             getParaCategory() + 카테고리별 CSS 변수 맵 (DESIGN.md 3번 참고)
-src/lib/app-data/               데이터 단일 출처: AppDataProvider, useTodos, useContainers, useTodoActions, useSession, useSignOut (25번)
+src/lib/app-data/               데이터 단일 출처: AppDataProvider, useTodos, useContainers, useTodoActions, useSession, useSignOut (25번),
+                                useSubtasks(subtasksOf · progressOf) · useSubtaskActions (26번)
+src/lib/supabase/subtasks.ts    todo_subtasks 조회 + Realtime + 낙관적 추가/수정/삭제/순서 (26번)
 src/lib/dnd/                    DndProvider(앱에 1개), handle-drop.ts(드롭 처리 단일 구현), drop-targets.ts(드롭 data 타입),
                                 collision.ts(preferSpecificTargetCollision — 보관함과 다른 드롭 영역이 겹칠 때 우선순위)
 src/lib/shell-ui.tsx            셸 UI 상태(Inbox 열림 · localStorage 기억, "+"로 열고 입력창 포커스)
@@ -541,7 +559,9 @@ src/components/month-calendar.tsx 월 보기 그리드 (칸 클릭 → 그 주, 
 src/components/mini-calendar.tsx 애플식 미니 달력 (calendar-header 팝오버 안, 보는 주 띠 강조)
 src/components/todo-card.tsx    할 일/노트 한 줄(할 일=체크박스, 노트=아이콘만 + 텍스트 + 드래그 핸들 +
                                  삭제 + URL이 있으면 파비콘 임베드 카드 + 전환 버튼)
-src/components/todo-detail-modal.tsx  할 일/노트 상세 팝업 (제목/메모 수정, 할일↔노트 전환, 삭제)
+src/components/todo-detail-modal.tsx  할 일/노트 상세 팝업 (제목/메모 수정, 할일↔노트 전환, 삭제, 완료 체크 · 하위 할 일) — body 포털
+src/components/subtask/subtask-list.tsx      하위 할 일 체크리스트(수정 · 삭제 · 연속 추가 · 드래그 순서) + DragOverlay 미리보기 (26번)
+src/components/subtask/subtask-progress.tsx  하위 할 일 진행률 링 + done/total (26번)
 src/components/add-todo-form.tsx  할 일/노트 추가 입력 행 (토글로 종류 선택)
 src/components/para-board.tsx   PARA 목록 화면 본문 — 세그먼트 컨트롤 + 컨테이너 카드 그리드
 src/components/para/container-card.tsx        Project/Area/Resource 카드 (droppable, 클릭 시 상세로 이동)
