@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Bookmark, Compass, Target } from "lucide-react";
 
 import { useTodos } from "@/lib/app-data/use-todos";
+import { useContexts } from "@/lib/app-data/use-contexts";
 import { useContainers } from "@/lib/app-data/use-containers";
 import { cn } from "@/lib/utils";
 import { CATEGORY_COLOR_VAR } from "@/lib/category";
@@ -22,6 +23,7 @@ export function ParaBoard() {
   const searchParams = useSearchParams();
   const { todos } = useTodos();
   const { projects, addProject, areas, addArea, resources, addResource } = useContainers();
+  const { contextOfContainer } = useContexts();
 
   // 탭(Project/Area/Resource) 선택도 URL(`?kind=`)이 유일한 출처다 — 별도 state 없이 매 렌더마다
   // 계산한다. 그래야 상세 화면에 들어갔다 브라우저 뒤로가기를 눌러도 보고 있던 탭 그대로 돌아온다.
@@ -52,6 +54,7 @@ export function ParaBoard() {
               : 0;
           })(),
           count: todos.filter((t) => t.projectId === p.id).length,
+          contextId: p.contextId,
         }))
       : activeKind === "area"
         ? areas.map((a) => ({
@@ -61,6 +64,7 @@ export function ParaBoard() {
             statusDone: a.archived,
             progress: undefined,
             count: todos.filter((t) => t.areaId === a.id).length,
+            contextId: a.contextId,
           }))
         : resources.map((r) => ({
             id: r.id,
@@ -69,6 +73,7 @@ export function ParaBoard() {
             statusDone: r.archived,
             progress: undefined,
             count: todos.filter((t) => t.resourceId === r.id).length,
+            contextId: r.contextId,
           }));
 
   return (
@@ -113,6 +118,11 @@ export function ParaBoard() {
             statusDone={row.statusDone}
             count={row.count}
             progress={row.progress}
+            contextName={(() => {
+              // 기본 컨텍스트는 칩을 달지 않는다(대부분이 기본이라) — 회사 · 공부처럼 기본이 아닌 것만
+              const context = contextOfContainer(row.contextId);
+              return context && !context.isDefault ? context.name : undefined;
+            })()}
             onClick={() => router.push(`/para/${activeKind}/${row.id}`)}
           />
         ))}

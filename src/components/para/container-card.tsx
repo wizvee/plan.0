@@ -18,9 +18,11 @@ interface ContainerCardProps {
   /** Project 전용 — 매핑된 할 일의 완료 비율 */
   progress?: number;
   onClick: () => void;
+  /** 기본이 아닌 컨텍스트 이름(회사 · 공부 …) — 있으면 이름 옆에 작은 칩 */
+  contextName?: string;
 }
 
-export function ContainerCard({ kind, id, name, statusLabel, statusDone, count, progress, onClick }: ContainerCardProps) {
+export function ContainerCard({ kind, id, name, statusLabel, statusDone, count, progress, onClick, contextName }: ContainerCardProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: `para:${kind}:${id}`,
     data: { type: "para-container", kind, id } satisfies DropTargetData,
@@ -44,9 +46,16 @@ export function ContainerCard({ kind, id, name, statusLabel, statusDone, count, 
         isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background"
       )}
     >
-      <span className="min-w-0 truncate text-[15.5px] font-semibold tracking-[-0.2px]">
-        <InlineText text={name} />
-      </span>
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="min-w-0 flex-1 truncate text-[15.5px] font-semibold tracking-[-0.2px]">
+          <InlineText text={name} />
+        </span>
+        {contextName ? (
+          <span className="shrink-0 rounded-[5px] bg-black/[0.06] px-[7px] py-0.5 text-[11.5px] font-semibold text-foreground/80">
+            {contextName}
+          </span>
+        ) : null}
+      </div>
       <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
         <span
           className={cn(

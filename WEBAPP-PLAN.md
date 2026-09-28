@@ -88,6 +88,7 @@ DB 변경은 `supabase/migrations/` 새 파일로만(schema.sql은 안 늘림).
 - RLS: 기존과 같은 "내 것만". 사용자에게 **이 파일만** 실행 요청.
 
 ### 4단계 — UI (시안 먼저)
+> ✅ 완료 (2026-09-28) — 시안 https://claude.ai/artifact/P6vjyuZjx27ES69VR3tGm1 컨펌 후 구현. 데이터: `types.ts` `Context` · 컨테이너 `contextId`, `lib/supabase/contexts.ts`(목록 + 현재 컨텍스트 Realtime · 추가/이름/기본/삭제/notify), `app-data/use-contexts.ts`(`contextOfTodo` · `contextOfContainer`). 화면: PARA Overview 마지막 줄 `ContextPicker`(기본 선택 = null 저장), PARA 목록 카드 칩(기본 아닌 것만), 셸 `ContextManager` 팝업(`useShellUI().openContextManager`), 계정 메뉴 컨텍스트 · 알림 섹션(`lib/push-client.ts` — 권한 · 구독 저장 · 테스트는 로컬 알림, Safari 탭이면 설치 안내, VAPID 키 없으면 안내), 레일 아바타 아래 / 모바일 탭 이름에 현재 컨텍스트. tsc · eslint · build 통과. 로그인이 필요해 브라우저 확인은 못 함.
 - **PARA 상세 Overview 탭** — **컨텍스트 선택**(회사 / 개인 / … 드롭다운, PARA 선택 팝오버와 같은 모양. 요약 줄이 아니라 Overview — 사용자 결정). 목록 카드에 작은 컨텍스트 칩.
   드롭다운 맨 아래 "새 컨텍스트…"(이름 + 키 입력)로 공부 같은 걸 바로 추가.
 - **계정 메뉴 → 컨텍스트** — 목록(이름 · 단축어 키 · 기본 표시) 이름 바꾸기 · 삭제 · 기본 지정. 키는 단축어에 넣을 값이라 복사 버튼.

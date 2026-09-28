@@ -19,6 +19,7 @@ import {
   type ParaKind,
 } from "@/lib/types";
 import { TodoCard } from "@/components/todo-card";
+import { ContextPicker } from "@/components/para/context-picker";
 import { InlineText } from "@/components/inline-text";
 import { ScrapSection } from "@/components/para/scrap-section";
 import { FilesTab } from "@/components/para/files-tab";
@@ -151,6 +152,12 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
     if (kind === "project") void updateProject(id, { driveFolderId: folderId });
     else if (kind === "area") void updateArea(id, { driveFolderId: folderId });
     else void updateResource(id, { driveFolderId: folderId });
+  }
+
+  function handleContextChange(contextId: string | null) {
+    if (kind === "project") void updateProject(id, { contextId });
+    else if (kind === "area") void updateArea(id, { contextId });
+    else void updateResource(id, { contextId });
   }
 
   async function ensureDriveFolder(): Promise<string> {
@@ -501,7 +508,8 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
       </div>
 
       {tab === "overview" ? (
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
+        // overflow-hidden을 쓰지 않는다 — 마지막 줄 컨텍스트 선택 팝오버가 잘리지 않게
+        <div className="rounded-xl border border-border bg-card">
           <OverviewRow label={kind === "project" ? "시작일" : "만든 날"}>
             {kind === "project" ? (
               <DateInput value={project!.startDate} onChange={(v) => v && void updateProject(id, { startDate: v })} />
@@ -520,11 +528,17 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
                   onChange={(v) => void updateProject(id, { completedAt: v ? new Date(v).toISOString() : null })}
                 />
               </OverviewRow>
-              <OverviewRow label="남은 기간" last>
+              <OverviewRow label="남은 기간">
                 <span className="tabular-nums">{project!.dueDate ? daysLeftLabel(project!.dueDate) : "—"}</span>
               </OverviewRow>
             </>
           ) : null}
+          <OverviewRow label="컨텍스트" last>
+            <span className="hidden min-w-0 flex-1 pr-3 text-[12.5px] text-muted-foreground sm:block">
+              이 {PARA_KIND_LABELS_KO[kind]}의 할 일이 어느 집중 모드에서 배지 · 알림에 뜰지
+            </span>
+            <ContextPicker contextId={container.contextId} onChange={handleContextChange} />
+          </OverviewRow>
         </div>
       ) : null}
 

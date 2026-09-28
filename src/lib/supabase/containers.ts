@@ -16,6 +16,7 @@ interface ProjectRow {
   created_at: string;
   completed_at: string | null;
   drive_folder_id: string | null;
+  context_id: string | null;
 }
 
 function projectFromRow(row: ProjectRow): Project {
@@ -28,11 +29,12 @@ function projectFromRow(row: ProjectRow): Project {
     createdAt: row.created_at,
     completedAt: row.completed_at,
     driveFolderId: row.drive_folder_id,
+    contextId: row.context_id ?? null,
   };
 }
 
 type ProjectPatch = Partial<
-  Pick<Project, "name" | "status" | "startDate" | "dueDate" | "completedAt" | "driveFolderId">
+  Pick<Project, "name" | "status" | "startDate" | "dueDate" | "completedAt" | "driveFolderId" | "contextId">
 >;
 
 export function useSupabaseProjects(userId: string) {
@@ -95,6 +97,7 @@ export function useSupabaseProjects(userId: string) {
           createdAt: new Date().toISOString(),
           completedAt: null,
           driveFolderId: null,
+          contextId: null,
         },
       ]);
 
@@ -124,6 +127,7 @@ export function useSupabaseProjects(userId: string) {
       if (patch.dueDate !== undefined) dbPatch.due_date = patch.dueDate;
       if (patch.completedAt !== undefined) dbPatch.completed_at = patch.completedAt;
       if (patch.driveFolderId !== undefined) dbPatch.drive_folder_id = patch.driveFolderId;
+      if (patch.contextId !== undefined) dbPatch.context_id = patch.contextId;
 
       await supabase.from("projects").update(dbPatch).eq("id", id);
     },
@@ -148,6 +152,7 @@ interface ContainerRow {
   archived: boolean;
   created_at: string;
   drive_folder_id: string | null;
+  context_id: string | null;
 }
 
 function containerFromRow(row: ContainerRow): ParaContainer {
@@ -157,10 +162,11 @@ function containerFromRow(row: ContainerRow): ParaContainer {
     archived: row.archived,
     createdAt: row.created_at,
     driveFolderId: row.drive_folder_id,
+    contextId: row.context_id ?? null,
   };
 }
 
-type ContainerPatch = Partial<Pick<ParaContainer, "name" | "archived" | "driveFolderId">>;
+type ContainerPatch = Partial<Pick<ParaContainer, "name" | "archived" | "driveFolderId" | "contextId">>;
 
 function useSupabaseContainerTable(table: "areas" | "resources", userId: string) {
   const [supabase] = useState(() => createClient());
@@ -212,7 +218,7 @@ function useSupabaseContainerTable(table: "areas" | "resources", userId: string)
       const optimisticId = crypto.randomUUID();
       setItems((prev) => [
         ...prev,
-        { id: optimisticId, name: trimmed, archived: false, createdAt: new Date().toISOString(), driveFolderId: null },
+        { id: optimisticId, name: trimmed, archived: false, createdAt: new Date().toISOString(), driveFolderId: null, contextId: null },
       ]);
 
       const { data, error } = await supabase
@@ -238,6 +244,7 @@ function useSupabaseContainerTable(table: "areas" | "resources", userId: string)
       if (patch.name !== undefined) dbPatch.name = patch.name;
       if (patch.archived !== undefined) dbPatch.archived = patch.archived;
       if (patch.driveFolderId !== undefined) dbPatch.drive_folder_id = patch.driveFolderId;
+      if (patch.contextId !== undefined) dbPatch.context_id = patch.contextId;
 
       await supabase.from(table).update(dbPatch).eq("id", id);
     },
