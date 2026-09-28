@@ -20,6 +20,18 @@ export interface DraggedTodoData {
   source: DragSource;
 }
 
+/**
+ * 끌고 있는 하위 할 일 — 정렬 가능한 행이라 드롭 대상 `data`도 같다. 같은 `todoId` 안에서 순서만 바꾸고,
+ * 캘린더 · Inbox · PARA 같은 다른 드롭 대상과는 충돌 계산에서 서로 제외된다(`collision.ts`).
+ */
+export interface DraggedSubtaskData {
+  type: "subtask";
+  todoId: string;
+}
+
+/** 끌고 있는 항목의 `active.data` */
+export type ActiveData = DraggedTodoData | DraggedSubtaskData;
+
 export type DropTargetData =
   /** Inbox 패널 전체 */
   | { type: "inbox" }
@@ -29,4 +41,4 @@ export type DropTargetData =
   | { type: "para-container"; kind: ParaKind; id: string };
 
 /** 정렬 가능한 카드(useSortable)는 드래그 대상이자 드롭 대상이라 같은 `data`를 쓴다. */
-export type OverData = DropTargetData | DraggedTodoData;
+export type OverData = DropTargetData | DraggedTodoData | DraggedSubtaskData;

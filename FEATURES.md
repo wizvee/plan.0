@@ -1,6 +1,6 @@
 # 현재 기능 목록 (FEATURES)
 
-2026-09-28 기준(애플 스타일 리디자인 반영), 코드에 실제로 구현돼 있는 사용자 기능을 화면별로 정리한 문서입니다.
+2026-09-28 기준(애플 스타일 리디자인 + 하위 할 일 반영), 코드에 실제로 구현돼 있는 사용자 기능을 화면별로 정리한 문서입니다.
 새 UI 시안을 그리거나 리디자인할 때 **빠뜨린 기능이 없는지 대조하는 체크리스트**로 씁니다.
 개념/기획은 [PLANNING.md](./PLANNING.md), 결정 이력은 [HANDOFF.md](./HANDOFF.md),
 시각 규칙은 [DESIGN.md](./DESIGN.md) 참고.
@@ -48,6 +48,7 @@
 | I12 | URL 칩 — 파비콘 + 도메인, 새 탭으로 열기 | `url-chip.tsx` |
 | I13 | 예약 날짜 표시, 지난 날짜면 빨간색 (PARA Tasks 탭 등) | `todo-card.tsx` |
 | I14 | 항목 텍스트 클릭 → 할 일 상세 팝업 (6번) | `todo-card.tsx` |
+| I15 | **하위 할 일 진행률** — 원형 링 + `2/4` (하위가 있는 할 일만, 노트 제외) | `todo-card.tsx`, `subtask/subtask-progress.tsx` |
 
 ## 4. 캘린더 — 주 보기
 
@@ -63,6 +64,7 @@
 | W8 | 블록 하단 모서리 드래그로 소요 시간 조절 | `calendar-block.tsx` |
 | W9 | 블록 제목 클릭 → 상세 팝업 | `calendar-block.tsx` |
 | W10 | 모바일: 요일+날짜 원형 스트립으로 하루씩 보기 + "39주 · 날짜 요일" 요약 줄 | `week-board.tsx` |
+| W11 | 블록 **하위 할 일** — 제목 옆 `2/4`, 44px 이상이면 바닥 진행률 바, 남는 높이만큼 하위 목록(작은 원으로 바로 체크, 넘치면 "외 N개") | `calendar-block.tsx` |
 
 ## 5. 캘린더 — 월 보기
 
@@ -73,6 +75,7 @@
 | M3 | 날짜 칸 클릭 → 그 주의 주 보기 | `month-calendar.tsx` |
 | M4 | 일정 칩 클릭 → 상세 팝업 | `month-calendar.tsx` |
 | M5 | 주/월 전환: 툴바 오른쪽 보기 드롭다운, 또는 미니 캘린더 월 라벨 | `calendar-header.tsx` |
+| M6 | 일정 칩에 하위 할 일 `2/4` | `month-calendar.tsx` |
 
 ## 6. 할 일 상세 팝업
 
@@ -84,6 +87,9 @@
 | D4 | URL 입력/수정 + 새 탭 열기 | `todo-detail-modal.tsx` |
 | D5 | 할 일 ↔ 노트 전환 (노트로 바꾸면 날짜·완료 초기화) | `todo-detail-modal.tsx` |
 | D6 | 삭제 | `todo-detail-modal.tsx` |
+| D7 | 완료 체크박스(제목 왼쪽) + 일정 줄(날짜 · 시간, 캘린더에 배치된 경우) | `todo-detail-modal.tsx` |
+| D8 | **하위 할 일 체크리스트** — 체크 · 그 자리 수정(비우면 삭제) · × 삭제 · Enter로 연속 추가(한글 조합 안전) · 그립으로 순서 변경, `2/4 · 50%` + 진행률 바. 노트엔 없음 | `subtask/subtask-list.tsx`, `lib/app-data/subtask-actions.ts` |
+| D9 | 팝업은 `document.body` 포털 — 어디서 열어도 캘린더 · Inbox 위에 뜸 | `todo-detail-modal.tsx` |
 
 ## 7. PARA 목록
 
@@ -112,13 +118,14 @@
 | C11 | 자료 탭 — md가 아닌 파일은 Drive에서 새 탭으로 열기 | `files-tab.tsx` |
 | C13 | 자료 탭 — **Drive에서 가져오기**: Google Picker로 기존 Drive 파일을 골라 이 컨테이너 폴더로 가져옴 (`NEXT_PUBLIC_GOOGLE_API_KEY` 필요) | `files-tab.tsx`, `lib/google-picker.ts`, `api/drive/access-token`, `api/drive/import` |
 | C12 | 상세 화면 전체가 드롭 영역 — 보관함에서 끌어오면 이 컨테이너로 매핑 | `container-detail-screen.tsx` |
+| C14 | Tasks — 하위 할 일이 있으면 › 로 펼쳐 바로 체크 · 수정 · 추가 · 순서 변경 (펼침 상태는 저장 안 함) | `todo-card.tsx` `expandable` |
 
 ## 9. 화면이 없는 기능
 
 | # | 기능 | 위치 |
 |---|---|---|
 | X1 | 애플 단축어 "공유하기 → 스크랩" API — 보관함에 URL 항목 생성 | `api/clip/route.ts` |
-| X2 | Supabase Realtime으로 여러 기기 실시간 동기화 | `lib/supabase` 훅 |
+| X2 | Supabase Realtime으로 여러 기기 실시간 동기화 (하위 할 일 포함) | `lib/supabase` 훅 |
 
 ---
 

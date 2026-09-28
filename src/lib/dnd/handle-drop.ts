@@ -3,12 +3,16 @@ import type { DragEndEvent } from "@dnd-kit/core";
 
 import { nextPosition, type useTodos } from "@/lib/app-data/use-todos";
 import { DEFAULT_DURATION_MINUTES, HOUR_HEIGHT, MINUTES_PER_DAY, clampMinutes, snapMinutes } from "@/lib/time";
-import type { DraggedTodoData, OverData } from "@/lib/dnd/drop-targets";
+import type { ActiveData, DraggedTodoData, OverData } from "@/lib/dnd/drop-targets";
+import type { Subtask } from "@/lib/types";
 
 type DropContext = Pick<
   ReturnType<typeof useTodos>,
   "todos" | "backlogItems" | "updateTodo" | "setTodos" | "persistPositions"
->;
+> & {
+  subtasksOf: (todoId: string) => Subtask[];
+  reorderSubtasks: (todoId: string, orderedIds: string[]) => void;
+};
 
 /**
  * 앱 전체의 드롭 처리 단일 구현 (REFACTORING-PLAN.md 3단계).
@@ -17,6 +21,22 @@ type DropContext = Pick<
 export function handleDrop(event: DragEndEvent, ctx: DropContext) {
   const { active, over } = event;
   if (!over) return;
+
+  // 하위 할 일 → 같은 할 일 안에서 순서 변경만 (다른 대상은 collision.ts에서 이미 제외됨)
+  const activeData = active.data.current as ActiveData | undefined;
+  if (activeData?.type === "subtask") {
+    const overData = over.data.current as OverData | undefined;
+    if (overData?.type !== "subtask" || overData.todoId !== activeData.todoId) return;
+    const list = ctx.subtasksOf(activeData.todoId);
+    const oldIndex = list.findIndex((s) => s.id === String(active.id));
+    const newIndex = list.findIndex((s) => s.id === String(over.id));
+    if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
+    ctx.reorderSubtasks(
+      activeData.todoId,
+      arrayMove(list, oldIndex, newIndex).map((s) => s.id)
+    );
+    return;
+  }
 
   const todo = ctx.todos.find((t) => t.id === String(active.id));
   if (!todo) return;

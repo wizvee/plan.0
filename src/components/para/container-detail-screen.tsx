@@ -549,6 +549,7 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
                   onUrlEdit={actions.editUrl}
                   onAssignPara={actions.assignPara}
                   onConvert={actions.convert}
+                  expandable
                 />
               ))}
               <p className="flex min-h-[42px] items-center gap-2 px-4 text-[13px] text-muted-foreground">

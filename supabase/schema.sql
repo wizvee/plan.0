@@ -1,5 +1,7 @@
 -- Weekly Todo Planner schema.
 -- Run this once in the Supabase dashboard: SQL Editor > New query > paste > Run.
+-- 2026-09-28부터 이 파일은 더 늘리지 않는다. 이후 변경은 supabase/migrations/에 날짜별 파일로 추가하고,
+-- 기존 프로젝트는 새 마이그레이션 파일만, 새 프로젝트는 이 파일 → migrations/ 파일을 날짜순으로 실행한다.
 
 create table if not exists public.todos (
   id uuid primary key default gen_random_uuid(),
