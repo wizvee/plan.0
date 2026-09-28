@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, startOfMonth, startOfWeek } from "date-fns";
 
 import { TodoDetailModal } from "@/components/todo-detail-modal";
+import { InlineText } from "@/components/inline-text";
 import { cn } from "@/lib/utils";
 import { CATEGORY_COLOR_VAR, getParaCategory } from "@/lib/category";
 import { formatClock } from "@/lib/time";
@@ -130,7 +131,9 @@ export function MonthCalendar({
                     )}
                   >
                     <span className="size-[7px] shrink-0 rounded-full" style={{ backgroundColor: colorVar }} aria-hidden="true" />
-                    <span className={cn("min-w-0 flex-1 truncate", todo.completed && "line-through")}>{todo.content}</span>
+                    <span className={cn("min-w-0 flex-1 truncate", todo.completed && "line-through")}>
+                      <InlineText text={todo.content} />
+                    </span>
                     {progress && progress.total > 0 ? (
                       <span className="shrink-0 text-[10.5px] font-semibold tabular-nums text-muted-foreground">
                         {progress.done}/{progress.total}

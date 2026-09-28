@@ -6,6 +6,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Plus, X } from "lucide-react";
 
 import { Checkbox } from "@/components/ui/checkbox";
+import { InlineText } from "@/components/inline-text";
 import { cn } from "@/lib/utils";
 import type { Subtask } from "@/lib/types";
 import type { DraggedSubtaskData } from "@/lib/dnd/drop-targets";
@@ -68,12 +69,15 @@ export function SubtaskList({ todoId, color, className }: { todoId: string; colo
 function SubtaskRow({ subtask, color }: { subtask: Subtask; color: string }) {
   const actions = useSubtaskActions();
   const [text, setText] = useState(subtask.content);
+  // 평소엔 `코드`가 보이도록 렌더링된 텍스트, 누르면 원문을 고치는 입력칸
+  const [editing, setEditing] = useState(false);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: subtask.id,
     data: { type: "subtask", todoId: subtask.todoId } satisfies DraggedSubtaskData,
   });
 
   function commit() {
+    setEditing(false);
     if (text.trim() === subtask.content) {
       setText(subtask.content);
       return;
@@ -112,23 +116,38 @@ function SubtaskRow({ subtask, color }: { subtask: Subtask; color: string }) {
         className="size-5 text-white"
         style={checkboxStyle}
       />
-      <input
-        type="text"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (isCommitEnter(e)) {
-            e.preventDefault();
-            e.currentTarget.blur();
-          }
-        }}
-        aria-label="하위 할 일 내용"
-        className={cn(
-          "min-w-0 flex-1 border-0 bg-transparent py-2.5 text-[14px] outline-none",
-          subtask.completed && "text-muted-foreground line-through"
-        )}
-      />
+      {editing ? (
+        <input
+          type="text"
+          autoFocus
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (isCommitEnter(e)) {
+              e.preventDefault();
+              e.currentTarget.blur();
+            }
+          }}
+          aria-label="하위 할 일 내용"
+          className={cn(
+            "min-w-0 flex-1 border-0 bg-transparent py-2.5 text-[14px] outline-none",
+            subtask.completed && "text-muted-foreground line-through"
+          )}
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          aria-label={`${subtask.content} — 눌러서 수정`}
+          className={cn(
+            "min-w-0 flex-1 cursor-text break-words py-2.5 text-left text-[14px]",
+            subtask.completed && "text-muted-foreground line-through"
+          )}
+        >
+          <InlineText text={subtask.content} />
+        </button>
+      )}
       <button
         type="button"
         onClick={() => actions.remove(subtask.id)}
@@ -151,7 +170,9 @@ export function SubtaskDragPreview({ subtask }: { subtask: Subtask }) {
           subtask.completed && "border-transparent bg-muted-foreground"
         )}
       />
-      <span className={cn("truncate", subtask.completed && "text-muted-foreground line-through")}>{subtask.content}</span>
+      <span className={cn("truncate", subtask.completed && "text-muted-foreground line-through")}>
+        <InlineText text={subtask.content} />
+      </span>
     </div>
   );
 }

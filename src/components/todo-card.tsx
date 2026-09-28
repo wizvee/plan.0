@@ -8,6 +8,7 @@ import { ChevronRight, GripVertical, StickyNote } from "lucide-react";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { UrlChip } from "@/components/url-chip";
+import { InlineText } from "@/components/inline-text";
 import { TodoDetailModal } from "@/components/todo-detail-modal";
 import { SubtaskProgress } from "@/components/subtask/subtask-progress";
 import { SubtaskList } from "@/components/subtask/subtask-list";
@@ -146,7 +147,7 @@ export function TodoCard({
                 todo.completed && "text-muted-foreground line-through"
               )}
             >
-              {todo.content}
+              <InlineText text={todo.content} />
             </span>
             {todo.url ? <UrlChip url={todo.url} /> : null}
             {scheduledDate || badge || progress.total > 0 ? (

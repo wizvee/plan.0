@@ -2,6 +2,7 @@
 
 import { useDroppable } from "@dnd-kit/core";
 
+import { InlineText } from "@/components/inline-text";
 import { cn } from "@/lib/utils";
 import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR } from "@/lib/category";
 import type { ParaKind } from "@/lib/types";
@@ -43,7 +44,9 @@ export function ContainerCard({ kind, id, name, statusLabel, statusDone, count, 
         isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background"
       )}
     >
-      <span className="min-w-0 truncate text-[15.5px] font-semibold tracking-[-0.2px]">{name}</span>
+      <span className="min-w-0 truncate text-[15.5px] font-semibold tracking-[-0.2px]">
+        <InlineText text={name} />
+      </span>
       <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
         <span
           className={cn(
