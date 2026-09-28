@@ -73,11 +73,13 @@ DB 변경은 `supabase/migrations/` 새 파일로만(schema.sql은 안 늘림).
 - 확인: 아이폰 홈 화면 아이콘 · 이름 · 전체 화면 · 탭바가 홈 인디케이터 위에 오는지.
 
 ### 2단계 — 서비스 워커
+> ✅ 완료 (2026-09-28) — `public/sw.js`(push → 알림 + `setAppBadge`, 같은 tag는 대체, notificationclick → 열린 창이면 그 주로 이동 · 없으면 새 창), `components/service-worker-register.tsx`(루트 레이아웃), `next.config.ts` sw.js 캐시 금지 헤더, `proxy.ts`에서 sw.js 로그인 예외. **페이로드 약속**: `{ title, body?, url?, badge?, tag? }`. 헤드리스 Chromium + DevTools 푸시로 등록 · 알림 표시 · 같은 tag 대체 확인(알림 클릭 이동과 iOS 배지는 실기기에서).
 - `public/sw.js`: `push` → `showNotification` + `setAppBadge(payload.badge)` (0이면 `clearAppBadge`),
   `notificationclick` → 앱 창 열고 `payload.url`(그 주)로 이동.
 - 앱 시작 시 등록, `next.config.ts`에 `sw.js` 캐시 금지 헤더. 오프라인 캐시는 넣지 않음.
 
 ### 3단계 — DB 마이그레이션 (`supabase/migrations/YYYYMMDD_webapp_push.sql`)
+> ✅ 완료 (2026-09-28) — `supabase/migrations/20260928_webapp_push.sql`: `contexts`(회사 `work` · 개인 `personal` 기본, 기존 사용자에 미리 넣음), 컨테이너 `context_id`(복합 FK로 남의 컨텍스트 금지, 컨텍스트 삭제 시 `context_id`만 null — **Postgres 15+ 문법**), `user_context`(현재 컨텍스트 + `notify_on_change` 기본 켬 — Q1), `push_subscriptions`, `push_log`, Realtime(contexts · user_context). 로컬 PostgreSQL 16에서 기존 스키마 → 하위 할 일 → 이 파일 2회 실행 · 시드 · 남의 컨텍스트 거부 · 기본 2개 거부 · 잘못된 키 거부 · 삭제 시 null · RLS 확인. **사용자가 SQL Editor에서 실행 필요.**
 - `contexts` — (id, user_id, name, key, position, is_default). `(user_id, key)` unique, 사용자당 기본 1개. **회사(`work`) · 개인(`personal`, 기본)** 을 미리 넣어 둔다.
 - `projects` / `areas` / `resources`에 `context_id uuid null references contexts on delete set null` (null = 기본 컨텍스트).
 - `push_subscriptions` — 기기별 구독(endpoint · 키 · user_id · 만든 시각). 여러 기기 가능.
@@ -86,6 +88,7 @@ DB 변경은 `supabase/migrations/` 새 파일로만(schema.sql은 안 늘림).
 - RLS: 기존과 같은 "내 것만". 사용자에게 **이 파일만** 실행 요청.
 
 ### 4단계 — UI (시안 먼저)
+> ✅ 완료 (2026-09-28) — 시안 https://claude.ai/artifact/P6vjyuZjx27ES69VR3tGm1 컨펌 후 구현. 데이터: `types.ts` `Context` · 컨테이너 `contextId`, `lib/supabase/contexts.ts`(목록 + 현재 컨텍스트 Realtime · 추가/이름/기본/삭제/notify), `app-data/use-contexts.ts`(`contextOfTodo` · `contextOfContainer`). 화면: PARA Overview 마지막 줄 `ContextPicker`(기본 선택 = null 저장), PARA 목록 카드 칩(기본 아닌 것만), 셸 `ContextManager` 팝업(`useShellUI().openContextManager`), 계정 메뉴 컨텍스트 · 알림 섹션(`lib/push-client.ts` — 권한 · 구독 저장 · 테스트는 로컬 알림, Safari 탭이면 설치 안내, VAPID 키 없으면 안내), 레일 아바타 아래 / 모바일 탭 이름에 현재 컨텍스트. tsc · eslint · build 통과. 로그인이 필요해 브라우저 확인은 못 함.
 - **PARA 상세 Overview 탭** — **컨텍스트 선택**(회사 / 개인 / … 드롭다운, PARA 선택 팝오버와 같은 모양. 요약 줄이 아니라 Overview — 사용자 결정). 목록 카드에 작은 컨텍스트 칩.
   드롭다운 맨 아래 "새 컨텍스트…"(이름 + 키 입력)로 공부 같은 걸 바로 추가.
 - **계정 메뉴 → 컨텍스트** — 목록(이름 · 단축어 키 · 기본 표시) 이름 바꾸기 · 삭제 · 기본 지정. 키는 단축어에 넣을 값이라 복사 버튼.

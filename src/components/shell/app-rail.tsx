@@ -9,6 +9,7 @@ import { mondayOf, toDateKey } from "@/lib/week";
 import { useSession } from "@/lib/app-data/app-data-provider";
 import { useTodos } from "@/lib/app-data/use-todos";
 import { useShellUI } from "@/lib/shell-ui";
+import { useContexts } from "@/lib/app-data/use-contexts";
 
 /**
  * 앱 내비게이션 — 데스크톱은 왼쪽 세로 레일(76px), 모바일은 하단 탭바. 한 컴포넌트가 반응형으로
@@ -20,6 +21,7 @@ export function AppRail({ accountOpen, onToggleAccount }: { accountOpen: boolean
   const { userEmail, googleConnected } = useSession();
   const { backlogItems } = useTodos();
   const { inboxOpen, toggleInbox } = useShellUI();
+  const { currentContext } = useContexts();
 
   const onPara = pathname.startsWith("/para");
 
@@ -66,11 +68,11 @@ export function AppRail({ accountOpen, onToggleAccount }: { accountOpen: boolean
       <button
         type="button"
         onClick={onToggleAccount}
-        aria-label="계정 메뉴"
+        aria-label={currentContext ? `계정 메뉴 — 지금 ${currentContext.name}` : "계정 메뉴"}
         aria-haspopup="menu"
         aria-expanded={accountOpen}
         data-account-toggle=""
-        className="relative flex flex-1 flex-col items-center justify-center gap-1 sm:size-11 sm:flex-none"
+        className="relative flex flex-1 flex-col items-center justify-center gap-1 sm:w-[60px] sm:flex-none sm:py-1"
       >
         <span
           className={cn(
@@ -82,11 +84,19 @@ export function AppRail({ accountOpen, onToggleAccount }: { accountOpen: boolean
         </span>
         {!googleConnected ? (
           <span
-            className="absolute right-[calc(50%-18px)] top-1.5 size-2.5 rounded-full border-2 border-secondary bg-warning sm:right-1 sm:top-1"
+            className="absolute right-[calc(50%-18px)] top-1.5 size-2.5 rounded-full border-2 border-secondary bg-warning sm:top-0.5"
             aria-label="Google Drive 연결 안 됨"
           />
         ) : null}
-        <span className="text-[10.5px] font-semibold text-muted-foreground sm:hidden">계정</span>
+        <span className="text-[10.5px] font-semibold text-muted-foreground sm:hidden">
+          {currentContext ? currentContext.name : "계정"}
+        </span>
+        {/* 데스크톱: 아바타 아래 현재 컨텍스트 (단축어 · 집중 모드로 바뀜) */}
+        {currentContext ? (
+          <span className="hidden max-w-[64px] truncate rounded-[5px] bg-foreground px-1.5 py-px text-[10px] font-bold text-background sm:block">
+            {currentContext.name}
+          </span>
+        ) : null}
       </button>
     </nav>
   );

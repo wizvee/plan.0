@@ -4,10 +4,12 @@ import { createContext, useContext, type ReactNode } from "react";
 
 import { useSupabaseTodos } from "@/lib/supabase/todos";
 import { useSupabaseSubtasks } from "@/lib/supabase/subtasks";
+import { useSupabaseContexts } from "@/lib/supabase/contexts";
 import { useSupabaseAreas, useSupabaseProjects, useSupabaseResources } from "@/lib/supabase/containers";
 
 type TodosStore = ReturnType<typeof useSupabaseTodos>;
 type SubtasksStore = ReturnType<typeof useSupabaseSubtasks>;
+type ContextsStore = ReturnType<typeof useSupabaseContexts>;
 type ProjectsStore = ReturnType<typeof useSupabaseProjects>;
 type AreasStore = ReturnType<typeof useSupabaseAreas>;
 type ResourcesStore = ReturnType<typeof useSupabaseResources>;
@@ -18,6 +20,7 @@ interface AppData {
   googleConnected: boolean;
   todos: TodosStore;
   subtasks: SubtasksStore;
+  contexts: ContextsStore;
   projects: ProjectsStore;
   areas: AreasStore;
   resources: ResourcesStore;
@@ -44,12 +47,13 @@ export function AppDataProvider({
 }) {
   const todos = useSupabaseTodos(userId);
   const subtasks = useSupabaseSubtasks(userId);
+  const contexts = useSupabaseContexts(userId);
   const projects = useSupabaseProjects(userId);
   const areas = useSupabaseAreas(userId);
   const resources = useSupabaseResources(userId);
 
   return (
-    <AppDataContext.Provider value={{ userId, userEmail, googleConnected, todos, subtasks, projects, areas, resources }}>{children}</AppDataContext.Provider>
+    <AppDataContext.Provider value={{ userId, userEmail, googleConnected, todos, subtasks, contexts, projects, areas, resources }}>{children}</AppDataContext.Provider>
   );
 }
 

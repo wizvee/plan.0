@@ -106,6 +106,8 @@ export interface Project {
   completedAt: string | null;
   /** PLANNING.md 9번: 이 프로젝트에 대응하는 Google Drive 폴더 ID. 아직 없으면 null */
   driveFolderId: string | null;
+  /** 컨텍스트(회사 · 개인 …, `contexts` 테이블). null = 기본 컨텍스트 (WEBAPP-PLAN.md) */
+  contextId: string | null;
 }
 
 /** Area와 Resource는 같은 모양 — 끝(due date)이 없는 컨테이너라는 점만 Project와 다름 */
@@ -116,6 +118,21 @@ export interface ParaContainer {
   createdAt: string;
   /** PLANNING.md 9번: 이 컨테이너에 대응하는 Google Drive 폴더 ID. 아직 없으면 null */
   driveFolderId: string | null;
+  /** 컨텍스트(회사 · 개인 …, `contexts` 테이블). null = 기본 컨텍스트 (WEBAPP-PLAN.md) */
+  contextId: string | null;
+}
+
+/**
+ * 컨텍스트 — 회사 · 개인 · 공부 … (WEBAPP-PLAN.md). PARA 컨테이너가 하나를 고르고, 할 일은 매핑된 컨테이너의
+ * 컨텍스트를 따른다(매핑 없음 = 기본). iOS 단축어(집중 모드)가 `key`로 현재 컨텍스트를 바꾼다.
+ */
+export interface Context {
+  id: string;
+  name: string;
+  /** 단축어가 /api/context에 보내는 영문 이름 (`work`) — 소문자 · 숫자 · - · _ , 32자 이하 */
+  key: string;
+  position: number;
+  isDefault: boolean;
 }
 
 export type Area = ParaContainer;

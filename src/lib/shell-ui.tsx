@@ -36,18 +36,23 @@ interface ShellUI {
   openInboxForAdd: () => void;
   /** openInboxForAdd가 호출될 때마다 바뀌는 값 — Inbox 패널이 이걸 보고 입력창에 포커스한다 */
   focusRequest: number;
+  /** 컨텍스트 관리 팝업 (셸이 한 번만 렌더링). `focusAdd`면 "새 컨텍스트" 입력칸에 포커스 */
+  contextManager: { open: boolean; focusAdd: boolean };
+  openContextManager: (options?: { focusAdd?: boolean }) => void;
+  closeContextManager: () => void;
 }
 
 const ShellUIContext = createContext<ShellUI | null>(null);
 
 /**
  * 셸 UI 상태. 셸(`AppShell`)이 레이아웃에서 한 번만 마운트하므로 화면을 옮겨도 유지된다.
- * 화면은 `useShellUI()`로 Inbox를 열 수만 있고, 셸의 모양/구성은 바꿀 수 없다.
+ * 화면은 `useShellUI()`로 Inbox · 컨텍스트 관리를 열 수만 있고, 셸의 모양/구성은 바꿀 수 없다.
  * Inbox 열림 여부는 이 브라우저에 기억한다(다음 방문 때도 같은 상태로).
  */
 export function ShellUIProvider({ children }: { children: ReactNode }) {
   const inboxOpen = useSyncExternalStore(subscribeInboxOpen, readInboxOpen, () => false);
   const [focusRequest, setFocusRequest] = useState(0);
+  const [contextManager, setContextManager] = useState({ open: false, focusAdd: false });
 
   const setInboxOpen = useCallback((open: boolean) => {
     memoryInboxOpen = open;
@@ -68,6 +73,9 @@ export function ShellUIProvider({ children }: { children: ReactNode }) {
       setFocusRequest((n) => n + 1);
     },
     focusRequest,
+    contextManager,
+    openContextManager: (options) => setContextManager({ open: true, focusAdd: options?.focusAdd ?? false }),
+    closeContextManager: () => setContextManager({ open: false, focusAdd: false }),
   };
 
   return <ShellUIContext.Provider value={value}>{children}</ShellUIContext.Provider>;
