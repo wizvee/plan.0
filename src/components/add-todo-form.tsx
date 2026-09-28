@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, StickyNote } from "lucide-react";
+import { Plus } from "lucide-react";
 
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { TodoKind } from "@/lib/types";
 
+/** Inbox 맨 위 입력창 — 오른쪽 세그먼트로 할 일/노트를 고른 뒤 Enter로 추가. */
 export function AddTodoForm({ onAdd }: { onAdd: (content: string, kind: TodoKind) => void }) {
   const [value, setValue] = useState("");
   const [kind, setKind] = useState<TodoKind>("task");
@@ -17,41 +17,48 @@ export function AddTodoForm({ onAdd }: { onAdd: (content: string, kind: TodoKind
     setValue("");
   }
 
+  const placeholder = kind === "task" ? "새 할 일" : "새 노트";
+
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
         submit();
       }}
-      className="flex items-center gap-2.5 py-2.5"
+      className="flex h-[42px] items-center gap-2 rounded-[10px] border border-border bg-card pl-3 pr-[5px] shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
     >
       <button
         type="submit"
-        className="flex size-[21px] shrink-0 items-center justify-center text-muted-foreground disabled:opacity-40"
         aria-label="추가"
         disabled={!value.trim()}
+        className="flex shrink-0 items-center justify-center text-primary disabled:opacity-60"
       >
-        <Plus className="size-[18px]" />
+        <Plus className="size-[18px]" strokeWidth={2} />
       </button>
-      <Input
+      <input
+        data-add-input=""
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder={kind === "task" ? "할 일 추가" : "노트 추가"}
-        className="h-auto flex-1 border-0 bg-transparent px-0 text-[15px] text-muted-foreground shadow-none placeholder:text-muted-foreground focus-visible:ring-0 focus:text-foreground"
+        placeholder={placeholder}
+        aria-label={placeholder}
+        className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-muted-foreground"
       />
-      <button
-        type="button"
-        onClick={() => setKind((k) => (k === "task" ? "note" : "task"))}
-        aria-pressed={kind === "note"}
-        aria-label="할 일/노트 전환"
-        className={cn(
-          "flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold",
-          kind === "note" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-secondary"
-        )}
-      >
-        <StickyNote className="size-3" />
-        {kind === "task" ? "할일" : "노트"}
-      </button>
+      <div role="group" aria-label="추가할 종류" className="flex shrink-0 rounded-[7px] bg-black/[0.06] p-0.5">
+        {(["task", "note"] as const).map((k) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => setKind(k)}
+            aria-pressed={kind === k}
+            className={cn(
+              "h-[26px] rounded-[5px] px-2.5 text-[12px] font-semibold text-muted-foreground",
+              kind === k && "bg-card text-foreground shadow-[0_1px_3px_rgba(0,0,0,0.12)]"
+            )}
+          >
+            {k === "task" ? "할 일" : "노트"}
+          </button>
+        ))}
+      </div>
     </form>
   );
 }

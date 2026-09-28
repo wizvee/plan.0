@@ -19,16 +19,16 @@ export function UrlChip({ url }: { url: string }) {
       rel="noopener noreferrer"
       onPointerDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
-      className="flex items-center gap-2 rounded-[10px] bg-muted px-2.5 py-2 text-[13px] text-muted-foreground transition-colors hover:bg-muted/70"
+      className="flex h-6 w-fit max-w-full items-center gap-1.5 rounded-md bg-black/[0.05] pl-1.5 pr-2 text-[12px] text-foreground/75 transition-colors hover:bg-black/[0.09]"
     >
       {faviconFailed ? (
-        <Link2 className="size-4 shrink-0" />
+        <Link2 className="size-3.5 shrink-0" />
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={`https://www.google.com/s2/favicons?sz=64&domain=${hostname}`}
           alt=""
-          className="size-5 shrink-0 rounded-[4px]"
+          className="size-3.5 shrink-0 rounded-[3px]"
           onError={() => setFaviconFailed(true)}
         />
       )}

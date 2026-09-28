@@ -23,6 +23,13 @@ export function weekRangeLabel(monday: Date): string {
   return `${format(monday, "M.d")} - ${format(sunday, "M.d")}`;
 }
 
+/** "9월 21일 – 27일", 달이 바뀌면 "9월 28일 – 10월 4일". */
+export function weekRangeLabelKo(monday: Date): string {
+  const sunday = addDays(monday, 6);
+  const end = monday.getMonth() === sunday.getMonth() ? format(sunday, "d일") : format(sunday, "M월 d일");
+  return `${format(monday, "M월 d일")} – ${end}`;
+}
+
 export function dayDateKey(monday: Date, dayIndex: number): string {
   return toDateKey(addDays(monday, dayIndex));
 }

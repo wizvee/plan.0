@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { addDays, addMonths, format, startOfMonth, subMonths } from "date-fns";
 
 import { useTodos } from "@/lib/app-data/use-todos";
-import { useSignOut } from "@/lib/app-data/use-sign-out";
 import { useContainers } from "@/lib/app-data/use-containers";
 import { useTodoActions } from "@/lib/app-data/todo-actions";
 import {
@@ -15,18 +14,15 @@ import {
   shiftWeeks,
   toDateKey,
   weekNumberLabel,
-  weekRangeLabel,
 } from "@/lib/week";
 import { cn } from "@/lib/utils";
 import { useTodayKey } from "@/lib/use-today";
 import { DAY_KEYS, DAY_LABELS_KO, type DayKey, type Todo } from "@/lib/types";
 import { WeekCalendar } from "@/components/week-calendar";
 import { MonthCalendar } from "@/components/month-calendar";
-import { WeekNav } from "@/components/week-nav";
-import { Button } from "@/components/ui/button";
+import { CalendarHeader } from "@/components/calendar-header";
 
 export function WeekBoard() {
-  const signOut = useSignOut();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { todos } = useTodos();
@@ -34,7 +30,7 @@ export function WeekBoard() {
   const actions = useTodoActions();
   // URL이 화면 상태의 유일한 출처다 — monday/viewMode/displayMonth를 별도 state로 들고 있다가
   // router.replace로 동기화하는 대신, 매 렌더마다 searchParams에서 직접 계산한다. 이렇게 해야
-  // AppSidebar처럼 다른 컴포넌트가 URL만 바꿔도(같은 라우트에 있어도) 화면이 바로 반응한다.
+  // 미니 캘린더처럼 다른 컴포넌트가 URL만 바꿔도(같은 라우트에 있어도) 화면이 바로 반응한다.
   const weekParam = searchParams.get("week");
   const monday = useMemo(() => mondayOf(parseDateKey(weekParam) ?? new Date()), [weekParam]);
   const viewMode: "week" | "month" = searchParams.get("view") === "month" ? "month" : "week";
@@ -61,34 +57,27 @@ export function WeekBoard() {
     return grouped;
   }, [todos, weekKey, monday]);
 
+  const replace = (url: string) => router.replace(url, { scroll: false });
+  const weekUrl = (date: Date) => `/?week=${toDateKey(mondayOf(date))}`;
+  const monthUrl = (date: Date) => `/?view=month&month=${toDateKey(startOfMonth(date))}`;
+
   return (
-    <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-4 py-6 sm:px-6">
+    <div className="flex min-h-0 flex-col">
+      <CalendarHeader
+        viewMode={viewMode}
+        monday={monday}
+        displayMonth={displayMonth}
+        onPrev={() => replace(viewMode === "week" ? weekUrl(shiftWeeks(monday, -1)) : monthUrl(subMonths(displayMonth, 1)))}
+        onNext={() => replace(viewMode === "week" ? weekUrl(shiftWeeks(monday, 1)) : monthUrl(addMonths(displayMonth, 1)))}
+        onToday={() => replace(viewMode === "week" ? weekUrl(new Date()) : monthUrl(new Date()))}
+        onSelectView={(mode) => replace(mode === "week" ? weekUrl(displayMonth) : monthUrl(addDays(monday, 3)))}
+        onSelectDate={(date) => replace(weekUrl(date))}
+        onSelectMonth={(month) => replace(monthUrl(month))}
+      />
+
       {viewMode === "week" ? (
-        <header className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
-            <div className="hidden sm:block">
-              <h1 className="text-[34px] font-bold leading-none tracking-tight">
-                {weekNumberLabel(monday)}
-              </h1>
-              <p className="mt-1.5 text-[15px] text-muted-foreground">{weekRangeLabel(monday)}</p>
-            </div>
-            <div className="flex w-full items-center justify-between gap-4 sm:w-auto">
-              <WeekNav
-                onPrev={() => router.replace(`/?week=${toDateKey(shiftWeeks(monday, -1))}`, { scroll: false })}
-                onNext={() => router.replace(`/?week=${toDateKey(shiftWeeks(monday, 1))}`, { scroll: false })}
-                onToday={() => router.replace(`/?week=${toDateKey(mondayOf(new Date()))}`, { scroll: false })}
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2 text-[15px] font-medium text-muted-foreground hover:bg-accent sm:hidden"
-                onClick={() => void signOut()}
-              >
-                로그아웃
-              </Button>
-            </div>
-          </div>
-          <div className="sm:hidden">
+        <>
+          <div className="border-b border-border px-3 pb-2.5 sm:hidden">
             <div className="flex items-center justify-between">
               {DAY_KEYS.map((day, index) => {
                 const date = addDays(monday, index);
@@ -99,19 +88,18 @@ export function WeekBoard() {
                     key={day}
                     type="button"
                     onClick={() => setMobileDay(day)}
-                    className="flex flex-col items-center gap-1.5 py-1"
+                    aria-pressed={isSelected}
+                    aria-label={format(date, "M월 d일")}
+                    className="flex flex-col items-center gap-1 py-1"
                   >
-                    <span className="text-[11px] font-medium text-muted-foreground">
+                    <span className={cn("text-[11px] font-medium text-muted-foreground", isToday && "text-today")}>
                       {DAY_LABELS_KO[day]}
                     </span>
                     <span
                       className={cn(
-                        "flex size-8 items-center justify-center rounded-full text-[15px] font-semibold transition-colors",
-                        isToday
-                          ? "bg-primary text-primary-foreground"
-                          : isSelected
-                            ? "ring-2 ring-primary text-foreground"
-                            : "text-foreground"
+                        "flex size-8 items-center justify-center rounded-full text-[16px] font-medium",
+                        isToday && !isSelected && "font-semibold text-today",
+                        isSelected && (isToday ? "bg-today font-semibold text-white" : "bg-foreground font-semibold text-background")
                       )}
                     >
                       {format(date, "d")}
@@ -120,30 +108,27 @@ export function WeekBoard() {
                 );
               })}
             </div>
-            <div className="mt-2.5 border-t border-border/70 pt-2.5 text-center text-[13px] text-muted-foreground">
-              {weekNumberLabel(monday)} · {format(addDays(monday, DAY_KEYS.indexOf(mobileDay)), "yyyy년 M월 d일")}{" "}
+            <p className="mt-1.5 text-center text-[12.5px] text-muted-foreground">
+              {weekNumberLabel(monday)} · {format(addDays(monday, DAY_KEYS.indexOf(mobileDay)), "M월 d일")}{" "}
               {DAY_LABELS_KO[mobileDay]}요일
-            </div>
+            </p>
           </div>
-        </header>
-      ) : null}
-
-      {viewMode === "week" ? (
-        <WeekCalendar
-          monday={monday}
-          mobileDay={mobileDay}
-          itemsByDay={scheduledByDay}
-          projects={projects}
-          areas={areas}
-          resources={resources}
-          onToggle={actions.toggle}
-          onRemove={actions.remove}
-          onEdit={actions.edit}
-          onMemoEdit={actions.editMemo}
-          onUrlEdit={actions.editUrl}
-          onAssignPara={actions.assignPara}
-          onResize={actions.resize}
-        />
+          <WeekCalendar
+            monday={monday}
+            mobileDay={mobileDay}
+            itemsByDay={scheduledByDay}
+            projects={projects}
+            areas={areas}
+            resources={resources}
+            onToggle={actions.toggle}
+            onRemove={actions.remove}
+            onEdit={actions.edit}
+            onMemoEdit={actions.editMemo}
+            onUrlEdit={actions.editUrl}
+            onAssignPara={actions.assignPara}
+            onResize={actions.resize}
+          />
+        </>
       ) : (
         <MonthCalendar
           displayMonth={displayMonth}
@@ -153,15 +138,6 @@ export function WeekBoard() {
           resources={resources}
           todayKey={todayKey}
           onSelectDay={goToWeek}
-          onPrevMonth={() =>
-            router.replace(`/?view=month&month=${toDateKey(subMonths(displayMonth, 1))}`, { scroll: false })
-          }
-          onNextMonth={() =>
-            router.replace(`/?view=month&month=${toDateKey(addMonths(displayMonth, 1))}`, { scroll: false })
-          }
-          onToday={() =>
-            router.replace(`/?view=month&month=${toDateKey(startOfMonth(new Date()))}`, { scroll: false })
-          }
           onEdit={actions.edit}
           onMemoEdit={actions.editMemo}
           onUrlEdit={actions.editUrl}

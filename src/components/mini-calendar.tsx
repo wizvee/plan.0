@@ -2,14 +2,12 @@
 
 import { useState } from "react";
 import {
-  addDays,
   addMonths,
+  eachDayOfInterval,
   endOfMonth,
   endOfWeek,
-  eachDayOfInterval,
   format,
   isSameMonth,
-  isWithinInterval,
   startOfMonth,
   startOfWeek,
   subMonths,
@@ -18,107 +16,103 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useTodayKey } from "@/lib/use-today";
-import { toDateKey } from "@/lib/week";
+import { mondayOf, toDateKey } from "@/lib/week";
 import { DAY_LABELS_KO } from "@/lib/types";
 
 const WEEKDAY_ORDER: (keyof typeof DAY_LABELS_KO)[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
 interface MiniCalendarProps {
-  /** 이 주(월요일 시작)의 7일을 은은하게 강조 표시한다. 없으면 "오늘"만 표시. */
+  /** 처음 보여줄 달 */
+  initialMonth: Date;
+  /** 이 주(월요일 시작)를 줄 전체 띠로 강조한다. 없으면 "오늘"만 표시. */
   highlightWeekStart?: Date;
   onSelectDate: (date: Date) => void;
-  /** 있으면 상단 "9월 2026" 라벨이 클릭 가능해져서, 지금 미니 캘린더가 보여주는 달로 월별 뷰를 연다. */
-  onSelectMonth?: (month: Date) => void;
+  /** 상단 "2026년 9월" 라벨을 누르면 지금 보여주는 달의 월 보기로 */
+  onSelectMonth: (month: Date) => void;
 }
 
-export function MiniCalendar({ highlightWeekStart, onSelectDate, onSelectMonth }: MiniCalendarProps) {
-  const [displayMonth, setDisplayMonth] = useState(() => startOfMonth(highlightWeekStart ?? new Date()));
+/** 애플 캘린더식 미니 달력 — 캘린더 화면 제목을 누르면 뜨는 팝오버 안에서 쓴다. */
+export function MiniCalendar({ initialMonth, highlightWeekStart, onSelectDate, onSelectMonth }: MiniCalendarProps) {
+  const [displayMonth, setDisplayMonth] = useState(() => startOfMonth(initialMonth));
   const todayKey = useTodayKey();
-
-  // highlightWeekStart가 바뀌면(주차 이동, PARA 화면에서 날짜 선택 등) 표시 중인 달도 따라가게
-  // 렌더 중에 동기화한다 — 이펙트 대신 이 패턴을 쓰면 한 번 더 렌더되는 걸 피할 수 있다.
-  const highlightKey = highlightWeekStart ? toDateKey(highlightWeekStart) : null;
-  const [syncedKey, setSyncedKey] = useState(highlightKey);
-  if (highlightKey !== syncedKey) {
-    setSyncedKey(highlightKey);
-    if (highlightWeekStart) setDisplayMonth(startOfMonth(highlightWeekStart));
-  }
 
   const gridStart = startOfWeek(startOfMonth(displayMonth), { weekStartsOn: 1 });
   const gridEnd = endOfWeek(endOfMonth(displayMonth), { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start: gridStart, end: gridEnd });
+  const weeks: Date[][] = [];
+  for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7));
 
-  const highlightRange =
-    highlightWeekStart !== undefined
-      ? { start: highlightWeekStart, end: addDays(highlightWeekStart, 6) }
-      : null;
+  const highlightKey = highlightWeekStart ? toDateKey(highlightWeekStart) : null;
 
   return (
-    <div className="rounded-lg border border-border bg-card p-3 pb-3.5">
-      <div className="mb-2.5 flex items-center justify-between">
-        {onSelectMonth ? (
-          <button
-            type="button"
-            onClick={() => onSelectMonth(displayMonth)}
-            className="border-b border-dashed border-primary text-[13px] font-bold hover:text-primary"
-          >
-            {format(displayMonth, "M")}월 <span className="font-medium text-muted-foreground">{format(displayMonth, "yyyy")}</span>
-          </button>
-        ) : (
-          <span className="text-[13px] font-bold">
-            {format(displayMonth, "M")}월 <span className="font-medium text-muted-foreground">{format(displayMonth, "yyyy")}</span>
-          </span>
-        )}
-        <div className="flex gap-0.5">
+    <div>
+      <div className="mb-2 flex items-center pl-1.5 pr-0.5">
+        <button
+          type="button"
+          onClick={() => onSelectMonth(displayMonth)}
+          aria-label={`${format(displayMonth, "M")}월 월 보기로`}
+          className="-ml-1.5 h-7 rounded-md px-1.5 text-[14px] font-bold hover:bg-black/5"
+        >
+          {format(displayMonth, "yyyy년 M월")}
+        </button>
+        <div className="ml-auto flex">
           <button
             type="button"
             aria-label="이전 달"
             onClick={() => setDisplayMonth((m) => subMonths(m, 1))}
-            className="flex size-[22px] items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
+            className="flex size-7 items-center justify-center rounded-md text-primary hover:bg-black/5"
           >
-            <ChevronLeft className="size-[13px]" />
+            <ChevronLeft className="size-4" strokeWidth={2.2} />
           </button>
           <button
             type="button"
             aria-label="다음 달"
             onClick={() => setDisplayMonth((m) => addMonths(m, 1))}
-            className="flex size-[22px] items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
+            className="flex size-7 items-center justify-center rounded-md text-primary hover:bg-black/5"
           >
-            <ChevronRight className="size-[13px]" />
+            <ChevronRight className="size-4" strokeWidth={2.2} />
           </button>
         </div>
       </div>
 
-      <div className="mb-1 grid grid-cols-7 gap-0.5">
+      <div className="mb-0.5 grid grid-cols-7">
         {WEEKDAY_ORDER.map((day) => (
-          <span key={day} className="text-center text-[10px] text-muted-foreground">
+          <span key={day} className="flex h-[22px] items-center justify-center text-[10.5px] font-semibold text-muted-foreground">
             {DAY_LABELS_KO[day]}
           </span>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-0.5">
-        {days.map((date) => {
-          const dateKey = toDateKey(date);
-          const inCurrentMonth = isSameMonth(date, displayMonth);
-          const isToday = dateKey === todayKey;
-          const inHighlightedWeek = highlightRange ? isWithinInterval(date, highlightRange) : false;
-
+      <div className="flex flex-col gap-0.5">
+        {weeks.map((week) => {
+          const highlighted = highlightKey !== null && toDateKey(mondayOf(week[0])) === highlightKey;
           return (
-            <button
-              key={dateKey}
-              type="button"
-              onClick={() => onSelectDate(date)}
-              className={cn(
-                "flex h-6 items-center justify-center rounded-md text-[12px] transition-colors",
-                !inCurrentMonth && "text-muted-foreground/40",
-                inCurrentMonth && !isToday && "text-foreground",
-                inHighlightedWeek && !isToday && "bg-accent",
-                isToday && "bg-primary font-bold text-primary-foreground"
-              )}
-            >
-              {format(date, "d")}
-            </button>
+            <div key={toDateKey(week[0])} className={cn("grid grid-cols-7 rounded-lg", highlighted && "bg-primary/10")}>
+              {week.map((date) => {
+                const dateKey = toDateKey(date);
+                const inMonth = isSameMonth(date, displayMonth);
+                const isToday = dateKey === todayKey;
+                return (
+                  <button
+                    key={dateKey}
+                    type="button"
+                    onClick={() => onSelectDate(date)}
+                    aria-label={format(date, "M월 d일")}
+                    className="group flex h-8 items-center justify-center"
+                  >
+                    <span
+                      className={cn(
+                        "flex size-[26px] items-center justify-center rounded-full text-[12.5px] font-medium group-hover:bg-black/[0.06]",
+                        !inMonth && "text-muted-foreground/50",
+                        isToday && "bg-today font-bold text-white group-hover:bg-today"
+                      )}
+                    >
+                      {format(date, "d")}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           );
         })}
       </div>
