@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Bookmark, Check, ChevronDown, CircleOff, Compass, ExternalLink, Layers, Link2, StickyNote, Target, Trash2, X } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
@@ -138,7 +139,9 @@ export function TodoDetailModal({
   const resourceMatches = filterItems(resources);
   const noMatches = projectMatches.length === 0 && areaMatches.length === 0 && resourceMatches.length === 0;
 
-  return (
+  // body로 포털 — 모달을 연 카드가 Inbox 패널(sticky = 자체 쌓임 맥락) 안에 있으면 본문 캘린더의
+  // z-index 요소(현재 시각 선 · 블록)가 모달 위로 올라와 클릭을 가로챘다.
+  return createPortal(
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-4" onClick={onClose}>
       <div
         className="flex w-full max-w-sm flex-col rounded-xl bg-card p-5 shadow-xl"
@@ -317,6 +320,7 @@ export function TodoDetailModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
