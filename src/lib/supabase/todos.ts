@@ -109,16 +109,19 @@ export function useSupabaseTodos(userId: string) {
     };
   }, [supabase, userId]);
 
+  /** 새 항목을 만들고 그 id를 돌려준다(빈 내용이거나 저장에 실패하면 undefined). */
   const addItem = useCallback(
-    async (content: string, position: number, kind: TodoKind, mapping?: NewItemMapping) => {
+    async (content: string, position: number, kind: TodoKind, mapping?: NewItemMapping): Promise<string | undefined> => {
       const trimmed = content.trim();
-      if (!trimmed) return;
+      if (!trimmed) return undefined;
 
-      const optimisticId = crypto.randomUUID();
+      // id를 클라이언트에서 정해서 insert — 만든 직후 이 id를 다른 행(회고의 converted_todo_id 등)이 바로
+      // 가리킬 수 있고, Realtime INSERT 이벤트가 응답보다 먼저 와도 같은 id라 중복되지 않는다.
+      const id = crypto.randomUUID();
       setTodos((prev) => [
         ...prev,
         {
-          id: optimisticId,
+          id,
           content: trimmed,
           kind,
           scheduledDate: null,
@@ -138,6 +141,7 @@ export function useSupabaseTodos(userId: string) {
       const { data, error } = await supabase
         .from("todos")
         .insert({
+          id,
           user_id: userId,
           content: trimmed,
           position,
@@ -150,15 +154,19 @@ export function useSupabaseTodos(userId: string) {
         .single();
 
       if (error || !data) {
-        setTodos((prev) => prev.filter((t) => t.id !== optimisticId));
-        return;
+        setTodos((prev) => prev.filter((t) => t.id !== id));
+        return undefined;
       }
-      setTodos((prev) => prev.map((t) => (t.id === optimisticId ? fromRow(data as TodoRow) : t)));
+      setTodos((prev) => prev.map((t) => (t.id === id ? fromRow(data as TodoRow) : t)));
+      return id;
     },
     [supabase, userId]
   );
 
-  const addTodo = useCallback((content: string, position: number) => addItem(content, position, "task"), [addItem]);
+  const addTodo = useCallback(
+    (content: string, position: number, mapping?: NewItemMapping) => addItem(content, position, "task", mapping),
+    [addItem]
+  );
 
   const addNote = useCallback(
     (content: string, position: number, mapping?: NewItemMapping) => addItem(content, position, "note", mapping),

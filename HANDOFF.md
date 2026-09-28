@@ -468,6 +468,24 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     - **확인 못 한 것**: 브라우저 실사용(Supabase 키 없음). tsc · eslint · build, 로컬 PostgreSQL로 마이그레이션 · RLS, 스크립트로
       드롭/충돌 로직만 확인. 실사용 체크리스트는 SUBTASKS-PLAN.md 7번.
 
+28. **(2026-09-28 추가) 회고(잘한 점 · 아쉬운 점 · 다음엔) + 할 일 상세 팝업 탭 구조**: 사용자 요청 — 할 일에 👍/👎를 가끔
+    남기고, 나중에 프로젝트 단위로 모아 전체 회고에 쓰고 싶다(메모에 섞으면 모을 수 없음). 개념 합의 → 시안
+    https://claude.ai/artifact/6vXMvW1raTc9Dhx9j25yNq (사용자 제안으로 종류 선택은 토글 → 드롭다운, 상세 팝업은 탭으로) 컨펌 →
+    계획 [REFLECTIONS-PLAN.md](./REFLECTIONS-PLAN.md) → 구현.
+    - **합의 규칙**: 종류는 KPT 3개(keep/problem/try), 할 일에 여러 개 또는 **프로젝트에 직접**(할 일 없이), 노트/스크랩엔 없음
+      (할 일 → 노트 전환 시 숨기기만), 할 일 삭제 시 회고도 삭제. Area/Resource에는 회고 탭 없음(1차).
+    - **DB**: `todo_reflections`(todo_id 또는 project_id 정확히 하나, `converted_todo_id`) — `supabase/migrations/20260928_todo_reflections.sql`.
+      할 일 회고는 project_id를 저장하지 않고 할 일의 **현재 매핑**으로 모은다(할 일을 옮기면 회고도 따라감).
+    - **할 일 상세 팝업**: 고정 머리(체크 · 제목 · 일정 · PARA) + 탭 3개(하위 할 일 `2/4` · 회고 개수 · 메모·URL 점) + 고정 바닥.
+      탭 본문 높이 300px 고정. **완료된 할 일은 회고 탭으로 열림**(완료 시 "한 줄 회고?"를 묻는 대신). 노트는 탭 없음.
+    - **PARA 상세(Project) 회고 탭**(`?tab=retro`): 프로젝트 전체 회고 입력 + 3열 보드, 출처 할 일을 누르면 그 할 일 상세,
+      "다음엔 → 할 일로"(Inbox에 이 프로젝트로 매핑해서 생성), "회고 노트로 저장"(자료 탭 편집기에 채워서 열기 — 고친 뒤 저장).
+    - `addTodo`가 PARA 매핑을 받고 새 id를 돌려주도록 바뀜(클라이언트에서 id를 정해 insert — 하위 할 일과 같은 방식).
+    - `useDismiss`가 Esc를 `preventDefault()`로 표시하고 상세 팝업은 `defaultPrevented`면 안 닫힘 — 팝업 안 메뉴에서 Esc를 누르면 메뉴만 닫힘.
+    - **확인**: tsc · eslint · build + 가짜 Supabase(auth/rest 목 서버)에 붙인 실제 앱을 Playwright로 클릭 확인(탭 · 드롭다운 ·
+      추가 · 할 일로 · 노트 편집기 열기 · 삭제 시 회고 제거 · 모바일). 실제 Supabase(RLS · Realtime) · Drive 저장은 확인 못 함.
+    - `supabase/migrations/20260928_todo_reflections.sql`은 사용자가 실행 완료 → `main`에 머지.
+
 ## 지금 구현된 것 (기능 목록)
 
 - Todo List(전역 보관함, 사이드 패널) + Mon~Sun **시간 단위 캘린더 그리드** (0~24시, 스크롤 가능)
@@ -539,8 +557,11 @@ src/lib/supabase/containers.ts  useSupabaseProjects/Areas/Resources 훅 — proj
 src/lib/types.ts                Todo/Project/Area/Resource 타입, TodoKind, ParaKind, isInboxVisible(), 요일 키, 라벨
 src/lib/category.ts             getParaCategory() + 카테고리별 CSS 변수 맵 (DESIGN.md 3번 참고)
 src/lib/app-data/               데이터 단일 출처: AppDataProvider, useTodos, useContainers, useTodoActions, useSession, useSignOut (25번),
-                                useSubtasks(subtasksOf · progressOf) · useSubtaskActions (27번)
+                                useSubtasks(subtasksOf · progressOf) · useSubtaskActions (27번),
+                                useReflections(reflectionsOf · reflectionsOfProject) · useReflectionActions (28번)
 src/lib/supabase/subtasks.ts    todo_subtasks 조회 + Realtime + 낙관적 추가/수정/삭제/순서 (27번)
+src/lib/supabase/reflections.ts todo_reflections 조회 + Realtime + 낙관적 추가/수정/삭제 (28번)
+src/lib/reflection.ts           회고 종류별 라벨 · 아이콘 · 색 변수, 회고 노트 마크다운 만들기 (28번)
 src/lib/dnd/                    DndProvider(앱에 1개), handle-drop.ts(드롭 처리 단일 구현), drop-targets.ts(드롭 data 타입),
                                 collision.ts(preferSpecificTargetCollision — 보관함과 다른 드롭 영역이 겹칠 때 우선순위)
 src/lib/shell-ui.tsx            셸 UI 상태(Inbox 열림 · localStorage 기억, "+"로 열고 입력창 포커스)
@@ -567,9 +588,12 @@ src/components/month-calendar.tsx 월 보기 그리드 (칸 클릭 → 그 주, 
 src/components/mini-calendar.tsx 애플식 미니 달력 (calendar-header 팝오버 안, 보는 주 띠 강조)
 src/components/todo-card.tsx    할 일/노트 한 줄(할 일=체크박스, 노트=아이콘만 + 텍스트 + 드래그 핸들 +
                                  삭제 + URL이 있으면 파비콘 임베드 카드 + 전환 버튼)
-src/components/todo-detail-modal.tsx  할 일/노트 상세 팝업 (제목/메모 수정, 할일↔노트 전환, 삭제, 완료 체크 · 하위 할 일) — body 포털
+src/components/todo-detail-modal.tsx  할 일/노트 상세 팝업 (제목/메모 수정, 할일↔노트 전환, 삭제, 완료 체크, 탭: 하위 할 일 · 회고 · 메모·URL) — body 포털
 src/components/subtask/subtask-list.tsx      하위 할 일 체크리스트(수정 · 삭제 · 연속 추가 · 드래그 순서) + DragOverlay 미리보기 (27번)
 src/components/subtask/subtask-progress.tsx  하위 할 일 진행률 링 + done/total (27번)
+src/components/reflection/reflection-kind.tsx     회고 종류 아이콘 + 종류 드롭다운 (28번)
+src/components/reflection/reflection-list.tsx     할 일 회고 목록 · 추가 줄 · 그 자리 수정 (28번)
+src/components/reflection/project-retro-tab.tsx   PARA 상세(Project) 회고 탭 — 3열 보드, 할 일로, 회고 노트로 저장 (28번)
 src/components/add-todo-form.tsx  할 일/노트 추가 입력 행 (토글로 종류 선택)
 src/components/para-board.tsx   PARA 목록 화면 본문 — 세그먼트 컨트롤 + 컨테이너 카드 그리드
 src/components/para/container-card.tsx        Project/Area/Resource 카드 (droppable, 클릭 시 상세로 이동)
@@ -603,6 +627,7 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
    새 프로젝트는 schema.sql → migrations/ 파일을 날짜순으로 실행.
    - `20260928_todo_subtasks.sql` — 하위 할 일 테이블 (SUBTASKS-PLAN.md 1단계) 실행 완료
    - `20260928_webapp_push.sql` — 컨텍스트 · 웹 푸시 테이블 (WEBAPP-PLAN.md 3단계) **실행 필요**
+   - `20260928_todo_reflections.sql` — 회고 테이블 (REFLECTIONS-PLAN.md) 실행 완료
 7. `/api/clip` 기능을 실제로 쓰려면 `SUPABASE_SECRET_KEY`/`CLIP_API_SECRET`/`CLIP_USER_ID` 세
    환경변수를 로컬(`.env.local`)과 Vercel 양쪽에 아직 등록 안 함 — README의 해당 섹션 참고해서
    설정하고 애플 단축어까지 만들어야 실제로 동작함. 코드/스키마는 준비 완료 상태.
