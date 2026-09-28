@@ -45,7 +45,7 @@ export function AccountMenu({ open, onClose }: { open: boolean; onClose: () => v
       ref={menuRef}
       role="menu"
       aria-label="계정"
-      className="fixed bottom-[72px] right-2 z-[60] w-[280px] rounded-xl border border-black/10 bg-popover/95 p-1.5 shadow-[0_14px_36px_rgba(0,0,0,0.18),0_2px_6px_rgba(0,0,0,0.06)] backdrop-blur sm:bottom-3.5 sm:left-[84px] sm:right-auto"
+      className="fixed bottom-[calc(var(--tabbar-h)+8px)] right-2 z-[60] w-[280px] rounded-xl border border-black/10 bg-popover/95 p-1.5 shadow-[0_14px_36px_rgba(0,0,0,0.18),0_2px_6px_rgba(0,0,0,0.06)] backdrop-blur sm:bottom-3.5 sm:left-[84px] sm:right-auto"
     >
       <div className="flex items-center gap-2.5 px-2.5 pb-3 pt-2.5">
         <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-[13px] font-bold text-accent-foreground">
