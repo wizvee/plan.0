@@ -97,6 +97,7 @@ DB 변경은 `supabase/migrations/` 새 파일로만(schema.sql은 안 늘림).
 - 셸 규칙대로 계정 메뉴 · 레일 안에서만 처리(화면별 코드 없음).
 
 ### 5단계 — 컨텍스트 전환 API + 단축어
+> ✅ 완료 (2026-09-28) — `src/app/api/context/route.ts`(`Authorization: Bearer <CONTEXT_API_SECRET>`, 비교는 timingSafeEqual, `{context: "<키>" | "default"}` → `user_context` upsert, 모르는 키면 400 + 사용 가능한 키 목록), README "컨텍스트 단축어" 섹션, `.env.local.example`. 로컬 서버로 인증 실패 · 잘못된 본문 · 값 없음 · DB 오류 · GET 405 확인(실제 DB 반영은 Supabase에서). 컨텍스트 바뀜 알림(Q1)은 발송이 생기는 6단계에서 이 라우트에 붙인다.
 - `POST /api/context` `{ "context": "work" }` — 키로 컨텍스트를 찾는다. `{ "context": null }` 또는 `"default"`는 기본 컨텍스트(Q4).
   모르는 키면 400(오타 방지). 비밀 키 헤더로만 호출(`/api/clip`과 같은 방식: `CONTEXT_API_SECRET` + 기존 `CLIP_USER_ID`).
   `user_context` 갱신 → Q1이면 컨텍스트 알림 + 배지 푸시.
