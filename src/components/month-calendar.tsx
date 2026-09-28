@@ -2,11 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, startOfMonth, startOfWeek } from "date-fns";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { TodoDetailModal } from "@/components/todo-detail-modal";
 import { cn } from "@/lib/utils";
-import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR, getParaCategory } from "@/lib/category";
+import { CATEGORY_COLOR_VAR, getParaCategory } from "@/lib/category";
+import { formatClock } from "@/lib/time";
 import { toDateKey } from "@/lib/week";
 import { DAY_LABELS_KO, type Area, type Project, type Resource, type Todo } from "@/lib/types";
 
@@ -21,9 +21,6 @@ interface MonthCalendarProps {
   resources: Resource[];
   todayKey: string | null;
   onSelectDay: (date: Date) => void;
-  onPrevMonth: () => void;
-  onNextMonth: () => void;
-  onToday: () => void;
   onEdit: (id: string, content: string) => void;
   onMemoEdit: (id: string, memo: string) => void;
   onUrlEdit: (id: string, url: string | null) => void;
@@ -39,9 +36,6 @@ export function MonthCalendar({
   resources,
   todayKey,
   onSelectDay,
-  onPrevMonth,
-  onNextMonth,
-  onToday,
   onEdit,
   onMemoEdit,
   onUrlEdit,
@@ -66,66 +60,35 @@ export function MonthCalendar({
   const days = eachDayOfInterval({ start: gridStart, end: gridEnd });
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-[28px] font-bold tracking-tight">{format(displayMonth, "yyyy년 M월")}</h1>
-        <div className="flex items-center gap-2.5">
-          <div className="flex overflow-hidden rounded-md border border-border">
-            <button
-              type="button"
-              onClick={onPrevMonth}
-              aria-label="이전 달"
-              className="flex h-[34px] w-[34px] items-center justify-center text-muted-foreground hover:bg-accent"
-            >
-              <ChevronLeft className="size-4" />
-            </button>
-            <button
-              type="button"
-              onClick={onNextMonth}
-              aria-label="다음 달"
-              className="flex h-[34px] w-[34px] items-center justify-center border-l border-border text-muted-foreground hover:bg-accent"
-            >
-              <ChevronRight className="size-4" />
-            </button>
-          </div>
-          <button
-            type="button"
-            onClick={onToday}
-            className="h-[34px] rounded-md border border-border px-3.5 text-[13px] font-semibold hover:bg-accent"
-          >
-            오늘
-          </button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-7">
+    <div className="flex flex-col border-t border-border [--month-bottom:64px] sm:[--month-bottom:0px]">
+      <div className="grid h-8 grid-cols-7 border-b border-border">
         {WEEKDAY_ORDER.map((day) => (
-          <span
-            key={day}
-            className={cn(
-              "pb-1 text-center text-[12px] font-bold text-muted-foreground",
-              (day === "sat" || day === "sun") && "text-destructive/80"
-            )}
-          >
+          <span key={day} className="flex items-center pl-2.5 text-[11.5px] font-medium text-muted-foreground">
             {DAY_LABELS_KO[day]}
           </span>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-px overflow-hidden rounded-lg border border-border bg-border">
-        {days.map((date) => {
+      <div
+        className="grid grid-cols-7"
+        style={{ gridAutoRows: `minmax(96px, calc((100dvh - 60px - 33px - var(--month-bottom, 0px)) / ${days.length / 7}))` }}
+      >
+        {days.map((date, index) => {
           const dateKey = toDateKey(date);
           const inMonth = isSameMonth(date, displayMonth);
           const isToday = dateKey === todayKey;
+          const isWeekend = index % 7 >= 5;
           const events = eventsByDate.get(dateKey) ?? [];
           const visible = events.slice(0, MAX_VISIBLE_EVENTS);
           const moreCount = events.length - visible.length;
+          const label = date.getDate() === 1 ? format(date, "M월 d일") : format(date, "d");
 
           return (
             <div
               key={dateKey}
               role="button"
               tabIndex={0}
+              aria-label={`${format(date, "M월 d일")} 주 보기로`}
               onClick={() => onSelectDay(date)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -134,31 +97,22 @@ export function MonthCalendar({
                 }
               }}
               className={cn(
-                "flex min-h-[104px] cursor-pointer flex-col items-start gap-1 overflow-hidden bg-card p-1.5 text-left transition-colors hover:bg-accent/40",
-                isToday && "bg-accent/25"
+                "flex min-h-0 cursor-pointer flex-col gap-0.5 overflow-hidden border-b border-r border-black/[0.06] px-1.5 pb-1 pt-1.5 text-left hover:bg-black/[0.02]",
+                isWeekend && "bg-black/[0.015]"
               )}
             >
-              {isToday ? (
-                <span className="flex size-[22px] items-center justify-center rounded-full bg-primary text-[12px] font-bold text-primary-foreground">
-                  {format(date, "d")}
-                </span>
-              ) : (
-                <span className={cn("text-[12px] font-semibold", !inMonth && "text-muted-foreground/50")}>
-                  {format(date, "d")}
-                </span>
-              )}
+              <span
+                className={cn(
+                  "mb-0.5 flex h-6 min-w-6 items-center justify-center self-start rounded-full px-1 text-[13px] font-medium",
+                  !inMonth && "text-muted-foreground/50",
+                  isToday && "bg-today font-semibold text-white"
+                )}
+              >
+                {label}
+              </span>
               {visible.map((todo) => {
                 const category = getParaCategory(todo);
-                const colorVar = todo.completed
-                  ? "var(--muted-foreground)"
-                  : category
-                    ? `var(${CATEGORY_COLOR_VAR[category]})`
-                    : "var(--muted-foreground)";
-                const tintVar = todo.completed
-                  ? "var(--muted)"
-                  : category
-                    ? `var(${CATEGORY_TINT_VAR[category]})`
-                    : "var(--secondary)";
+                const colorVar = category ? `var(${CATEGORY_COLOR_VAR[category]})` : "var(--muted-foreground)";
                 return (
                   <button
                     key={todo.id}
@@ -168,16 +122,23 @@ export function MonthCalendar({
                       setDetailTodoId(todo.id);
                     }}
                     className={cn(
-                      "w-full truncate rounded-[4px] border-l-[3px] px-1.5 py-0.5 text-left text-[11px] font-medium",
-                      todo.completed && "line-through"
+                      "flex h-5 w-full items-center gap-1.5 rounded px-1 text-left text-[12px] hover:bg-black/5",
+                      todo.completed && "opacity-50"
                     )}
-                    style={{ borderLeftColor: colorVar, backgroundColor: tintVar, color: colorVar }}
                   >
-                    {todo.content}
+                    <span className="size-[7px] shrink-0 rounded-full" style={{ backgroundColor: colorVar }} aria-hidden="true" />
+                    <span className={cn("min-w-0 flex-1 truncate", todo.completed && "line-through")}>{todo.content}</span>
+                    {todo.startMinutes !== null ? (
+                      <span className="hidden shrink-0 text-[11px] text-muted-foreground lg:inline">
+                        {formatClock(todo.startMinutes)}
+                      </span>
+                    ) : null}
                   </button>
                 );
               })}
-              {moreCount > 0 ? <span className="text-[10px] text-muted-foreground">+{moreCount}개 더보기</span> : null}
+              {moreCount > 0 ? (
+                <span className="pl-[17px] text-[11px] text-muted-foreground">+{moreCount}개 더보기</span>
+              ) : null}
             </div>
           );
         })}

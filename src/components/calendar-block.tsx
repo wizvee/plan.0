@@ -21,6 +21,7 @@ import {
   snapMinutes,
 } from "@/lib/time";
 import type { Area, Project, Resource, Todo } from "@/lib/types";
+import type { DraggedTodoData } from "@/lib/dnd/drop-targets";
 
 interface CalendarBlockProps {
   todo: Todo;
@@ -62,6 +63,7 @@ export function CalendarBlock({
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: todo.id,
     disabled: overlay,
+    data: { type: "todo", source: "calendar" } satisfies DraggedTodoData,
   });
 
   function handleResizePointerDown(e: ReactPointerEvent<HTMLDivElement>) {
@@ -93,24 +95,17 @@ export function CalendarBlock({
   const compact = renderedHeight <= 34;
 
   const category = getParaCategory(todo);
-  const colorVar = todo.completed
-    ? "var(--muted-foreground)"
-    : category
-      ? `var(${CATEGORY_COLOR_VAR[category]})`
-      : "var(--muted-foreground)";
-  const tintVar = todo.completed
-    ? "var(--muted)"
-    : category
-      ? `var(${CATEGORY_TINT_VAR[category]})`
-      : "var(--secondary)";
+  // 완료돼도 카테고리 색은 유지하고 블록 전체를 흐리게(애플 캘린더 방식). 매핑 없으면 회색.
+  const colorVar = category ? `var(${CATEGORY_COLOR_VAR[category]})` : "var(--muted-foreground)";
+  const tintVar = category ? `var(${CATEGORY_TINT_VAR[category]})` : "var(--secondary)";
 
   if (overlay) {
     return (
       <div
-        className="w-[200px] rounded-[5px] border-l-[3px] px-2.5 py-1.5 shadow-lg"
-        style={{ height: renderedHeight, borderLeftColor: colorVar, backgroundColor: tintVar }}
+        className="w-[200px] rounded-md px-2.5 py-1.5 shadow-lg"
+        style={{ height: renderedHeight, boxShadow: `inset 3px 0 0 ${colorVar}`, backgroundColor: tintVar }}
       >
-        <p className="truncate text-[13px] font-medium text-foreground">{todo.content}</p>
+        <p className="truncate text-[12px] font-semibold text-foreground">{todo.content}</p>
         <p className="truncate text-[11px] text-muted-foreground">
           {minutesRangeLabel(startMinutes, duration)}
         </p>
@@ -123,9 +118,9 @@ export function CalendarBlock({
     top: minutesToPx(startMinutes),
     height: renderedHeight,
     left: 3,
-    right: 3,
+    right: 4,
     transform: CSS.Translate.toString(transform),
-    borderLeftColor: colorVar,
+    boxShadow: `inset 3px 0 0 ${colorVar}`,
     backgroundColor: tintVar,
   };
 
@@ -137,32 +132,34 @@ export function CalendarBlock({
         {...attributes}
         {...listeners}
         className={cn(
-          "absolute z-[1] flex touch-none select-none flex-col justify-center overflow-hidden rounded-[5px] border-l-[3px] px-2 py-1 shadow-[0_1px_1px_rgba(0,0,0,0.04)] transition-shadow hover:shadow-md",
+          "absolute z-[1] flex touch-none select-none flex-col justify-start overflow-hidden rounded-md py-[5px] pl-[9px] pr-[7px] hover:brightness-[0.98]",
+          todo.completed && "opacity-50",
           isDragging && "z-20 opacity-40",
           compact && "flex-row items-center gap-1.5 py-0"
         )}
       >
-        <div className="flex min-w-0 flex-1 items-center gap-1.5">
-          <span onPointerDown={(e) => e.stopPropagation()} className="shrink-0">
+        <div className={cn("flex min-w-0 items-center gap-1.5", compact && "flex-1")}>
+          <span onPointerDown={(e) => e.stopPropagation()} className="flex shrink-0">
             <Checkbox
               checked={todo.completed}
               onCheckedChange={() => onToggle?.(todo.id)}
-              className="size-4 border-primary/50 data-[state=checked]:bg-primary"
+              className="size-[13px] border-[1.5px] [&_svg]:size-2.5"
+              style={{ borderColor: colorVar, backgroundColor: todo.completed ? colorVar : undefined }}
               aria-label="완료 표시"
             />
           </span>
           <span
             onClick={() => onEdit && setDetailOpen(true)}
             className={cn(
-              "min-w-0 flex-1 cursor-pointer truncate text-[12.5px] font-medium leading-tight text-foreground",
-              todo.completed && "text-muted-foreground line-through"
+              "min-w-0 flex-1 cursor-pointer truncate text-[12px] font-semibold leading-tight text-foreground",
+              todo.completed && "line-through"
             )}
           >
             {todo.content}
           </span>
         </div>
         {!compact ? (
-          <span className="truncate text-[10.5px] leading-tight text-muted-foreground">
+          <span className="mt-0.5 truncate pl-[19px] text-[11px] leading-tight text-foreground/70">
             {minutesRangeLabel(startMinutes, duration)}
           </span>
         ) : null}

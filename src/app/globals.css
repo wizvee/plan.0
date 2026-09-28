@@ -4,54 +4,60 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --radius: 0.5rem;
-  --background: #F6F4F0;
-  --foreground: #3B3632;
-  --card: #FFFEFB;
-  --card-foreground: #3B3632;
-  --popover: #FFFEFB;
-  --popover-foreground: #3B3632;
-  --primary: #5C7599;
-  --primary-foreground: #FBFAF8;
-  --secondary: #ECE8E2;
-  --secondary-foreground: #3B3632;
-  --muted: #ECE8E2;
-  --muted-foreground: #8B8377;
-  --accent: #E7ECF2;
-  --accent-foreground: #4D6584;
-  --destructive: #C1685C;
-  --border: rgba(59, 54, 50, 0.12);
-  --input: #DAD4CA;
-  --ring: #5C7599;
-  --category-area: oklch(54% 0.07 155);
-  --category-area-tint: oklch(94% 0.014 155);
-  --category-resource: oklch(54% 0.075 320);
-  --category-resource-tint: oklch(94% 0.014 320);
+  --radius: 0.625rem;
+  --background: #FFFFFF;
+  --foreground: #1D1D1F;
+  --card: #FFFFFF;
+  --card-foreground: #1D1D1F;
+  --popover: #FFFFFF;
+  --popover-foreground: #1D1D1F;
+  --primary: #0071E3;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F5F5F7;
+  --secondary-foreground: #1D1D1F;
+  --muted: #F5F5F7;
+  --muted-foreground: #6E6E73;
+  --accent: #E8F1FE;
+  --accent-foreground: #0A4A9E;
+  --destructive: #FF3B30;
+  --border: rgba(0, 0, 0, 0.08);
+  --input: #D1D1D6;
+  --ring: #0071E3;
+  --today: #FF3B30;
+  --warning: #FF9500;
+  --panel: #FBFBFD;
+  --category-area: #2E9E5B;
+  --category-area-tint: #E5F5EB;
+  --category-resource: #A550D6;
+  --category-resource-tint: #F4EAFB;
 }
 
 .dark {
-  --background: #1C1A17;
-  --foreground: #EAE5DD;
-  --card: #262320;
-  --card-foreground: #EAE5DD;
-  --popover: #262320;
-  --popover-foreground: #EAE5DD;
-  --primary: #90A6C7;
-  --primary-foreground: #1C1A17;
-  --secondary: #33302B;
-  --secondary-foreground: #EAE5DD;
-  --muted: #33302B;
-  --muted-foreground: #A39B8D;
-  --accent: #2B3542;
-  --accent-foreground: #9FB4D4;
-  --destructive: #D98A7E;
-  --border: rgba(234, 229, 221, 0.14);
-  --input: #4A453D;
-  --ring: #90A6C7;
-  --category-area: oklch(72% 0.09 155);
-  --category-area-tint: oklch(28% 0.035 155);
-  --category-resource: oklch(72% 0.1 320);
-  --category-resource-tint: oklch(28% 0.035 320);
+  --background: #1C1C1E;
+  --foreground: #F5F5F7;
+  --card: #2C2C2E;
+  --card-foreground: #F5F5F7;
+  --popover: #2C2C2E;
+  --popover-foreground: #F5F5F7;
+  --primary: #0A84FF;
+  --primary-foreground: #FFFFFF;
+  --secondary: #2C2C2E;
+  --secondary-foreground: #F5F5F7;
+  --muted: #2C2C2E;
+  --muted-foreground: #98989D;
+  --accent: #10304F;
+  --accent-foreground: #64A8FF;
+  --destructive: #FF453A;
+  --border: rgba(255, 255, 255, 0.12);
+  --input: #48484A;
+  --ring: #0A84FF;
+  --today: #FF453A;
+  --warning: #FF9F0A;
+  --panel: #232325;
+  --category-area: #30D158;
+  --category-area-tint: #173A24;
+  --category-resource: #BF5AF2;
+  --category-resource-tint: #34203F;
 }
 
 @theme inline {
@@ -77,11 +83,14 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-today: var(--today);
+  --color-warning: var(--warning);
+  --color-panel: var(--panel);
   --color-category-area: var(--category-area);
   --color-category-area-tint: var(--category-area-tint);
   --color-category-resource: var(--category-resource);
   --color-category-resource-tint: var(--category-resource-tint);
-  --font-sans: "Wanted Sans Variable", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Apple SD Gothic Neo", "Wanted Sans Variable", "Helvetica Neue", Arial, sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 

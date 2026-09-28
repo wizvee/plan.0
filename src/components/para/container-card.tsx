@@ -3,8 +3,9 @@
 import { useDroppable } from "@dnd-kit/core";
 
 import { cn } from "@/lib/utils";
-import { CATEGORY_COLOR_VAR } from "@/lib/category";
+import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR } from "@/lib/category";
 import type { ParaKind } from "@/lib/types";
+import type { DropTargetData } from "@/lib/dnd/drop-targets";
 
 interface ContainerCardProps {
   kind: ParaKind;
@@ -19,7 +20,10 @@ interface ContainerCardProps {
 }
 
 export function ContainerCard({ kind, id, name, statusLabel, statusDone, count, progress, onClick }: ContainerCardProps) {
-  const { setNodeRef, isOver } = useDroppable({ id: `para:${kind}:${id}` });
+  const { setNodeRef, isOver } = useDroppable({
+    id: `para:${kind}:${id}`,
+    data: { type: "para-container", kind, id } satisfies DropTargetData,
+  });
 
   const colorVar = `var(${CATEGORY_COLOR_VAR[kind]})`;
 
@@ -34,33 +38,32 @@ export function ContainerCard({ kind, id, name, statusLabel, statusDone, count, 
       }}
       style={{ borderTopColor: statusDone ? undefined : colorVar }}
       className={cn(
-        "cursor-pointer rounded-lg border border-t-[3px] border-border bg-card px-4 py-3.5 transition-shadow hover:shadow-md",
-        statusDone && "opacity-70",
+        "flex cursor-pointer flex-col gap-3 rounded-xl border border-t-[3px] border-border bg-card px-4 pb-3.5 pt-4 transition-shadow hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)]",
+        statusDone && "opacity-60",
         isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background"
       )}
     >
-      <div className="flex items-center justify-between gap-2.5">
-        <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">{name}</span>
-      </div>
-      <div className="mt-2 flex items-center gap-2.5 text-[12.5px] text-muted-foreground">
+      <span className="min-w-0 truncate text-[15.5px] font-semibold tracking-[-0.2px]">{name}</span>
+      <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
         <span
           className={cn(
-            "rounded-sm px-2 py-0.5 text-[11px] font-bold",
-            statusDone ? "bg-secondary text-muted-foreground" : "bg-accent text-accent-foreground"
+            "rounded-[5px] px-[7px] py-0.5 font-semibold",
+            statusDone ? "bg-black/[0.06] text-muted-foreground" : "text-foreground"
           )}
+          style={statusDone ? undefined : { backgroundColor: `var(${CATEGORY_TINT_VAR[kind]})` }}
         >
           {statusLabel}
         </span>
         <span className="whitespace-nowrap">항목 {count}개</span>
-        {progress !== undefined ? (
-          <>
-            <span className="h-[5px] max-w-[100px] flex-1 overflow-hidden rounded-full bg-secondary">
-              <span className="block h-full rounded-full" style={{ width: `${progress}%`, backgroundColor: colorVar }} />
-            </span>
-            <span className="tabular-nums">{progress}%</span>
-          </>
-        ) : null}
       </div>
+      {progress !== undefined ? (
+        <div className="flex items-center gap-2">
+          <span className="h-[5px] flex-1 overflow-hidden rounded-full bg-black/[0.07]">
+            <span className="block h-full rounded-full" style={{ width: `${progress}%`, backgroundColor: colorVar }} />
+          </span>
+          <span className="text-[12px] font-semibold tabular-nums text-foreground/75">{progress}%</span>
+        </div>
+      ) : null}
     </div>
   );
 }

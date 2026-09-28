@@ -7,7 +7,7 @@ export const DEFAULT_DURATION_MINUTES = 60;
 export const DEFAULT_START_MINUTES = 9 * 60;
 export const MIN_BLOCK_HEIGHT = 28;
 export const BLOCK_GAP = 2;
-export const GUTTER_WIDTH = 52;
+export const GUTTER_WIDTH = 56;
 export const INITIAL_SCROLL_HOUR = 7;
 
 export function snapMinutes(minutes: number, step: number = SNAP_MINUTES): number {
@@ -22,13 +22,16 @@ export function minutesToPx(minutes: number): number {
   return (minutes / 60) * HOUR_HEIGHT;
 }
 
+/** 시간 눈금 라벨 — 애플 캘린더(한국어)처럼 "오전 9시", "정오", "오후 1시". */
 export function hourLabel(hour: number): string {
-  const period = hour < 12 ? "AM" : "PM";
+  if (hour === 12) return "정오";
+  const period = hour < 12 ? "오전" : "오후";
   const h12 = hour % 12 === 0 ? 12 : hour % 12;
-  return `${h12} ${period}`;
+  return `${period} ${h12}시`;
 }
 
-function formatClock(minutes: number): string {
+/** "오전 9시", "오후 2:30" */
+export function formatClock(minutes: number): string {
   const h = Math.floor(minutes / 60) % 24;
   const m = minutes % 60;
   const period = h < 12 ? "오전" : "오후";

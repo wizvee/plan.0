@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   }
 
   const code = request.nextUrl.searchParams.get("code");
-  const next = request.nextUrl.searchParams.get("state") || "/para";
+  const next = safeNextPath(request.nextUrl.searchParams.get("state"));
   if (!code) {
     return NextResponse.redirect(new URL(`${next}?google=error`, request.nextUrl.origin));
   }
@@ -35,4 +35,13 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.redirect(new URL(`${next}?google=connected`, request.nextUrl.origin));
+}
+
+/**
+ * 연결 후 돌아갈 경로. 앱 안의 경로("/...")만 허용한다 — `state`는 URL로 조작할 수 있어서, 그대로 쓰면
+ * "https://다른사이트"나 "//다른사이트"로 튕겨 보내는 오픈 리다이렉트가 된다.
+ */
+function safeNextPath(next: string | null): string {
+  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return "/para";
+  return next;
 }

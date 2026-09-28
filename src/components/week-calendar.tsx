@@ -6,6 +6,7 @@ import { useDroppable } from "@dnd-kit/core";
 
 import { CalendarBlock } from "@/components/calendar-block";
 import { cn } from "@/lib/utils";
+import type { DropTargetData } from "@/lib/dnd/drop-targets";
 import { useTodayKey } from "@/lib/use-today";
 import { DAY_KEYS, DAY_LABELS_KO, type Area, type DayKey, type Project, type Resource, type Todo } from "@/lib/types";
 import {
@@ -56,8 +57,8 @@ function CurrentTimeLine() {
   return (
     <div className="pointer-events-none absolute inset-x-0 z-[2]" style={{ top: minutesToPx(minutes) }}>
       <div className="relative">
-        <span className="absolute -left-[3px] -top-[3px] size-[7px] rounded-full bg-destructive" />
-        <div className="h-px bg-destructive" />
+        <span className="absolute -left-1 -top-[3px] size-2 rounded-full bg-today" />
+        <div className="h-0.5 bg-today" />
       </div>
     </div>
   );
@@ -65,6 +66,7 @@ function CurrentTimeLine() {
 
 function DayGridColumn({
   day,
+  date,
   items,
   isToday,
   projects,
@@ -79,6 +81,8 @@ function DayGridColumn({
   onResize,
 }: {
   day: DayKey;
+  /** 이 칸의 실제 날짜 (yyyy-MM-dd) — 드롭하면 이 날짜로 배치된다 */
+  date: string;
   items: Todo[];
   isToday: boolean;
   projects: Project[];
@@ -92,21 +96,23 @@ function DayGridColumn({
   onAssignPara: (id: string, patch: { projectId: string | null; areaId: string | null; resourceId: string | null }) => void;
   onResize: (id: string, durationMinutes: number) => void;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: `grid:${day}` });
+  const { setNodeRef, isOver } = useDroppable({
+    id: `grid:${day}`,
+    data: { type: "calendar-day", date } satisfies DropTargetData,
+  });
 
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        "relative border-border/60 transition-colors",
-        day !== "mon" && "border-l",
-        isToday && "bg-accent/20",
-        isOver && "bg-accent/35"
+        "relative border-black/[0.06] transition-colors sm:border-l",
+        (day === "sat" || day === "sun") && "bg-black/[0.015]",
+        isOver && "bg-primary/[0.07]"
       )}
       style={{ height: HOURS_IN_DAY * HOUR_HEIGHT }}
     >
       {Array.from({ length: HOURS_IN_DAY }).map((_, hour) => (
-        <div key={hour} className="border-t border-border/40" style={{ height: HOUR_HEIGHT }} />
+        <div key={hour} className="border-t border-black/[0.07]" style={{ height: HOUR_HEIGHT }} />
       ))}
       {isToday ? <CurrentTimeLine /> : null}
       {items.map((todo) => (
@@ -154,25 +160,21 @@ export function WeekCalendar({
   }, []);
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-[14px] bg-card shadow-[0_1px_1px_rgba(0,0,0,0.03)] ring-1 ring-border">
-      <div className="hidden border-b border-border/70 sm:flex">
+    <div className="flex min-h-0 flex-col border-t border-border">
+      <div className="hidden h-14 border-b border-border sm:flex">
         <div style={{ width: GUTTER_WIDTH }} className="shrink-0" />
         {DAY_KEYS.map((day) => {
           const date = addDays(monday, DAY_KEYS.indexOf(day));
           const isToday = format(date, "yyyy-MM-dd") === todayKey;
           return (
-            <div
-              key={day}
-              className={cn(
-                "flex flex-1 flex-col items-center justify-center gap-1 py-2",
-                isToday && "bg-accent/40"
-              )}
-            >
-              <span className="text-[11px] font-medium text-muted-foreground">{DAY_LABELS_KO[day]}</span>
+            <div key={day} className="flex flex-1 flex-col items-center justify-center gap-0.5">
+              <span className={cn("text-[11.5px] font-medium text-muted-foreground", isToday && "text-today")}>
+                {DAY_LABELS_KO[day]}
+              </span>
               <span
                 className={cn(
-                  "flex size-7 items-center justify-center rounded-full text-[15px] font-semibold",
-                  isToday && "bg-primary text-primary-foreground"
+                  "flex size-7 items-center justify-center rounded-full text-[17px]",
+                  isToday && "bg-today font-semibold text-white"
                 )}
               >
                 {format(date, "d")}
@@ -181,12 +183,12 @@ export function WeekCalendar({
           );
         })}
       </div>
-      <div ref={scrollRef} className="flex overflow-y-auto" style={{ maxHeight: "calc(100vh - 300px)" }}>
+      <div ref={scrollRef} className="flex max-h-[calc(100dvh-60px-80px-64px)] overflow-y-auto sm:max-h-[calc(100dvh-60px-57px)]">
         <div style={{ width: GUTTER_WIDTH }} className="shrink-0">
           {Array.from({ length: HOURS_IN_DAY }).map((_, hour) => (
             <div key={hour} className="relative" style={{ height: HOUR_HEIGHT }}>
               {hour > 0 ? (
-                <span className="absolute -top-2 right-2 text-[10.5px] text-muted-foreground">
+                <span className="absolute -top-[7px] right-2 whitespace-nowrap text-[10.5px] text-muted-foreground/80">
                   {hourLabel(hour)}
                 </span>
               ) : null}
@@ -201,6 +203,7 @@ export function WeekCalendar({
               <div key={day} className={cn(mobileDay !== day && "hidden", "sm:block")}>
                 <DayGridColumn
                   day={day}
+                  date={format(date, "yyyy-MM-dd")}
                   items={itemsByDay[day]}
                   isToday={isToday}
                   projects={projects}

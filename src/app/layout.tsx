@@ -32,7 +32,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           href="https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@v1.0.3/packages/wanted-sans/fonts/webfonts/variable/split/WantedSansVariable.min.css"
         />
       </head>
-      <body className="min-h-full flex flex-col bg-muted/30">{children}</body>
+      <body className="min-h-full flex flex-col bg-background">{children}</body>
     </html>
   );
 }

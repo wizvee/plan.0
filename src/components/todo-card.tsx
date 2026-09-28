@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { UrlChip } from "@/components/url-chip";
 import { TodoDetailModal } from "@/components/todo-detail-modal";
 import { cn } from "@/lib/utils";
+import type { DragSource, DraggedTodoData } from "@/lib/dnd/drop-targets";
 import { CATEGORY_COLOR_VAR, getParaCategory } from "@/lib/category";
 import type { Area, Project, Resource, Todo, TodoKind } from "@/lib/types";
 
@@ -32,6 +33,8 @@ interface TodoCardProps {
   overlay?: boolean;
   /** PARA 매핑 표시용 — 이 할 일이 속한 Project/Area/Resource 이름 */
   badge?: string;
+  /** 이 카드가 놓인 곳 — Inbox 목록인지 PARA 상세 목록인지 (드롭 처리에서 사용) */
+  dragSource?: Extract<DragSource, "inbox" | "container">;
 }
 
 export function TodoCard({
@@ -48,15 +51,17 @@ export function TodoCard({
   onConvert,
   overlay,
   badge,
+  dragSource = "container",
 }: TodoCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
-  const category = !badge ? getParaCategory(todo) : null;
+  const category = getParaCategory(todo);
   const scheduledDate = scheduledDateOf(todo);
   const isOverdue = scheduledDate ? !todo.completed && isBefore(scheduledDate, startOfDay(new Date())) : false;
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: todo.id,
     disabled: overlay,
+    data: { type: "todo", source: dragSource } satisfies DraggedTodoData,
   });
 
   const style = overlay
@@ -69,64 +74,67 @@ export function TodoCard({
         ref={overlay ? undefined : setNodeRef}
         style={style}
         className={cn(
-          "flex items-start gap-2.5 bg-card py-2.5",
-          isDragging && "opacity-40",
-          overlay && "rounded-[10px] px-3 shadow-lg ring-1 ring-border"
+          "group relative flex items-start gap-3 pl-5 pr-4",
+          overlay ? "w-[300px] rounded-xl bg-card shadow-lg ring-1 ring-border" : "hover:bg-black/[0.03]",
+          isDragging && "opacity-40"
         )}
       >
         <button
           type="button"
-          className="mt-0.5 cursor-grab touch-none text-muted-foreground/40 hover:text-muted-foreground"
-          aria-label="드래그 핸들"
+          aria-label="드래그해서 옮기기"
+          className={cn(
+            "absolute left-0.5 top-3 flex h-5 w-4 cursor-grab touch-none items-center justify-center text-muted-foreground/50 hover:text-muted-foreground",
+            overlay ? "hidden" : "sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+          )}
           {...(overlay ? {} : { ...attributes, ...listeners })}
         >
-          <GripVertical className="size-4" />
+          <GripVertical className="size-3.5" />
         </button>
         {todo.kind === "note" ? (
-          <StickyNote className="mt-0.5 size-[18px] shrink-0 text-muted-foreground/60" aria-hidden="true" />
+          <StickyNote className="mt-3 size-[18px] shrink-0 text-muted-foreground/60" strokeWidth={1.8} aria-label="노트" />
         ) : (
-          <Checkbox
-            checked={todo.completed}
-            onCheckedChange={() => onToggle?.(todo.id)}
-            aria-label="완료 표시"
-            className="mt-0.5"
-          />
+          <span className="mt-3 shrink-0">
+            <Checkbox
+              checked={todo.completed}
+              onCheckedChange={() => onToggle?.(todo.id)}
+              aria-label="완료 표시"
+              className="size-5"
+            />
+          </span>
         )}
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <span className="flex min-w-0 items-start gap-1.5">
-            <span
-              onClick={() => onEdit && setDetailOpen(true)}
-              className={cn(
-                "min-w-0 flex-1 cursor-pointer break-words text-[15px] leading-snug",
-                todo.completed && "text-muted-foreground"
-              )}
-            >
-              {todo.content}
-            </span>
-            {category ? (
-              <span
-                className="mt-1.5 size-[7px] shrink-0 rounded-full"
-                style={{ backgroundColor: `var(${CATEGORY_COLOR_VAR[category]})` }}
-                aria-hidden="true"
-              />
-            ) : null}
+        <div
+          className={cn(
+            "flex min-w-0 flex-1 flex-col gap-[5px] py-[11px]",
+            !overlay && "border-b border-border"
+          )}
+        >
+          <span
+            onClick={() => onEdit && setDetailOpen(true)}
+            className={cn(
+              "min-w-0 cursor-pointer break-words text-[14px] leading-[1.35]",
+              todo.completed && "text-muted-foreground line-through"
+            )}
+          >
+            {todo.content}
           </span>
           {todo.url ? <UrlChip url={todo.url} /> : null}
           {scheduledDate || badge ? (
-            <span className="flex flex-wrap items-center gap-2">
+            <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[12px] text-muted-foreground">
               {scheduledDate ? (
-                <span
-                  className={cn(
-                    "text-[12px] font-semibold",
-                    isOverdue ? "text-destructive" : "text-muted-foreground"
-                  )}
-                >
+                <span className={cn("font-medium tabular-nums", isOverdue && "text-destructive")}>
                   {format(scheduledDate, "yyyy. M. d.")}
                 </span>
               ) : null}
               {badge ? (
-                <span className="w-fit rounded-full bg-accent px-2 py-0.5 text-[11px] font-bold text-accent-foreground">
-                  {badge}
+                <span className="flex min-w-0 items-center gap-1.5">
+                  {category ? (
+                    <span
+                      className="size-[7px] shrink-0 rounded-full"
+                      style={{ backgroundColor: `var(${CATEGORY_COLOR_VAR[category]})` }}
+                      aria-hidden="true"
+                    />
+                  ) : null}
+                  <span className="truncate">{badge}</span>
                 </span>
               ) : null}
             </span>

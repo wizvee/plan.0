@@ -2,8 +2,9 @@
 
 import { useRef, useState } from "react";
 import {
-  ArrowLeft,
   Check,
+  ChevronLeft,
+  Cloud,
   ExternalLink,
   FileText,
   FolderOpen,
@@ -47,7 +48,8 @@ function TagPropertyValues({
           key={`${v}-${i}`}
           type="button"
           onClick={() => onRemove(i)}
-          className="rounded-sm bg-secondary px-2 py-0.5 text-[12px] font-bold text-foreground hover:bg-secondary/70"
+          title="눌러서 삭제"
+          className="flex h-6 items-center rounded-[5px] bg-accent px-2 text-[12.5px] font-medium text-accent-foreground hover:bg-accent/70"
         >
           {v}
         </button>
@@ -72,7 +74,7 @@ function TagPropertyValues({
           type="button"
           onClick={() => setAdding(true)}
           aria-label="태그 추가"
-          className="flex size-[22px] items-center justify-center rounded-sm border border-dashed border-border text-muted-foreground hover:text-foreground"
+          className="flex size-6 items-center justify-center rounded-[5px] border border-dashed border-black/20 text-muted-foreground hover:text-foreground"
         >
           <Plus className="size-[11px]" />
         </button>
@@ -81,8 +83,18 @@ function TagPropertyValues({
   );
 }
 
+const KIND_TILE: Record<keyof typeof KIND_ICON, string> = {
+  md: "bg-secondary text-foreground/70",
+  pdf: "bg-destructive/10 text-destructive",
+  pptx: "bg-warning/15 text-warning",
+  image: "bg-category-area-tint text-category-area",
+  other: "bg-secondary text-muted-foreground",
+};
+
 interface FilesTabProps {
   mode: "list" | "edit";
+  /** 목록 위에 보여줄 Drive 폴더 위치 (예: "Drive › 포트폴리오 리뉴얼") */
+  folderLabel: string;
   loading: boolean;
   error: string | null;
   files: DriveFile[];
@@ -111,6 +123,7 @@ interface FilesTabProps {
 
 export function FilesTab({
   mode,
+  folderLabel,
   loading,
   error,
   files,
@@ -140,61 +153,63 @@ export function FilesTab({
 
   if (mode === "edit") {
     return (
-      <div>
-        <div className="mb-3.5 flex items-center justify-between">
+      <div className="flex flex-col">
+        <div className="mb-3.5 flex items-center">
           <button
             type="button"
             onClick={onBackToList}
-            className="flex items-center gap-1.5 text-[13px] font-bold text-muted-foreground hover:text-foreground"
+            className="-ml-1 flex h-[30px] items-center gap-0.5 rounded-[7px] pl-0.5 pr-2 text-[14px] text-primary hover:bg-black/5"
           >
-            <ArrowLeft className="size-3.5" />
-            목록으로
+            <ChevronLeft className="size-[18px]" strokeWidth={2.2} />
+            자료
           </button>
+          <span className="ml-auto mr-2.5 hidden text-[12.5px] text-muted-foreground sm:inline">Drive에 .md로 저장</span>
           <button
             type="button"
             onClick={onSave}
             disabled={saving}
-            className="flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-1.5 text-[13px] font-bold text-primary-foreground disabled:opacity-50"
+            className="flex h-[30px] items-center gap-1.5 rounded-[7px] bg-primary px-4 text-[13px] font-semibold text-primary-foreground disabled:opacity-50 max-sm:ml-auto"
           >
-            <Check className="size-3.5" />
+            <Check className="size-3.5" strokeWidth={2.4} />
             {saving ? "저장 중…" : "저장"}
           </button>
         </div>
 
         {promotedBanner ? (
-          <div className="mb-3.5 flex items-center gap-2 rounded-md bg-accent px-3 py-2.5 text-[12.5px] font-bold text-accent-foreground">
+          <div className="mb-3.5 flex items-center gap-2 rounded-lg bg-accent px-3 py-2.5 text-[12.5px] font-semibold text-accent-foreground">
             <FileText className="size-3.5 shrink-0" />
             선택한 스크랩으로 새 노트를 만들었어요 — 원본 스크랩은 정리(삭제)됐습니다.
           </div>
         ) : null}
 
+        {error ? <p className="mb-3 text-[13.5px] text-destructive">{error}</p> : null}
+
         <input
           value={editingTitle}
           onChange={(e) => onTitleChange(e.target.value)}
           placeholder="제목"
-          className="mb-4 w-full border-none bg-transparent p-0 text-[22px] font-extrabold text-foreground outline-none"
+          aria-label="제목"
+          className="mb-3.5 w-full border-none bg-transparent p-0 text-[26px] font-bold tracking-[-0.4px] text-foreground outline-none placeholder:text-muted-foreground/60"
         />
 
-        <span className="mb-2 block text-[12px] font-bold text-muted-foreground">속성</span>
-        <div className="mb-1.5 flex flex-col">
+        <div className="mb-4 flex flex-col border-y border-border py-1.5">
           {editingProperties.map((prop, i) => (
-            <div key={`${prop.key}-${i}`} className="flex items-start gap-2.5 py-1.5">
-              <span className="flex w-[110px] shrink-0 items-center gap-1.5 text-muted-foreground">
+            <div key={`${prop.key}-${i}`} className="flex min-h-[34px] items-center gap-2">
+              <span className="flex w-[110px] shrink-0 items-center gap-1.5 text-[13.5px] text-muted-foreground">
                 {prop.type === "tag" ? <TagIcon className="size-3.5" /> : <ExternalLink className="size-3.5" />}
-                <span className="text-[13.5px]">{prop.key}</span>
+                {prop.key}
               </span>
               {prop.type === "link" ? (
-                <div className="flex flex-col gap-0.5">
+                <div className="flex min-w-0 flex-col gap-0.5">
                   {prop.values.map((v) => (
                     <a
                       key={v}
                       href={v}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-[13.5px] text-accent-foreground underline"
+                      className="truncate text-[13.5px] text-primary hover:underline"
                     >
                       {v}
-                      <ExternalLink className="size-2.5" />
                     </a>
                   ))}
                 </div>
@@ -210,10 +225,10 @@ export function FilesTab({
           <button
             type="button"
             onClick={onAddTagProperty}
-            className="flex items-center gap-1.5 py-1.5 text-muted-foreground hover:text-foreground"
+            className="-ml-1.5 flex h-[30px] items-center gap-1.5 self-start rounded-md px-1.5 text-[13px] text-muted-foreground hover:bg-black/5 hover:text-foreground"
           >
             <Plus className="size-3" />
-            <span className="text-[13px]">속성 추가</span>
+            속성 추가
           </button>
         </div>
 
@@ -221,44 +236,59 @@ export function FilesTab({
           value={editingBody}
           onChange={(e) => onBodyChange(e.target.value)}
           placeholder="마크다운으로 편하게 적어보세요…"
-          className="mt-3.5 h-[300px] w-full resize-none border-none bg-transparent p-0 text-[14.5px] leading-relaxed text-foreground outline-none"
+          aria-label="본문 (마크다운)"
+          className="h-[320px] w-full resize-none border-none bg-transparent p-0 font-mono text-[13.5px] leading-[1.7] text-foreground outline-none"
         />
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="mb-3 flex justify-end gap-2">
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="flex min-w-0 items-center gap-1.5 text-[12.5px] text-muted-foreground">
+          <Cloud className="size-3.5 shrink-0 text-category-area" strokeWidth={1.8} />
+          <span className="truncate">{folderLabel}</span>
+        </span>
+        <div className="flex-1" />
         <button
           type="button"
           onClick={onImport}
           disabled={importing}
-          className="flex items-center gap-1.5 rounded-md bg-secondary px-3 py-1.5 text-[13px] font-bold text-foreground disabled:opacity-50"
+          className="flex h-[30px] shrink-0 items-center gap-1.5 rounded-[7px] border border-black/10 bg-card px-3 text-[13px] font-medium hover:bg-black/5 disabled:opacity-50"
         >
-          <FolderOpen className="size-3.5" />
+          <FolderOpen className="size-3.5" strokeWidth={1.8} />
           {importing ? "가져오는 중…" : "Drive에서 가져오기"}
         </button>
         <button
           type="button"
           onClick={onToggleUpload}
-          className="flex items-center gap-1.5 rounded-md bg-secondary px-3 py-1.5 text-[13px] font-bold text-foreground"
+          aria-pressed={showUpload}
+          className={cn(
+            "flex h-[30px] shrink-0 items-center gap-1.5 rounded-[7px] border border-black/10 bg-card px-3 text-[13px] font-medium hover:bg-black/5",
+            showUpload && "bg-secondary"
+          )}
         >
-          <Upload className="size-3.5" />
+          <Upload className="size-3.5" strokeWidth={1.8} />
           업로드
         </button>
         <button
           type="button"
           onClick={onNewNote}
-          className="flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-[13px] font-bold text-accent-foreground"
+          className="flex h-[30px] shrink-0 items-center gap-1.5 rounded-[7px] bg-primary px-3 text-[13px] font-semibold text-primary-foreground"
         >
-          <Plus className="size-3.5" />새 노트
+          <Plus className="size-3.5" strokeWidth={2.2} />새 노트
         </button>
       </div>
 
       {showUpload ? (
         <div
+          role="button"
+          tabIndex={0}
           onClick={() => fileInputRef.current?.click()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click();
+          }}
           onDragOver={(e) => {
             e.preventDefault();
             setDragOver(true);
@@ -271,11 +301,11 @@ export function FilesTab({
             if (file) onUploadFile(file);
           }}
           className={cn(
-            "mb-3.5 cursor-pointer rounded-lg border-[1.5px] border-dashed border-border px-4 py-4 text-center text-[13px] text-muted-foreground",
-            dragOver && "bg-accent/40"
+            "flex min-h-[76px] cursor-pointer items-center justify-center rounded-xl border-[1.5px] border-dashed border-primary/45 bg-primary/[0.04] px-4 text-center text-[13.5px] text-accent-foreground",
+            dragOver && "bg-primary/10"
           )}
         >
-          {uploading ? "업로드 중…" : "여기로 파일을 끌어놓거나 클릭해서 선택하세요 (PPT · PDF · 이미지 등)"}
+          {uploading ? "업로드 중…" : "여기로 파일을 끌어놓거나 클릭해서 선택 (PPT · PDF · 이미지 등)"}
           <input
             ref={fileInputRef}
             type="file"
@@ -289,15 +319,15 @@ export function FilesTab({
         </div>
       ) : null}
 
-      {error ? <p className="py-3 text-[13.5px] text-destructive">{error}</p> : null}
+      {error ? <p className="text-[13.5px] text-destructive">{error}</p> : null}
 
       {loading ? (
         <p className="py-6 text-[14px] text-muted-foreground">불러오는 중…</p>
       ) : files.length === 0 && !error ? (
-        <p className="py-6 text-[14px] text-muted-foreground">아직 파일이 없습니다. 업로드하거나 새 노트를 만들어보세요.</p>
-      ) : (
-        <div className="flex flex-col">
-          {files.map((file) => {
+        <p className="py-6 text-[14px] text-muted-foreground">아직 파일이 없어요. 업로드하거나 새 노트를 만들어보세요.</p>
+      ) : files.length > 0 ? (
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
+          {files.map((file, index) => {
             const kind = classifyDriveFile(file);
             const Icon = KIND_ICON[kind];
             return (
@@ -305,21 +335,24 @@ export function FilesTab({
                 key={file.id}
                 type="button"
                 onClick={() => onOpenFile(file)}
-                className="flex items-center gap-3 rounded-md border-b border-border px-2 py-2.5 text-left hover:bg-accent/40"
-              >
-                <Icon className="size-[18px] shrink-0 text-muted-foreground" />
-                <span className="min-w-0 flex-1 truncate text-[14px]">{file.name}</span>
-                <span className="shrink-0 text-[12px] text-muted-foreground">{formatModified(file.modifiedTime)}</span>
-                {kind === "md" ? (
-                  <span className="shrink-0 text-[11px] font-bold text-muted-foreground">편집</span>
-                ) : (
-                  <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" />
+                className={cn(
+                  "flex min-h-[52px] w-full items-center gap-3 px-4 text-left hover:bg-black/[0.03]",
+                  index < files.length - 1 && "border-b border-black/[0.06]"
                 )}
+              >
+                <span className={cn("flex size-[30px] shrink-0 items-center justify-center rounded-[7px]", KIND_TILE[kind])}>
+                  <Icon className="size-4" strokeWidth={1.8} />
+                </span>
+                <span className="min-w-0 flex-1 truncate text-[14px]">{file.name}</span>
+                <span className="shrink-0 text-[12.5px] tabular-nums text-muted-foreground">{formatModified(file.modifiedTime)}</span>
+                <span className="flex w-11 shrink-0 justify-end text-[12.5px] font-medium text-primary">
+                  {kind === "md" ? "편집" : <ExternalLink className="size-[15px] text-muted-foreground" strokeWidth={1.8} />}
+                </span>
               </button>
             );
           })}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

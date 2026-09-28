@@ -1,38 +1,24 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format, differenceInCalendarDays } from "date-fns";
-import { ArrowLeft, Bookmark, Compass, Target } from "lucide-react";
-import {
-  DndContext,
-  DragOverlay,
-  PointerSensor,
-  useDroppable,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type DragStartEvent,
-} from "@dnd-kit/core";
-import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { Bookmark, ChevronLeft, Cloud, Compass, Inbox as InboxIcon, Target } from "lucide-react";
+import { useDroppable } from "@dnd-kit/core";
 
-import { createClient } from "@/lib/supabase/client";
-import { useSupabaseTodos } from "@/lib/supabase/todos";
-import { useSupabaseAreas, useSupabaseProjects, useSupabaseResources } from "@/lib/supabase/containers";
-import { preferSpecificTargetCollision } from "@/lib/dnd";
+import { useTodos } from "@/lib/app-data/use-todos";
+import { useContainers } from "@/lib/app-data/use-containers";
+import { useTodoActions } from "@/lib/app-data/todo-actions";
+import type { DropTargetData } from "@/lib/dnd/drop-targets";
 import { cn } from "@/lib/utils";
+import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR } from "@/lib/category";
+import { useSession } from "@/lib/app-data/app-data-provider";
 import {
-  BACKLOG,
   PARA_KIND_LABELS,
-  isInboxVisible,
   type ParaContainer,
   type ParaKind,
-  type Todo,
-  type TodoKind,
 } from "@/lib/types";
 import { TodoCard } from "@/components/todo-card";
-import { AppSidebar } from "@/components/app-sidebar";
-import { AppNavRail } from "@/components/app-nav-rail";
 import { ScrapSection } from "@/components/para/scrap-section";
 import { FilesTab } from "@/components/para/files-tab";
 import type { DriveFile } from "@/lib/google-drive";
@@ -53,25 +39,18 @@ function daysLeftLabel(dueDate: string): string {
   return `D+${Math.abs(diff)}`;
 }
 
-function nextPosition(items: Todo[]) {
-  return items.length === 0 ? 0 : Math.max(...items.map((t) => t.position)) + 1;
-}
-
 interface ContainerDetailScreenProps {
   kind: ParaKind;
   id: string;
-  userId: string;
-  userEmail: string;
-  googleConnected: boolean;
 }
 
-export function ContainerDetailScreen({ kind, id, userId, userEmail, googleConnected }: ContainerDetailScreenProps) {
+export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { todos, setTodos, addTodo, addNote, updateTodo, removeTodo, persistPositions } = useSupabaseTodos(userId);
-  const { projects, updateProject } = useSupabaseProjects(userId);
-  const { areas, updateArea } = useSupabaseAreas(userId);
-  const { resources, updateResource } = useSupabaseResources(userId);
+  const { todos, setTodos } = useTodos();
+  const { projects, updateProject, areas, updateArea, resources, updateResource } = useContainers();
+  const actions = useTodoActions();
+  const { googleConnected } = useSession();
 
   // 이 화면도 탭(Overview/Tasks/자료)을 URL(`?tab=`)에서 직접 계산한다 — 다른 화면에 갔다가
   // 뒤로가기를 눌러도 보고 있던 탭 그대로 돌아오게.
@@ -82,8 +61,6 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail, googleConne
     router.replace(`/para/${kind}/${id}?tab=${next}`, { scroll: false });
   }
 
-  const [panelOpen, setPanelOpen] = useState(false);
-  const [activeId, setActiveId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
 
@@ -107,82 +84,14 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail, googleConne
   const [promotedBanner, setPromotedBanner] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const dropId = `para:${kind}:${id}`;
-  const { setNodeRef, isOver } = useDroppable({ id: dropId });
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
-
-  const backlogItems = useMemo(
-    () => todos.filter(isInboxVisible).sort((a, b) => a.position - b.position),
-    [todos]
-  );
-
-  const containerMapping = {
-    projectId: kind === "project" ? id : null,
-    areaId: kind === "area" ? id : null,
-    resourceId: kind === "resource" ? id : null,
-  };
-
-  const nameById = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const p of projects) map.set(p.id, p.name);
-    for (const a of areas) map.set(a.id, a.name);
-    for (const r of resources) map.set(r.id, r.name);
-    return map;
-  }, [projects, areas, resources]);
-
-  function badgeFor(todo: Todo): string | undefined {
-    const mappedId = todo.projectId ?? todo.areaId ?? todo.resourceId;
-    return mappedId ? nameById.get(mappedId) : undefined;
-  }
+  const { setNodeRef, isOver } = useDroppable({
+    id: `para:${kind}:${id}`,
+    data: { type: "para-container", kind, id } satisfies DropTargetData,
+  });
 
   const project = kind === "project" ? projects.find((p) => p.id === id) : undefined;
   const container =
     kind === "project" ? project : kind === "area" ? areas.find((a) => a.id === id) : resources.find((r) => r.id === id);
-
-  function handleDragStart(event: DragStartEvent) {
-    setActiveId(String(event.active.id));
-  }
-
-  function handleDragEnd(event: DragEndEvent) {
-    setActiveId(null);
-    const { active, over } = event;
-    if (!over) return;
-    const activeIdStr = String(active.id);
-    const overIdStr = String(over.id);
-    const todo = todos.find((t) => t.id === activeIdStr);
-    if (!todo) return;
-
-    if (overIdStr === dropId) {
-      setTodos((prev) => prev.map((t) => (t.id === activeIdStr ? { ...t, ...containerMapping } : t)));
-      void updateTodo(activeIdStr, containerMapping);
-      return;
-    }
-
-    const isOverBacklogItem = todos.some((t) => t.id === overIdStr && isInboxVisible(t));
-    if (overIdStr !== BACKLOG && !isOverBacklogItem) return;
-
-    if (todo.projectId || todo.areaId || todo.resourceId) {
-      const patch = { projectId: null, areaId: null, resourceId: null };
-      setTodos((prev) => prev.map((t) => (t.id === activeIdStr ? { ...t, ...patch } : t)));
-      void updateTodo(activeIdStr, patch);
-      return;
-    }
-
-    const oldIndex = backlogItems.findIndex((t) => t.id === activeIdStr);
-    const overIndex = backlogItems.findIndex((t) => t.id === overIdStr);
-    const ordered =
-      oldIndex !== -1 && overIndex !== -1 && oldIndex !== overIndex
-        ? arrayMove(backlogItems, oldIndex, overIndex)
-        : backlogItems;
-
-    const normalizedById = new Map(ordered.map((t, index) => [t.id, index]));
-    setTodos((prev) =>
-      prev.map((t) => (normalizedById.has(t.id) ? { ...t, position: normalizedById.get(t.id)! } : t))
-    );
-    void persistPositions(
-      ordered.map((t) => ({ id: t.id, position: normalizedById.get(t.id)! }))
-    );
-  }
 
   if (!container) {
     return (
@@ -208,13 +117,6 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail, googleConne
   const statusLabel =
     kind === "project" ? (project!.status === "active" ? "진행중" : "완료") : paraContainer.archived ? "보관" : "활성";
   const statusDone = kind === "project" ? project!.status === "completed" : paraContainer.archived;
-
-  async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.replace("/login");
-    router.refresh();
-  }
 
   function toggleStatus() {
     if (kind === "project") {
@@ -242,27 +144,6 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail, googleConne
     if (kind === "project") void updateProject(id, { name: trimmed });
     else if (kind === "area") void updateArea(id, { name: trimmed });
     else void updateResource(id, { name: trimmed });
-  }
-
-  function handleConvert(tid: string, newKind: TodoKind) {
-    if (newKind === "note") {
-      void updateTodo(tid, {
-        kind: newKind,
-        scheduledDate: null,
-        startMinutes: null,
-        durationMinutes: null,
-        completed: false,
-      });
-    } else {
-      void updateTodo(tid, { kind: newKind });
-    }
-  }
-
-  function handleAssignPara(
-    tid: string,
-    patch: { projectId: string | null; areaId: string | null; resourceId: string | null }
-  ) {
-    void updateTodo(tid, patch);
   }
 
   function setContainerDriveFolderId(folderId: string) {
@@ -510,284 +391,272 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail, googleConne
     }
   }
 
-  const activeTodo = activeId ? todos.find((t) => t.id === activeId) ?? null : null;
+  const kindColor = `var(${CATEGORY_COLOR_VAR[kind]})`;
+  const kindTint = `var(${CATEGORY_TINT_VAR[kind]})`;
+  const summaryFacts =
+    kind === "project"
+      ? [{ label: "마감일", value: project!.dueDate ? formatDateLabel(project!.dueDate) : "미설정" }]
+      : [{ label: "만든 날", value: formatDateLabel(container.createdAt.slice(0, 10)) }];
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={preferSpecificTargetCollision}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "mx-auto flex w-full max-w-[780px] flex-col rounded-xl px-4 pb-8 pt-4 transition-shadow sm:px-9",
+        isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+      )}
     >
-      <div className="min-h-screen pb-14 sm:pb-0 sm:pl-[260px]">
+      <button
+        type="button"
+        onClick={() => router.push(`/para?kind=${kind}`)}
+        className="-ml-1 flex h-[30px] items-center gap-0.5 self-start rounded-[7px] pl-0.5 pr-2 text-[14px] text-primary hover:bg-black/5"
+      >
+        <ChevronLeft className="size-[18px]" strokeWidth={2.2} />
+        {PARA_KIND_LABELS[kind]}
+      </button>
+
+      <div className="mb-4 mt-3.5 flex items-center gap-3.5">
         <div
-          ref={setNodeRef}
-          className={cn(
-            "mx-auto w-full max-w-[720px] rounded-lg px-4 py-6 transition-shadow sm:px-6",
-            isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background"
-          )}
+          className="flex size-12 shrink-0 items-center justify-center rounded-xl"
+          style={{ backgroundColor: kindTint, color: kindColor }}
         >
-          <button
-            type="button"
-            onClick={() => router.push(`/para?kind=${kind}`)}
-            className="mb-4 flex items-center gap-1 text-[13px] font-medium text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="size-3.5" />
-            목록으로
-          </button>
-
-          <div className="mb-4 flex items-start gap-3">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-              <Icon className="size-5" />
-            </div>
-            {editingName ? (
-              <input
-                autoFocus
-                value={nameDraft}
-                onChange={(e) => setNameDraft(e.target.value)}
-                onBlur={commitName}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") commitName();
-                  if (e.key === "Escape") setEditingName(false);
-                }}
-                className="-mx-1 mt-1.5 min-w-0 flex-1 rounded-md bg-transparent px-1 text-[22px] font-bold leading-tight tracking-tight outline-none ring-1 ring-primary"
-              />
-            ) : (
-              <h1
-                onClick={startEditingName}
-                className="-mx-1 mt-1.5 cursor-pointer rounded-md px-1 text-[22px] font-bold leading-tight tracking-tight hover:bg-accent"
-              >
-                {container.name}
-              </h1>
-            )}
-          </div>
-
-          <div className="mb-5 flex flex-wrap items-center gap-6 rounded-lg border border-border bg-card px-4 py-3.5">
-            <div className="flex flex-col gap-1">
-              <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Status</span>
-              <button
-                type="button"
-                onClick={toggleStatus}
-                className={cn(
-                  "w-fit rounded-sm px-2 py-0.5 text-[11.5px] font-bold",
-                  statusDone ? "bg-secondary text-muted-foreground" : "bg-accent text-accent-foreground"
-                )}
-              >
-                {statusLabel}
-              </button>
-            </div>
-            {kind === "project" ? (
-              <>
-                <div className="flex flex-col gap-1">
-                  <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Due date</span>
-                  <span className="text-[14.5px] font-semibold tabular-nums">{project!.dueDate ?? "미설정"}</span>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Progress</span>
-                  <span className="flex items-center gap-2">
-                    <span className="h-[5px] w-[100px] overflow-hidden rounded-full bg-secondary">
-                      <span className="block h-full rounded-full bg-primary" style={{ width: `${progress}%` }} />
-                    </span>
-                    <span className="text-[14.5px] font-semibold tabular-nums">{progress}%</span>
-                  </span>
-                </div>
-              </>
-            ) : null}
-          </div>
-
-          <div className="mb-4 flex gap-5 border-b border-border">
-            {(["overview", "tasks", "files"] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => (t === "files" ? void handleSelectFiles() : selectTab(t))}
-                className={cn(
-                  "relative pb-3 text-[14.5px] font-bold text-muted-foreground",
-                  tab === t &&
-                    "text-foreground after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:rounded-full after:bg-primary"
-                )}
-              >
-                {t === "overview" ? "Overview" : t === "tasks" ? "Tasks" : "자료"}
-              </button>
-            ))}
-          </div>
-
-          {tab === "overview" ? (
-            <div className="flex flex-col">
-              <div className="flex items-center gap-4 border-b border-border py-3">
-                <span className="w-[130px] shrink-0 text-[14px] text-muted-foreground">Start date</span>
-                {kind === "project" ? (
-                  <input
-                    type="date"
-                    value={project!.startDate}
-                    onClick={(e) => e.currentTarget.showPicker?.()}
-                    onChange={(e) => {
-                      if (e.target.value) void updateProject(id, { startDate: e.target.value });
-                    }}
-                    className="-mx-1 cursor-pointer rounded-md bg-transparent px-1 text-[14px] tabular-nums text-foreground outline-none hover:bg-accent"
-                  />
-                ) : (
-                  <span className="text-[14px] tabular-nums">{format(new Date(container.createdAt), "yyyy-MM-dd")}</span>
-                )}
-              </div>
-              {kind === "project" ? (
-                <>
-                  <div className="flex items-center gap-4 border-b border-border py-3">
-                    <span className="w-[130px] shrink-0 text-[14px] text-muted-foreground">Due date</span>
-                    <input
-                      type="date"
-                      value={project!.dueDate ?? ""}
-                      onClick={(e) => e.currentTarget.showPicker?.()}
-                      onChange={(e) => void updateProject(id, { dueDate: e.target.value || null })}
-                      className={cn(
-                        "-mx-1 cursor-pointer rounded-md bg-transparent px-1 text-[14px] tabular-nums outline-none hover:bg-accent",
-                        !project!.dueDate && "text-muted-foreground"
-                      )}
-                    />
-                  </div>
-                  <div className="flex items-center gap-4 border-b border-border py-3">
-                    <span className="w-[130px] shrink-0 text-[14px] text-muted-foreground">Completion date</span>
-                    <input
-                      type="date"
-                      value={project!.completedAt ? project!.completedAt.slice(0, 10) : ""}
-                      onClick={(e) => e.currentTarget.showPicker?.()}
-                      onChange={(e) =>
-                        void updateProject(id, {
-                          completedAt: e.target.value ? new Date(e.target.value).toISOString() : null,
-                        })
-                      }
-                      className={cn(
-                        "-mx-1 cursor-pointer rounded-md bg-transparent px-1 text-[14px] tabular-nums outline-none hover:bg-accent",
-                        !project!.completedAt && "text-muted-foreground"
-                      )}
-                    />
-                  </div>
-                  <div className="flex items-center gap-4 py-3">
-                    <span className="w-[130px] shrink-0 text-[14px] text-muted-foreground">Days left</span>
-                    <span className="text-[14px] tabular-nums">
-                      {project!.dueDate ? daysLeftLabel(project!.dueDate) : "—"}
-                    </span>
-                  </div>
-                </>
-              ) : null}
-            </div>
-          ) : null}
-
-          {tab === "tasks" ? (
-            <div className="flex flex-col">
-              <div className="flex flex-col divide-y divide-border/70">
-                {mappedTasks.length === 0 ? (
-                  <p className="py-6 text-[14px] text-muted-foreground">
-                    아직 매핑된 할 일이 없습니다. 오른쪽(모바일은 하단) &ldquo;할 일 보관함&rdquo;을 열어서 이{" "}
-                    {PARA_KIND_LABELS[kind]}로 드래그해보세요.
-                  </p>
-                ) : (
-                  mappedTasks.map((todo) => (
-                    <TodoCard
-                      key={todo.id}
-                      todo={todo}
-                      projects={projects}
-                      areas={areas}
-                      resources={resources}
-                      onToggle={(tid) => void updateTodo(tid, { completed: !todo.completed })}
-                      onRemove={(tid) => void removeTodo(tid)}
-                      onEdit={(tid, content) => void updateTodo(tid, { content })}
-                      onMemoEdit={(tid, memo) => void updateTodo(tid, { memo: memo || null })}
-                      onUrlEdit={(tid, url) => void updateTodo(tid, { url })}
-                      onAssignPara={handleAssignPara}
-                      onConvert={handleConvert}
-                    />
-                  ))
-                )}
-              </div>
-
-              <ScrapSection
-                scraps={mappedNotes}
-                projects={projects}
-                areas={areas}
-                resources={resources}
-                selectMode={scrapSelectMode}
-                selectedIds={selectedScrapIds}
-                promoting={promoting}
-                onStartSelect={handleStartScrapSelect}
-                onCancelSelect={handleCancelScrapSelect}
-                onToggleSelect={handleToggleScrapSelect}
-                onPromote={() => void handlePromoteScraps()}
-                onRemove={(tid) => void removeTodo(tid)}
-                onEdit={(tid, content) => void updateTodo(tid, { content })}
-                onMemoEdit={(tid, memo) => void updateTodo(tid, { memo: memo || null })}
-                onUrlEdit={(tid, url) => void updateTodo(tid, { url })}
-                onAssignPara={handleAssignPara}
-                onConvert={handleConvert}
-              />
-            </div>
-          ) : null}
-
-          {tab === "files" ? (
-            <FilesTab
-              mode={filesMode}
-              loading={filesLoading}
-              error={filesError}
-              files={driveFiles}
-              showUpload={showUpload}
-              uploading={uploading}
-              importing={importing}
-              onToggleUpload={() => setShowUpload((v) => !v)}
-              onUploadFile={(file) => void handleUploadFile(file)}
-              onImport={() => void handleImportFromDrive()}
-              onOpenFile={(file) => void handleOpenFile(file)}
-              onNewNote={handleNewNote}
-              editingTitle={editingTitle}
-              editingBody={editingBody}
-              editingProperties={editingProperties}
-              promotedBanner={promotedBanner}
-              saving={saving}
-              onTitleChange={setEditingTitle}
-              onBodyChange={setEditingBody}
-              onAddTagProperty={handleAddTagProperty}
-              onAddTagValue={handleAddTagValue}
-              onRemoveTagValue={handleRemoveTagValue}
-              onBackToList={() => setFilesMode("list")}
-              onSave={() => void handleSaveFile()}
-            />
-          ) : null}
+          <Icon className="size-6" strokeWidth={1.8} />
         </div>
+        {editingName ? (
+          <input
+            autoFocus
+            aria-label="이름"
+            value={nameDraft}
+            onChange={(e) => setNameDraft(e.target.value)}
+            onBlur={commitName}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commitName();
+              if (e.key === "Escape") setEditingName(false);
+            }}
+            className="-mx-1 min-w-0 flex-1 rounded-md bg-transparent px-1 text-[28px] font-bold tracking-[-0.5px] outline-none ring-1 ring-primary"
+          />
+        ) : (
+          <h1
+            onClick={startEditingName}
+            title="클릭해서 이름 수정"
+            className="-mx-1 cursor-text rounded-md px-1 text-[28px] font-bold tracking-[-0.5px] hover:bg-black/[0.04]"
+          >
+            {container.name}
+          </h1>
+        )}
       </div>
 
-      <SortableContext items={backlogItems.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-        <AppSidebar
-          activePage="para"
-          userEmail={userEmail}
-          googleConnected={googleConnected}
-          onSignOut={handleSignOut}
-          panelOpen={panelOpen}
-          onClosePanel={() => setPanelOpen(false)}
-          items={backlogItems}
-          projects={projects}
-          areas={areas}
-          resources={resources}
-          onToggle={(tid) => {
-            const current = todos.find((t) => t.id === tid);
-            if (current) void updateTodo(tid, { completed: !current.completed });
-          }}
-          onRemove={(tid) => void removeTodo(tid)}
-          onEdit={(tid, content) => void updateTodo(tid, { content })}
-          onMemoEdit={(tid, memo) => void updateTodo(tid, { memo: memo || null })}
-          onUrlEdit={(tid, url) => void updateTodo(tid, { url })}
-          onAssignPara={handleAssignPara}
-          onConvert={handleConvert}
-          onAdd={(content, itemKind) =>
-            itemKind === "note"
-              ? void addNote(content, nextPosition(backlogItems))
-              : void addTodo(content, nextPosition(backlogItems))
-          }
-          getBadge={badgeFor}
+      <div className="mb-[18px] flex flex-wrap items-stretch gap-y-3 rounded-xl bg-secondary px-1 py-3">
+        <div className="flex flex-col gap-[5px] px-4">
+          <span className="text-[11.5px] font-semibold text-muted-foreground">상태</span>
+          <button
+            type="button"
+            onClick={toggleStatus}
+            title="눌러서 상태 전환"
+            className={cn(
+              "h-6 self-start rounded-[5px] px-[9px] text-[12.5px] font-semibold",
+              statusDone ? "bg-black/[0.08] text-muted-foreground" : "text-foreground"
+            )}
+            style={statusDone ? undefined : { backgroundColor: kindTint }}
+          >
+            {statusLabel}
+          </button>
+        </div>
+        {summaryFacts.map((fact) => (
+          <div key={fact.label} className="flex flex-col gap-[5px] border-l border-black/[0.08] px-4">
+            <span className="text-[11.5px] font-semibold text-muted-foreground">{fact.label}</span>
+            <span className="text-[14.5px] font-semibold leading-6 tabular-nums">{fact.value}</span>
+          </div>
+        ))}
+        {kind === "project" ? (
+          <div className="flex flex-col gap-[5px] border-l border-black/[0.08] px-4">
+            <span className="text-[11.5px] font-semibold text-muted-foreground">진행률</span>
+            <span className="flex h-6 items-center gap-2">
+              <span className="h-1.5 w-[110px] overflow-hidden rounded-full bg-black/[0.1]">
+                <span className="block h-full rounded-full" style={{ width: `${progress}%`, backgroundColor: kindColor }} />
+              </span>
+              <span className="text-[14.5px] font-semibold tabular-nums">{progress}%</span>
+            </span>
+          </div>
+        ) : null}
+      </div>
+
+      <div role="tablist" aria-label="상세 탭" className="mb-4 flex self-start rounded-lg bg-black/[0.06] p-0.5">
+        {(["overview", "tasks", "files"] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            role="tab"
+            aria-selected={tab === t}
+            onClick={() => (t === "files" && googleConnected ? void handleSelectFiles() : selectTab(t))}
+            className={cn(
+              "h-[30px] min-w-[84px] rounded-md px-3.5 text-[13px] font-semibold text-muted-foreground",
+              tab === t && "bg-card text-foreground shadow-[0_1px_3px_rgba(0,0,0,0.12)]"
+            )}
+          >
+            {t === "overview" ? "개요" : t === "tasks" ? "할 일" : "자료"}
+          </button>
+        ))}
+      </div>
+
+      {tab === "overview" ? (
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
+          <OverviewRow label={kind === "project" ? "시작일" : "만든 날"}>
+            {kind === "project" ? (
+              <DateInput value={project!.startDate} onChange={(v) => v && void updateProject(id, { startDate: v })} />
+            ) : (
+              <span className="tabular-nums">{formatDateLabel(container.createdAt.slice(0, 10))}</span>
+            )}
+          </OverviewRow>
+          {kind === "project" ? (
+            <>
+              <OverviewRow label="마감일">
+                <DateInput value={project!.dueDate ?? ""} onChange={(v) => void updateProject(id, { dueDate: v || null })} />
+              </OverviewRow>
+              <OverviewRow label="완료일">
+                <DateInput
+                  value={project!.completedAt ? project!.completedAt.slice(0, 10) : ""}
+                  onChange={(v) => void updateProject(id, { completedAt: v ? new Date(v).toISOString() : null })}
+                />
+              </OverviewRow>
+              <OverviewRow label="남은 기간" last>
+                <span className="tabular-nums">{project!.dueDate ? daysLeftLabel(project!.dueDate) : "—"}</span>
+              </OverviewRow>
+            </>
+          ) : null}
+        </div>
+      ) : null}
+
+      {tab === "tasks" ? (
+        <div className="flex flex-col gap-[22px]">
+          <section>
+            <div className="flex items-baseline gap-1.5 px-1 pb-1.5">
+              <h2 className="text-[13px] font-bold">할 일</h2>
+              <span className="text-[13px] text-muted-foreground">{mappedTasks.length}</span>
+            </div>
+            <div className="overflow-hidden rounded-xl border border-border bg-card">
+              {mappedTasks.map((todo) => (
+                <TodoCard
+                  key={todo.id}
+                  todo={todo}
+                  projects={projects}
+                  areas={areas}
+                  resources={resources}
+                  onToggle={actions.toggle}
+                  onRemove={actions.remove}
+                  onEdit={actions.edit}
+                  onMemoEdit={actions.editMemo}
+                  onUrlEdit={actions.editUrl}
+                  onAssignPara={actions.assignPara}
+                  onConvert={actions.convert}
+                />
+              ))}
+              <p className="flex min-h-[42px] items-center gap-2 px-4 text-[13px] text-muted-foreground">
+                <InboxIcon className="size-[15px] shrink-0" strokeWidth={1.8} />
+                {mappedTasks.length === 0 ? "아직 연결된 할 일이 없어요. " : ""}Inbox에서 끌어다 놓으면 이{" "}
+                {PARA_KIND_LABELS_KO[kind]}에 연결돼요
+              </p>
+            </div>
+          </section>
+
+          <ScrapSection
+            scraps={mappedNotes}
+            projects={projects}
+            areas={areas}
+            resources={resources}
+            selectMode={scrapSelectMode}
+            selectedIds={selectedScrapIds}
+            promoting={promoting}
+            onStartSelect={handleStartScrapSelect}
+            onCancelSelect={handleCancelScrapSelect}
+            onToggleSelect={handleToggleScrapSelect}
+            onPromote={() => void handlePromoteScraps()}
+            onRemove={actions.remove}
+            onEdit={actions.edit}
+            onMemoEdit={actions.editMemo}
+            onUrlEdit={actions.editUrl}
+            onAssignPara={actions.assignPara}
+            onConvert={actions.convert}
+          />
+        </div>
+      ) : null}
+
+      {tab === "files" && !googleConnected ? (
+        <div className="flex flex-col items-center gap-2.5 rounded-xl bg-secondary px-6 py-12 text-center">
+          <Cloud className="size-[34px] text-muted-foreground/70" strokeWidth={1.6} />
+          <span className="text-[16px] font-semibold">Google Drive가 연결되지 않았어요</span>
+          <span className="max-w-[360px] text-[13.5px] leading-normal text-muted-foreground">
+            연결하면 이 {PARA_KIND_LABELS_KO[kind]} 전용 폴더에 파일과 노트를 모아둘 수 있어요.
+          </span>
+          <a
+            href={`/api/auth/google?next=${encodeURIComponent(`/para/${kind}/${id}`)}`}
+            className="mt-1.5 flex h-8 items-center rounded-lg bg-primary px-4 text-[13.5px] font-semibold text-primary-foreground"
+          >
+            Google Drive 연결
+          </a>
+        </div>
+      ) : null}
+
+      {tab === "files" && googleConnected ? (
+        <FilesTab
+          mode={filesMode}
+          loading={filesLoading}
+          error={filesError}
+          files={driveFiles}
+          folderLabel={`Drive › ${container.name}`}
+          showUpload={showUpload}
+          uploading={uploading}
+          importing={importing}
+          onToggleUpload={() => setShowUpload((v) => !v)}
+          onUploadFile={(file) => void handleUploadFile(file)}
+          onImport={() => void handleImportFromDrive()}
+          onOpenFile={(file) => void handleOpenFile(file)}
+          onNewNote={handleNewNote}
+          editingTitle={editingTitle}
+          editingBody={editingBody}
+          editingProperties={editingProperties}
+          promotedBanner={promotedBanner}
+          saving={saving}
+          onTitleChange={setEditingTitle}
+          onBodyChange={setEditingBody}
+          onAddTagProperty={handleAddTagProperty}
+          onAddTagValue={handleAddTagValue}
+          onRemoveTagValue={handleRemoveTagValue}
+          onBackToList={() => setFilesMode("list")}
+          onSave={() => void handleSaveFile()}
         />
-      </SortableContext>
+      ) : null}
+    </div>
+  );
+}
 
-      <DragOverlay>{activeTodo ? <TodoCard todo={activeTodo} overlay /> : null}</DragOverlay>
+const PARA_KIND_LABELS_KO: Record<ParaKind, string> = { project: "프로젝트", area: "영역", resource: "리소스" };
 
-      <AppNavRail activePage="para" panelOpen={panelOpen} onTogglePanel={() => setPanelOpen((open) => !open)} />
-    </DndContext>
+/** "2026. 10. 15." */
+function formatDateLabel(dateKey: string): string {
+  return format(new Date(`${dateKey}T00:00:00`), "yyyy. M. d.");
+}
+
+function OverviewRow({ label, last, children }: { label: string; last?: boolean; children: ReactNode }) {
+  return (
+    <div className={cn("flex min-h-[46px] items-center px-4 text-[14px]", !last && "border-b border-black/[0.06]")}>
+      <span className="w-[140px] shrink-0 text-muted-foreground">{label}</span>
+      {children}
+    </div>
+  );
+}
+
+function DateInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  return (
+    <input
+      type="date"
+      value={value}
+      onClick={(e) => e.currentTarget.showPicker?.()}
+      onChange={(e) => onChange(e.target.value)}
+      className={cn(
+        "-mx-1 cursor-pointer rounded-md bg-transparent px-1 tabular-nums outline-none hover:bg-black/[0.04]",
+        !value && "text-muted-foreground"
+      )}
+    />
   );
 }
