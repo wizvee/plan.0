@@ -9,6 +9,7 @@ import { CATEGORY_COLOR_VAR, getParaCategory } from "@/lib/category";
 import { formatClock } from "@/lib/time";
 import { toDateKey } from "@/lib/week";
 import { DAY_LABELS_KO, type Area, type Project, type Resource, type Todo } from "@/lib/types";
+import { useSubtasks } from "@/lib/app-data/use-subtasks";
 
 const WEEKDAY_ORDER: (keyof typeof DAY_LABELS_KO)[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const MAX_VISIBLE_EVENTS = 2;
@@ -43,6 +44,7 @@ export function MonthCalendar({
   onRemove,
 }: MonthCalendarProps) {
   const [detailTodoId, setDetailTodoId] = useState<string | null>(null);
+  const { progressOf } = useSubtasks();
   const detailTodo = detailTodoId ? todos.find((t) => t.id === detailTodoId) ?? null : null;
   const eventsByDate = useMemo(() => {
     const map = new Map<string, Todo[]>();
@@ -113,6 +115,7 @@ export function MonthCalendar({
               {visible.map((todo) => {
                 const category = getParaCategory(todo);
                 const colorVar = category ? `var(${CATEGORY_COLOR_VAR[category]})` : "var(--muted-foreground)";
+                const progress = todo.kind === "task" ? progressOf(todo.id) : null;
                 return (
                   <button
                     key={todo.id}
@@ -128,6 +131,11 @@ export function MonthCalendar({
                   >
                     <span className="size-[7px] shrink-0 rounded-full" style={{ backgroundColor: colorVar }} aria-hidden="true" />
                     <span className={cn("min-w-0 flex-1 truncate", todo.completed && "line-through")}>{todo.content}</span>
+                    {progress && progress.total > 0 ? (
+                      <span className="shrink-0 text-[10.5px] font-semibold tabular-nums text-muted-foreground">
+                        {progress.done}/{progress.total}
+                      </span>
+                    ) : null}
                     {todo.startMinutes !== null ? (
                       <span className="hidden shrink-0 text-[11px] text-muted-foreground lg:inline">
                         {formatClock(todo.startMinutes)}

@@ -22,6 +22,15 @@ import {
 } from "@/lib/time";
 import type { Area, Project, Resource, Todo } from "@/lib/types";
 import type { DraggedTodoData } from "@/lib/dnd/drop-targets";
+import { useSubtasks } from "@/lib/app-data/use-subtasks";
+import { useSubtaskActions } from "@/lib/app-data/subtask-actions";
+
+/** 블록 안 하위 할 일 목록 배치 — 머리(패딩 · 제목 · 시간) 아래, 진행률 바 위에 들어갈 줄 수를 계산할 때 쓴다. */
+const SUBTASK_HEAD_PX = 40;
+const SUBTASK_FOOT_PX = 9;
+const SUBTASK_ROW_PX = 15;
+/** 진행률 바를 그릴 최소 블록 높이 (그보다 짧으면 제목 옆 개수만) */
+const PROGRESS_BAR_MIN_HEIGHT = 44;
 
 interface CalendarBlockProps {
   todo: Todo;
@@ -55,6 +64,8 @@ export function CalendarBlock({
   const [detailOpen, setDetailOpen] = useState(false);
   const [previewDuration, setPreviewDuration] = useState<number | null>(null);
   const resizeState = useRef<{ startY: number; startDuration: number } | null>(null);
+  const { subtasksOf } = useSubtasks();
+  const subtaskActions = useSubtaskActions();
 
   const startMinutes = todo.startMinutes ?? DEFAULT_START_MINUTES;
   const baseDuration = todo.durationMinutes ?? DEFAULT_DURATION_MINUTES;
@@ -98,6 +109,18 @@ export function CalendarBlock({
   // 완료돼도 카테고리 색은 유지하고 블록 전체를 흐리게(애플 캘린더 방식). 매핑 없으면 회색.
   const colorVar = category ? `var(${CATEGORY_COLOR_VAR[category]})` : "var(--muted-foreground)";
   const tintVar = category ? `var(${CATEGORY_TINT_VAR[category]})` : "var(--secondary)";
+
+  // 하위 할 일: 제목 옆 개수 · 바닥 진행률 바 · 블록이 크면 앞에서부터 목록 (노트는 없음)
+  const subtasks = todo.kind === "task" ? subtasksOf(todo.id) : [];
+  const subtaskDone = subtasks.filter((s) => s.completed).length;
+  const showProgressBar = subtasks.length > 0 && !compact && renderedHeight >= PROGRESS_BAR_MIN_HEIGHT;
+  const rowsThatFit = compact
+    ? 0
+    : Math.max(0, Math.floor((renderedHeight - SUBTASK_HEAD_PX - SUBTASK_FOOT_PX) / SUBTASK_ROW_PX));
+  // 다 못 보여주면 마지막 줄을 "외 N개"로
+  const visibleSubtasks =
+    rowsThatFit >= subtasks.length ? subtasks : subtasks.slice(0, Math.max(0, rowsThatFit - 1));
+  const hiddenSubtaskCount = subtasks.length - visibleSubtasks.length;
 
   if (overlay) {
     return (
@@ -157,11 +180,61 @@ export function CalendarBlock({
           >
             {todo.content}
           </span>
+          {subtasks.length > 0 ? (
+            <span
+              className="shrink-0 text-[10.5px] font-bold tabular-nums text-foreground/70"
+              aria-label={`하위 할 일 ${subtasks.length}개 중 ${subtaskDone}개 완료`}
+            >
+              {subtaskDone}/{subtasks.length}
+            </span>
+          ) : null}
         </div>
         {!compact ? (
           <span className="mt-0.5 truncate pl-[19px] text-[11px] leading-tight text-foreground/70">
             {minutesRangeLabel(startMinutes, duration)}
           </span>
+        ) : null}
+        {!compact && rowsThatFit > 0 && subtasks.length > 0 ? (
+          <div className="mt-1 flex min-w-0 flex-col gap-px pl-[19px]">
+            {visibleSubtasks.map((subtask) => (
+              <span key={subtask.id} className="flex h-[14px] min-w-0 items-center gap-[5px] text-[11px] leading-none">
+                {/* 드래그와 겹치지 않게 pointerdown을 막는다 (부모 체크박스와 같은 방식) */}
+                <button
+                  type="button"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => subtaskActions.toggle(subtask.id)}
+                  aria-label={`${subtask.content} ${subtask.completed ? "완료 취소" : "완료 표시"}`}
+                  className="size-2.5 shrink-0 rounded-full border-[1.3px]"
+                  style={{ borderColor: colorVar, backgroundColor: subtask.completed ? colorVar : undefined }}
+                />
+                <span
+                  className={cn(
+                    "min-w-0 flex-1 truncate",
+                    subtask.completed ? "text-foreground/50 line-through" : "text-foreground"
+                  )}
+                >
+                  {subtask.content}
+                </span>
+              </span>
+            ))}
+            {hiddenSubtaskCount > 0 ? (
+              <span className="flex h-[14px] items-center text-[10.5px] leading-none text-foreground/55">
+                {visibleSubtasks.length > 0 ? `외 ${hiddenSubtaskCount}개` : `하위 할 일 ${hiddenSubtaskCount}개`}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+        {showProgressBar ? (
+          <div
+            className="mt-auto h-[3px] shrink-0 overflow-hidden rounded-full"
+            style={{ backgroundColor: `color-mix(in srgb, ${colorVar} 20%, transparent)` }}
+            aria-hidden="true"
+          >
+            <div
+              className="h-full rounded-full"
+              style={{ width: `${(subtaskDone / subtasks.length) * 100}%`, backgroundColor: colorVar }}
+            />
+          </div>
         ) : null}
         <div
           onPointerDown={handleResizePointerDown}
