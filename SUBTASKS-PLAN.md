@@ -102,6 +102,7 @@ src/components/subtask/subtask-list.tsx      체크리스트 + "하위 할 일 �
 각 단계는 따로 커밋 · 푸시하고, 단계마다 `npx tsc --noEmit` · `npx eslint` · `npm run build` 통과를 확인한다.
 
 ### 1단계 — DB 스키마
+> ✅ 완료 (2026-09-28) — 로컬 PostgreSQL 16에서 schema.sql 2회 연속 실행(재실행 안전) · RLS(남의 할 일에 끼워 넣기 거부, 다른 사용자에게 안 보임) · 빈 내용 거부 · 부모 삭제 시 cascade 확인. **Supabase SQL Editor 재실행은 사용자 몫.**
 - `supabase/schema.sql`에 3번의 테이블 · 인덱스 · RLS 정책 · publication 추가 (재실행해도 안전하게 `if not exists` / `drop policy if exists`).
 - 사용자에게 SQL 재실행 요청. **이 단계가 끝나야 2단계 이후를 실제로 확인할 수 있다.**
 
