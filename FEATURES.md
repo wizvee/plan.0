@@ -1,6 +1,6 @@
 # 현재 기능 목록 (FEATURES)
 
-2026-09-28 기준(애플 스타일 리디자인 + 하위 할 일 반영), 코드에 실제로 구현돼 있는 사용자 기능을 화면별로 정리한 문서입니다.
+2026-09-28 기준(애플 스타일 리디자인 + 하위 할 일 + 회고 반영), 코드에 실제로 구현돼 있는 사용자 기능을 화면별로 정리한 문서입니다.
 새 UI 시안을 그리거나 리디자인할 때 **빠뜨린 기능이 없는지 대조하는 체크리스트**로 씁니다.
 개념/기획은 [PLANNING.md](./PLANNING.md), 결정 이력은 [HANDOFF.md](./HANDOFF.md),
 시각 규칙은 [DESIGN.md](./DESIGN.md) 참고.
@@ -90,6 +90,8 @@
 | D7 | 완료 체크박스(제목 왼쪽) + 일정 줄(날짜 · 시간, 캘린더에 배치된 경우) | `todo-detail-modal.tsx` |
 | D8 | **하위 할 일 체크리스트** — 체크 · 그 자리 수정(비우면 삭제) · × 삭제 · Enter로 연속 추가(한글 조합 안전) · 그립으로 순서 변경, `2/4 · 50%` + 진행률 바. 노트엔 없음 | `subtask/subtask-list.tsx`, `lib/app-data/subtask-actions.ts` |
 | D9 | 팝업은 `document.body` 포털 — 어디서 열어도 캘린더 · Inbox 위에 뜸 | `todo-detail-modal.tsx` |
+| D10 | **탭 구조** — 체크 · 제목 · 일정 · PARA는 고정, 아래는 하위 할 일(`2/4`) · 회고(개수) · 메모·URL(내용 있으면 점) 탭. 완료된 할 일은 회고 탭, 미완료는 하위 할 일 탭으로 열림. 노트는 탭 없이 메모 · URL | `todo-detail-modal.tsx` |
+| D11 | **회고** — 잘한 점 · 아쉬운 점 · 다음엔 여러 개. 종류 드롭다운 + Enter로 연속 추가(고른 종류 유지), 누르면 수정(비우면 삭제), × 삭제. 프로젝트에 매핑돼 있으면 "프로젝트 회고에도 모여요" | `reflection/reflection-list.tsx`, `reflection/reflection-kind.tsx`, `lib/app-data/reflection-actions.ts` |
 
 ## 7. PARA 목록
 
@@ -119,6 +121,9 @@
 | C13 | 자료 탭 — **Drive에서 가져오기**: Google Picker로 기존 Drive 파일을 골라 이 컨테이너 폴더로 가져옴 (`NEXT_PUBLIC_GOOGLE_API_KEY` 필요) | `files-tab.tsx`, `lib/google-picker.ts`, `api/drive/access-token`, `api/drive/import` |
 | C12 | 상세 화면 전체가 드롭 영역 — 보관함에서 끌어오면 이 컨테이너로 매핑 | `container-detail-screen.tsx` |
 | C14 | Tasks — 하위 할 일이 있으면 › 로 펼쳐 바로 체크 · 수정 · 추가 · 순서 변경 (펼침 상태는 저장 안 함) | `todo-card.tsx` `expandable` |
+| C15 | **회고 탭(Project만, `?tab=retro`)** — 프로젝트에 직접 쓰기 + 매핑된 할 일들의 회고를 잘한 점 / 아쉬운 점 / 다음엔 3열로. 출처 할 일을 누르면 그 할 일 상세 | `reflection/project-retro-tab.tsx`, `lib/app-data/use-reflections.ts` |
+| C16 | 회고 탭 — "다음엔" 항목 **할 일로**: Inbox에 이 프로젝트로 매핑된 할 일 생성, "Inbox에 추가됨" 표시(그 할 일을 지우면 다시 가능) | `project-retro-tab.tsx` |
+| C17 | 회고 탭 — **회고 노트로 저장**: 종류별 마크다운을 채운 새 노트를 자료 탭 편집기로 열기(Drive 연결 시) | `project-retro-tab.tsx`, `lib/reflection.ts` `buildRetroMarkdown` |
 
 ## 9. 화면이 없는 기능
 

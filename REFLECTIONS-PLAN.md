@@ -3,7 +3,7 @@
 작성 2026-09-28. 기존 문서(PLANNING / HANDOFF / DESIGN / FEATURES / SUBTASKS-PLAN)는 건드리지 않고 이 파일에만 적습니다.
 연결 시안: https://claude.ai/artifact/6vXMvW1raTc9Dhx9j25yNq (보드 ① 할 일 상세 — 회고 남기기 · ② PARA 상세 회고 탭)
 
-> **상태: 개념 합의 완료, 시안 컨펌 대기.** HANDOFF.md "작업 방식" 규칙대로 시안 컨펌 전에는 코드 작업을 시작하지 않는다.
+> **상태: 시안 컨펌 → 구현 완료 (2026-09-28).** 남은 것: 사용자가 마이그레이션 실행 + 실제 Supabase · Drive에서 확인(7번).
 
 ## 1. 무엇을 왜
 
@@ -72,7 +72,7 @@ alter table public.todo_reflections enable row level security;
 - RLS: 4개 정책(`auth.uid() = user_id`). insert/update `with check`에 **붙는 대상도 내 것인지** 확인
   (`todo_id`면 `todos`, `project_id`면 `projects`에서 `user_id = auth.uid()`).
 - Realtime: `supabase_realtime` publication에 추가.
-- 위치: `supabase/migrations/<날짜>_todo_reflections.sql` (schema.sql은 늘리지 않음 — SUBTASKS-PLAN과 같은 규칙).
+- 위치: `supabase/migrations/20260928_todo_reflections.sql` (schema.sql은 늘리지 않음 — SUBTASKS-PLAN과 같은 규칙).
 - ⚠️ **사용자가 해야 할 일:** 배포 전에 Supabase SQL Editor에서 이 마이그레이션 파일만 실행.
 - Area를 나중에 붙이면 `area_id` 컬럼 추가 + check를 `num_nonnulls(todo_id, project_id, area_id) = 1`로.
 
@@ -163,3 +163,15 @@ export interface Reflection {
 - 완료 시 회고 입력 유도
 - 캘린더 블록 · Inbox 카드에 회고 표시(개수 배지 등)
 - 회고 검색 · 통계 · AI 요약
+
+## 7. 확인 체크리스트 (배포 후 실제 화면에서)
+
+- [ ] SQL Editor에서 `supabase/migrations/20260928_todo_reflections.sql` 실행
+- [ ] 완료된 할 일을 열면 회고 탭, 미완료는 하위 할 일 탭으로 열린다
+- [ ] 종류를 바꿔가며 Enter로 여러 개 추가, 새로고침해도 남아 있다 / 다른 기기에 실시간으로 뜬다
+- [ ] 프로젝트 회고 탭에 할 일 회고 + 직접 쓴 회고가 3열로 모인다, 출처를 누르면 그 할 일 상세
+- [ ] 할 일을 다른 프로젝트로 옮기면 회고도 옮겨 간다 / 노트로 바꾸면 숨고 다시 할 일로 바꾸면 돌아온다
+- [ ] 할 일을 지우면 그 회고도 사라진다
+- [ ] "다음엔 → 할 일로" → Inbox에 이 프로젝트 할 일이 생기고 "Inbox에 추가됨", 그 할 일을 지우면 다시 "할 일로"
+- [ ] "회고 노트로 저장" → 자료 탭 편집기에 채워져 열리고, 저장하면 Drive 폴더에 .md로 생긴다
+- [ ] 팝업 안 종류 메뉴에서 Esc → 메뉴만 닫힘

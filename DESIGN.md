@@ -47,6 +47,9 @@
 | `--border` | `rgba(0,0,0,.08)` | `rgba(255,255,255,.12)` | 헤어라인 |
 | `--category-area` / `-tint` | `#2E9E5B` / `#E5F5EB` | `#30D158` / `#173A24` | Area 카테고리 |
 | `--category-resource` / `-tint` | `#A550D6` / `#F4EAFB` | `#BF5AF2` / `#34203F` | Resource 카테고리 |
+| `--retro-keep` / `-tint` | `#2E9E5B` / `#E5F5EB` | `#30D158` / `#173A24` | 회고 · 잘한 점 (Area 초록과 같은 값) |
+| `--retro-problem` / `-tint` | `#C26A00` / `#FFF1DC` | `#FF9F0A` / `#3D2A0F` | 회고 · 아쉬운 점 (`--warning`은 작은 아이콘에 대비 부족이라 어둡게) |
+| `--retro-try` / `-tint` | `#0071E3` / `#E8F1FE` | `#0A84FF` / `#10304F` | 회고 · 다음엔 (primary/accent와 같은 값) |
 
 **Project 카테고리는 별도 토큰이 없습니다** — `--primary`/`--accent`를 그대로 재사용합니다.
 새 카테고리 색이 필요하면 애플 시스템 컬러 계열에서 고르고, 틴트는 라이트 `L≈94%`, 다크 `L≈25%` 정도로 파생하세요.
@@ -112,13 +115,18 @@ AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBann
 - **주 보기**: 요일 머리글의 오늘은 빨간 원, 시간 라벨 "오전 9시 / 정오 / 오후 1시", 현재 시각 빨간 선, 주말 열은 아주 옅은 틴트.
 - **PARA 목록**: 제목 + 설명, 오른쪽 Project/Area/Resource 세그먼트, 카드 그리드.
 - **PARA 상세**: `‹ Project` 뒤로가기(파란 텍스트), 카테고리 아이콘 타일 + 이름(클릭해서 수정), 회색 요약 줄
-  (상태 · 마감일 또는 만든 날 · 진행률), 세그먼트 탭(개요 / 할 일 / 자료), 흰 카드 그룹 리스트. Drive 미연결이면 자료 탭은 연결 안내.
+  (상태 · 마감일 또는 만든 날 · 진행률), 세그먼트 탭(개요 / 할 일 / 자료 / 회고 — 회고는 Project만), 흰 카드 그룹 리스트.
+  Drive 미연결이면 자료 탭은 연결 안내.
 - **팝오버/메뉴**: 흰 반투명 + `backdrop-blur` + 큰 그림자, 메뉴 항목은 hover 시 primary 배경 · 흰 글자(macOS 메뉴).
 - **모달**: `createPortal(…, document.body)`로 띄운다. Inbox 패널처럼 sticky인 조상 안에서 그리면 자체 쌓임 맥락에 갇혀
   캘린더의 z-index 요소가 모달 위로 올라온다(2026-09-28 버그).
 - **하위 할 일 진행률**(SUBTASKS-PLAN.md): 하위가 0개면 아무것도 그리지 않는다. 목록 카드 = 13px 링 + `2/4`(`SubtaskProgress`),
   주 보기 블록 = 제목 옆 `2/4` + 바닥 3px 바 + 남는 높이만큼 하위 목록, 월 보기 = `2/4` 텍스트만, 상세 팝업 = `2/4 · %` + 4px 바 +
   체크리스트(`SubtaskList`). 체크리스트를 다른 곳에 넣을 때도 `SubtaskList`를 재사용하고 새로 만들지 않는다.
+- **할 일 상세 팝업**: 머리(체크 · 제목 · 일정 · PARA)와 바닥(노트로 전환 · 삭제)은 고정, 가운데는 세그먼트 탭
+  (하위 할 일 · 회고 · 메모·URL). 탭 이름에 내용 표시(`2/4` · 개수 · 점), 탭 본문 높이 고정. 새 항목은 탭으로 추가한다.
+- **회고**(REFLECTIONS-PLAN.md): 종류는 `ReflectionKindIcon`(틴트 원 + lucide `ThumbsUp`/`ThumbsDown`/`Lightbulb`), 색은
+  `--retro-*` 토큰으로 **아이콘에만**(텍스트는 기본 전경색). 종류 선택은 `ReflectionKindSelect` 드롭다운(macOS 메뉴) 하나만 쓴다.
 
 ## 7. 타이포그래피 / 아이콘
 

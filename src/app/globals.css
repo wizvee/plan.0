@@ -32,6 +32,14 @@
   --category-area-tint: #E5F5EB;
   --category-resource: #A550D6;
   --category-resource-tint: #F4EAFB;
+  /* 회고 종류 (REFLECTIONS-PLAN.md) — 아이콘 · 아이콘 타일에만 쓴다. 잘한 점은 Area 초록, 다음엔은 primary 재사용.
+     아쉬운 점은 --warning(#FF9500)이 작은 아이콘에서 대비가 부족해 한 단계 어둡게. */
+  --retro-keep: #2E9E5B;
+  --retro-keep-tint: #E5F5EB;
+  --retro-problem: #C26A00;
+  --retro-problem-tint: #FFF1DC;
+  --retro-try: #0071E3;
+  --retro-try-tint: #E8F1FE;
 }
 
 .dark {
@@ -60,6 +68,12 @@
   --category-area-tint: #173A24;
   --category-resource: #BF5AF2;
   --category-resource-tint: #34203F;
+  --retro-keep: #30D158;
+  --retro-keep-tint: #173A24;
+  --retro-problem: #FF9F0A;
+  --retro-problem-tint: #3D2A0F;
+  --retro-try: #0A84FF;
+  --retro-try-tint: #10304F;
 }
 
 @theme inline {

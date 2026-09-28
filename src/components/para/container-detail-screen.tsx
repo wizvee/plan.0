@@ -23,6 +23,7 @@ import { ContextPicker } from "@/components/para/context-picker";
 import { InlineText } from "@/components/inline-text";
 import { ScrapSection } from "@/components/para/scrap-section";
 import { FilesTab } from "@/components/para/files-tab";
+import { ProjectRetroTab } from "@/components/reflection/project-retro-tab";
 import type { DriveFile } from "@/lib/google-drive";
 import { classifyDriveFile } from "@/lib/drive-file";
 import { parseNoteContent, serializeNoteContent, type NoteProperty } from "@/lib/frontmatter";
@@ -54,12 +55,14 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
   const actions = useTodoActions();
   const { googleConnected } = useSession();
 
-  // 이 화면도 탭(Overview/Tasks/자료)을 URL(`?tab=`)에서 직접 계산한다 — 다른 화면에 갔다가
-  // 뒤로가기를 눌러도 보고 있던 탭 그대로 돌아오게.
+  // 이 화면도 탭(Overview/Tasks/자료/회고)을 URL(`?tab=`)에서 직접 계산한다 — 다른 화면에 갔다가
+  // 뒤로가기를 눌러도 보고 있던 탭 그대로 돌아오게. 회고 탭은 Project에만 있다(REFLECTIONS-PLAN.md).
   const tabParam = searchParams.get("tab");
-  const tab: "overview" | "tasks" | "files" = tabParam === "tasks" || tabParam === "files" ? tabParam : "overview";
+  const tab: DetailTab =
+    tabParam === "tasks" || tabParam === "files" || (tabParam === "retro" && kind === "project") ? tabParam : "overview";
+  const tabs: DetailTab[] = kind === "project" ? ["overview", "tasks", "files", "retro"] : ["overview", "tasks", "files"];
 
-  function selectTab(next: "overview" | "tasks" | "files") {
+  function selectTab(next: DetailTab) {
     router.replace(`/para/${kind}/${id}?tab=${next}`, { scroll: false });
   }
 
@@ -292,6 +295,21 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
     setFilesMode("edit");
   }
 
+  /** 회고 탭의 "회고 노트로 저장" — 회고를 채운 새 노트를 자료 탭 편집기에 열어, 고친 뒤 저장하게 한다. */
+  function handleOpenRetroNote(title: string, body: string) {
+    setEditingFileId(null);
+    setEditingTitle(title);
+    setEditingBody(body);
+    setEditingProperties([]);
+    setPromotedBanner(false);
+    selectTab("files");
+    setFilesMode("edit");
+    // 저장 후 돌아갈 파일 목록을 미리 불러둔다 (자료 탭을 한 번도 안 열었으면 비어 있음)
+    void ensureDriveFolder()
+      .then(loadDriveFiles)
+      .catch((err) => setFilesError(err instanceof Error ? err.message : "Drive 폴더를 만들지 못했습니다."));
+  }
+
   function handleAddTagProperty() {
     setEditingProperties((prev) =>
       prev.some((p) => p.type === "tag") ? prev : [...prev, { key: "태그", type: "tag" as const, values: [] }]
@@ -490,7 +508,7 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
       </div>
 
       <div role="tablist" aria-label="상세 탭" className="mb-4 flex self-start rounded-lg bg-black/[0.06] p-0.5">
-        {(["overview", "tasks", "files"] as const).map((t) => (
+        {tabs.map((t) => (
           <button
             key={t}
             type="button"
@@ -498,11 +516,11 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
             aria-selected={tab === t}
             onClick={() => (t === "files" && googleConnected ? void handleSelectFiles() : selectTab(t))}
             className={cn(
-              "h-[30px] min-w-[84px] rounded-md px-3.5 text-[13px] font-semibold text-muted-foreground",
+              "h-[30px] min-w-[68px] rounded-md px-3 text-[13px] sm:min-w-[84px] sm:px-3.5 font-semibold text-muted-foreground",
               tab === t && "bg-card text-foreground shadow-[0_1px_3px_rgba(0,0,0,0.12)]"
             )}
           >
-            {t === "overview" ? "개요" : t === "tasks" ? "할 일" : "자료"}
+            {TAB_LABELS[t]}
           </button>
         ))}
       </div>
@@ -597,6 +615,15 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
         </div>
       ) : null}
 
+      {tab === "retro" && kind === "project" ? (
+        <ProjectRetroTab
+          projectId={id}
+          projectName={container.name}
+          googleConnected={googleConnected}
+          onSaveNote={handleOpenRetroNote}
+        />
+      ) : null}
+
       {tab === "files" && !googleConnected ? (
         <div className="flex flex-col items-center gap-2.5 rounded-xl bg-secondary px-6 py-12 text-center">
           <Cloud className="size-[34px] text-muted-foreground/70" strokeWidth={1.6} />
@@ -647,6 +674,10 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
 }
 
 const PARA_KIND_LABELS_KO: Record<ParaKind, string> = { project: "프로젝트", area: "영역", resource: "리소스" };
+
+type DetailTab = "overview" | "tasks" | "files" | "retro";
+
+const TAB_LABELS: Record<DetailTab, string> = { overview: "개요", tasks: "할 일", files: "자료", retro: "회고" };
 
 /** "2026. 10. 15." */
 function formatDateLabel(dateKey: string): string {
