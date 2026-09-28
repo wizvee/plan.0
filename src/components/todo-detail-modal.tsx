@@ -2,12 +2,19 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Bookmark, Check, ChevronDown, CircleOff, Compass, ExternalLink, Layers, Link2, StickyNote, Target, Trash2, X } from "lucide-react";
+import { Bookmark, Check, ChevronDown, CircleOff, Clock, Compass, ExternalLink, Layers, Link2, StickyNote, Target, Trash2, X } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { ko } from "date-fns/locale";
 
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { SubtaskList } from "@/components/subtask/subtask-list";
 import { cn } from "@/lib/utils";
 import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR, getParaCategory } from "@/lib/category";
+import { formatClock, MINUTES_PER_DAY } from "@/lib/time";
 import type { Area, ParaKind, Project, Resource, Todo, TodoKind } from "@/lib/types";
+import { useTodoActions } from "@/lib/app-data/todo-actions";
+import { useSubtasks } from "@/lib/app-data/use-subtasks";
 
 const KIND_ICON: Record<ParaKind, typeof Target> = {
   project: Target,
@@ -20,6 +27,15 @@ const KIND_LABEL: Record<ParaKind, string> = {
   area: "영역",
   resource: "리소스",
 };
+
+/** "9월 28일 (월) · 오전 9시 – 오전 11시". 캘린더에 배치되지 않았으면 null. */
+function scheduleLabel(todo: Todo): string | null {
+  if (!todo.scheduledDate) return null;
+  const day = format(parseISO(todo.scheduledDate), "M월 d일 (EEE)", { locale: ko });
+  if (todo.startMinutes === null) return day;
+  const end = Math.min(todo.startMinutes + (todo.durationMinutes ?? 0), MINUTES_PER_DAY);
+  return `${day} · ${formatClock(todo.startMinutes)} – ${formatClock(end)}`;
+}
 
 interface ParaAssignPatch {
   projectId: string | null;
@@ -60,6 +76,8 @@ export function TodoDetailModal({
   const [paraOpen, setParaOpen] = useState(false);
   const [paraQuery, setParaQuery] = useState("");
   const paraRef = useRef<HTMLDivElement>(null);
+  const { toggle } = useTodoActions();
+  const { progressOf } = useSubtasks();
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -139,25 +157,50 @@ export function TodoDetailModal({
   const resourceMatches = filterItems(resources);
   const noMatches = projectMatches.length === 0 && areaMatches.length === 0 && resourceMatches.length === 0;
 
+  const isTask = todo.kind === "task";
+  const schedule = scheduleLabel(todo);
+  const progress = progressOf(todo.id);
+  const percent = progress.total ? Math.round((progress.done / progress.total) * 100) : 0;
+
   // body로 포털 — 모달을 연 카드가 Inbox 패널(sticky = 자체 쌓임 맥락) 안에 있으면 본문 캘린더의
   // z-index 요소(현재 시각 선 · 블록)가 모달 위로 올라와 클릭을 가로챘다.
   return createPortal(
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-4" onClick={onClose}>
       <div
-        className="flex w-full max-w-sm flex-col rounded-xl bg-card p-5 shadow-xl"
+        className="flex max-h-[calc(100dvh-2rem)] w-full max-w-[440px] flex-col overflow-y-auto rounded-xl bg-card p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start gap-3">
-          <Input
-            autoFocus
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onBlur={commitTitle}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") e.currentTarget.blur();
-            }}
-            className="h-auto min-w-0 flex-1 border-0 bg-transparent p-0 text-[19px] font-bold shadow-none focus-visible:ring-0"
-          />
+          {isTask ? (
+            <Checkbox
+              checked={todo.completed}
+              onCheckedChange={() => toggle(todo.id)}
+              aria-label={todo.completed ? "완료 취소" : "완료 표시"}
+              className="mt-[3px] size-[22px] text-white"
+              style={{ borderColor: color, backgroundColor: todo.completed ? color : undefined }}
+            />
+          ) : null}
+          <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
+            <Input
+              autoFocus
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onBlur={commitTitle}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") e.currentTarget.blur();
+              }}
+              className={cn(
+                "h-auto min-w-0 flex-1 border-0 bg-transparent p-0 text-[19px] font-bold shadow-none focus-visible:ring-0",
+                isTask && todo.completed && "text-muted-foreground line-through"
+              )}
+            />
+            {schedule ? (
+              <span className="flex items-center gap-[5px] text-[12.5px] text-muted-foreground">
+                <Clock className="size-[13px] shrink-0" strokeWidth={1.8} aria-hidden="true" />
+                {schedule}
+              </span>
+            ) : null}
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -256,6 +299,43 @@ export function TodoDetailModal({
             </div>
           ) : null}
         </div>
+
+        {isTask ? (
+          <section aria-label="하위 할 일" className="mt-3 flex flex-col gap-2">
+            <div className="flex items-center gap-2 px-0.5">
+              <h3 className="text-[13px] font-bold">하위 할 일</h3>
+              {progress.total > 0 ? (
+                <>
+                  <span className="text-[12.5px] font-semibold tabular-nums" style={{ color }}>
+                    {progress.done}/{progress.total}
+                  </span>
+                  <span className="ml-auto text-[12px] tabular-nums text-muted-foreground">{percent}%</span>
+                </>
+              ) : null}
+            </div>
+            {progress.total > 0 ? (
+              <div
+                className="h-1 overflow-hidden rounded-full"
+                style={{ backgroundColor: `color-mix(in srgb, ${color} 16%, transparent)` }}
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={progress.total}
+                aria-valuenow={progress.done}
+                aria-label="하위 할 일 진행률"
+              >
+                <div
+                  className="h-full rounded-full transition-[width] duration-200"
+                  style={{ width: `${percent}%`, backgroundColor: color }}
+                />
+              </div>
+            ) : null}
+            <SubtaskList
+              todoId={todo.id}
+              color={color}
+              className="overflow-hidden rounded-[10px] border border-border"
+            />
+          </section>
+        ) : null}
 
         <textarea
           value={memo}
