@@ -6,6 +6,7 @@ import { CSS } from "@dnd-kit/utilities";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { TodoDetailModal } from "@/components/todo-detail-modal";
+import { InlineText } from "@/components/inline-text";
 import { cn } from "@/lib/utils";
 import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR, getParaCategory } from "@/lib/category";
 import {
@@ -128,7 +129,7 @@ export function CalendarBlock({
         className="w-[200px] rounded-md px-2.5 py-1.5 shadow-lg"
         style={{ height: renderedHeight, boxShadow: `inset 3px 0 0 ${colorVar}`, backgroundColor: tintVar }}
       >
-        <p className="truncate text-[12px] font-semibold text-foreground">{todo.content}</p>
+        <p className="truncate text-[12px] font-semibold text-foreground"><InlineText text={todo.content} /></p>
         <p className="truncate text-[11px] text-muted-foreground">
           {minutesRangeLabel(startMinutes, duration)}
         </p>
@@ -178,7 +179,7 @@ export function CalendarBlock({
               todo.completed && "line-through"
             )}
           >
-            {todo.content}
+            <InlineText text={todo.content} />
           </span>
           {subtasks.length > 0 ? (
             <span
@@ -213,7 +214,7 @@ export function CalendarBlock({
                     subtask.completed ? "text-foreground/50 line-through" : "text-foreground"
                   )}
                 >
-                  {subtask.content}
+                  <InlineText text={subtask.content} />
                 </span>
               </span>
             ))}

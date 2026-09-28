@@ -3,6 +3,7 @@
 import { Check, Link2, Plus } from "lucide-react";
 
 import { TodoCard } from "@/components/todo-card";
+import { InlineText } from "@/components/inline-text";
 import { cn } from "@/lib/utils";
 import type { Area, Project, Resource, Todo, TodoKind } from "@/lib/types";
 
@@ -89,7 +90,9 @@ export function ScrapSection({
                   {checked ? <Check className="size-3" strokeWidth={3} /> : null}
                 </span>
                 <Link2 className="size-[15px] shrink-0 text-muted-foreground" aria-hidden="true" />
-                <span className="min-w-0 flex-1 truncate text-[14px]">{scrap.content}</span>
+                <span className="min-w-0 flex-1 truncate text-[14px]">
+                  <InlineText text={scrap.content} />
+                </span>
               </button>
             );
           })}

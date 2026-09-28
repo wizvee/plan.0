@@ -19,6 +19,7 @@ import {
   type ParaKind,
 } from "@/lib/types";
 import { TodoCard } from "@/components/todo-card";
+import { InlineText } from "@/components/inline-text";
 import { ScrapSection } from "@/components/para/scrap-section";
 import { FilesTab } from "@/components/para/files-tab";
 import type { DriveFile } from "@/lib/google-drive";
@@ -441,7 +442,7 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
             title="클릭해서 이름 수정"
             className="-mx-1 cursor-text rounded-md px-1 text-[28px] font-bold tracking-[-0.5px] hover:bg-black/[0.04]"
           >
-            {container.name}
+            <InlineText text={container.name} />
           </h1>
         )}
       </div>

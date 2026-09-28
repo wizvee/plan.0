@@ -126,6 +126,9 @@ AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBann
   애플 기기에선 SF Pro, 그 외에선 Wanted Sans. 구글 폰트 새로 추가하지 마세요.
 - 제목 22–28px bold · 자간 약간 좁게(`tracking-[-0.4px]`), 본문 14px, 보조 12–13px.
 - 아이콘: `lucide-react`만, `strokeWidth={1.8}` 정도로 가늘게. 이모지를 아이콘 대용으로 쓰지 마세요.
+- **인라인 코드**: 사용자가 입력한 텍스트의 `` `VAR` `` 같은 백틱 구간은 인라인 코드(고정폭 · 옅은 회색 배경 `bg-black/[0.06]` ·
+  `rounded-[4px]`)로 보인다. 사용자 텍스트를 그릴 때는 `{todo.content}` 대신 항상 `<InlineText text={…} />`(`components/inline-text.tsx`).
+  편집 가능한 텍스트는 평소엔 렌더링된 텍스트, 누르면 원문 입력칸(백틱 포함)으로 바뀐다. 저장값은 원문 그대로.
 
 ## 8. 로그인 화면
 

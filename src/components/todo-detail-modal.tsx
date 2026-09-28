@@ -9,6 +9,7 @@ import { ko } from "date-fns/locale";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { SubtaskList } from "@/components/subtask/subtask-list";
+import { InlineText } from "@/components/inline-text";
 import { cn } from "@/lib/utils";
 import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR, getParaCategory } from "@/lib/category";
 import { formatClock, MINUTES_PER_DAY } from "@/lib/time";
@@ -72,6 +73,9 @@ export function TodoDetailModal({
 }: TodoDetailModalProps) {
   const [title, setTitle] = useState(todo.content);
   const [memo, setMemo] = useState(todo.memo ?? "");
+  // 제목 · 메모는 평소엔 `코드`가 렌더링된 텍스트로 보여주고, 누르면 원문 입력칸으로 바뀐다
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [editingMemo, setEditingMemo] = useState(false);
   const [url, setUrl] = useState(todo.url ?? "");
   const [paraOpen, setParaOpen] = useState(false);
   const [paraQuery, setParaQuery] = useState("");
@@ -100,6 +104,7 @@ export function TodoDetailModal({
   }, [paraOpen]);
 
   function commitTitle() {
+    setEditingTitle(false);
     const trimmed = title.trim();
     if (trimmed && trimmed !== todo.content) {
       onEdit(todo.id, trimmed);
@@ -109,6 +114,7 @@ export function TodoDetailModal({
   }
 
   function commitMemo() {
+    setEditingMemo(false);
     const trimmed = memo.trim();
     if (trimmed !== (todo.memo ?? "")) {
       onMemoEdit(todo.id, trimmed);
@@ -181,19 +187,34 @@ export function TodoDetailModal({
             />
           ) : null}
           <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
-            <Input
-              autoFocus
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onBlur={commitTitle}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") e.currentTarget.blur();
-              }}
-              className={cn(
-                "h-auto min-w-0 flex-1 border-0 bg-transparent p-0 text-[19px] font-bold shadow-none focus-visible:ring-0",
-                isTask && todo.completed && "text-muted-foreground line-through"
-              )}
-            />
+            {editingTitle ? (
+              <Input
+                autoFocus
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onBlur={commitTitle}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.nativeEvent.isComposing) e.currentTarget.blur();
+                }}
+                aria-label="제목"
+                className={cn(
+                  "h-auto min-w-0 flex-1 border-0 bg-transparent p-0 text-[19px] font-bold shadow-none focus-visible:ring-0",
+                  isTask && todo.completed && "text-muted-foreground line-through"
+                )}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setEditingTitle(true)}
+                aria-label={`${title} — 눌러서 제목 수정`}
+                className={cn(
+                  "min-w-0 cursor-text break-words text-left text-[19px] font-bold leading-snug",
+                  isTask && todo.completed && "text-muted-foreground line-through"
+                )}
+              >
+                <InlineText text={title} />
+              </button>
+            )}
             {schedule ? (
               <span className="flex items-center gap-[5px] text-[12.5px] text-muted-foreground">
                 <Clock className="size-[13px] shrink-0" strokeWidth={1.8} aria-hidden="true" />
@@ -337,14 +358,30 @@ export function TodoDetailModal({
           </section>
         ) : null}
 
-        <textarea
-          value={memo}
-          onChange={(e) => setMemo(e.target.value)}
-          onBlur={commitMemo}
-          placeholder="메모"
-          rows={3}
-          className="mt-2.5 resize-y border-0 bg-transparent p-0 text-[15px] leading-snug text-foreground outline-none placeholder:text-muted-foreground"
-        />
+        {editingMemo ? (
+          <textarea
+            autoFocus
+            value={memo}
+            onChange={(e) => setMemo(e.target.value)}
+            onBlur={commitMemo}
+            placeholder="메모"
+            aria-label="메모"
+            rows={3}
+            className="mt-2.5 resize-y border-0 bg-transparent p-0 text-[15px] leading-snug text-foreground outline-none placeholder:text-muted-foreground"
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setEditingMemo(true)}
+            aria-label="메모 수정"
+            className={cn(
+              "mt-2.5 min-h-[3.9em] cursor-text whitespace-pre-wrap break-words text-left text-[15px] leading-snug",
+              !memo && "text-muted-foreground"
+            )}
+          >
+            {memo ? <InlineText text={memo} /> : "메모"}
+          </button>
+        )}
 
         <div className="my-3 border-t border-border" />
         <div className="flex items-center gap-1.5 rounded-md bg-muted pl-2.5 pr-1">
