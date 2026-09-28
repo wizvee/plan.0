@@ -158,6 +158,7 @@ src/components/subtask/subtask-list.tsx      체크리스트 + "하위 할 일 �
   (PARA 행에서 바로 "+ 하위 할 일"을 여는 버튼은 넣지 않는다 — 필요해지면 추가.)
 
 ### 7단계 — 하위 할 일 순서 바꾸기 (드래그)
+> ✅ 완료 (2026-09-28) — `DraggedSubtaskData`, `SubtaskList` 행마다 `useSortable` + 그립(행 왼쪽 20px 여백), `collision.ts`에서 하위 드래그는 같은 할 일의 하위 행만(closestCenter) · 할 일 드래그는 하위 행 제외, `handle-drop.ts` 맨 앞에서 순서 변경, DragOverlay에 한 줄 미리보기. 드롭 · 충돌 로직은 스크립트로 확인(같은 할 일 안 재정렬 O, 다른 할 일 · 캘린더에 놓으면 무시, 할 일 드래그는 하위 행을 대상으로 안 잡음). tsc · eslint · build 통과.
 - `drop-targets.ts`: `DraggedSubtaskData = { type: "subtask"; todoId: string }` 추가,
   `SubtaskList` 각 행에 `useSortable({ id, data })` + 그립 핸들(모바일은 항상 보임, 데스크톱은 hover — TodoCard와 같은 규칙).
 - `handle-drop.ts`: `active.data.type === "subtask"`면 **같은 `todoId` 안에서만** 순서를 바꾸고

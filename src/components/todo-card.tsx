@@ -177,8 +177,8 @@ export function TodoCard({
           </div>
         </div>
         {isExpanded ? (
-          // 하위 체크박스가 할 일 제목 시작점(80px)에 오도록: 목록 행 안쪽 여백 10px을 뺀 70px
-          <SubtaskList todoId={todo.id} color={categoryColor} className="pl-[70px] pr-4" />
+          // 하위 체크박스가 할 일 제목 시작점(80px)에 오도록: 목록 행 안쪽 여백(그립 자리) 20px을 뺀 60px
+          <SubtaskList todoId={todo.id} color={categoryColor} className="pl-[60px] pr-4" />
         ) : null}
       </div>
       {detailOpen ? (
