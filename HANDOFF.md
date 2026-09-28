@@ -486,6 +486,10 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
       추가 · 할 일로 · 노트 편집기 열기 · 삭제 시 회고 제거 · 모바일). 실제 Supabase(RLS · Realtime) · Drive 저장은 확인 못 함.
     - `supabase/migrations/20260928_todo_reflections.sql`은 사용자가 실행 완료 → `main`에 머지.
 
+29. **(2026-09-28 추가) 완료된 할 일은 캘린더에서 끌어서 옮길 수 없게**: 사용자 요청. `calendar-block.tsx`의
+    `useDraggable`을 `todo.completed`면 `disabled` — 끝난 일정이 실수로 다른 날로 밀리지 않게. 완료를 풀면 다시 옮길 수 있다.
+    잠긴 블록은 `touch-none`도 빼서 모바일에서 그 위로 캘린더를 스크롤할 수 있음. 길이 조절(아래 모서리)·상세 열기·완료 체크는 그대로.
+
 ## 지금 구현된 것 (기능 목록)
 
 - Todo List(전역 보관함, 사이드 패널) + Mon~Sun **시간 단위 캘린더 그리드** (0~24시, 스크롤 가능)
