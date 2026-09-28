@@ -63,7 +63,7 @@ export function MonthCalendar({
   const days = eachDayOfInterval({ start: gridStart, end: gridEnd });
 
   return (
-    <div className="flex flex-col border-t border-border [--month-bottom:64px] sm:[--month-bottom:0px]">
+    <div className="flex flex-col border-t border-border [--month-bottom:var(--tabbar-h)] sm:[--month-bottom:0px]">
       <div className="grid h-8 grid-cols-7 border-b border-border">
         {WEEKDAY_ORDER.map((day) => (
           <span key={day} className="flex items-center pl-2.5 text-[11.5px] font-medium text-muted-foreground">

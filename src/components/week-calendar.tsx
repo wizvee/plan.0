@@ -183,7 +183,7 @@ export function WeekCalendar({
           );
         })}
       </div>
-      <div ref={scrollRef} className="flex max-h-[calc(100dvh-60px-80px-64px)] overflow-y-auto sm:max-h-[calc(100dvh-60px-57px)]">
+      <div ref={scrollRef} className="flex max-h-[calc(100dvh-60px-80px-var(--tabbar-h))] overflow-y-auto sm:max-h-[calc(100dvh-60px-57px)]">
         <div style={{ width: GUTTER_WIDTH }} className="shrink-0">
           {Array.from({ length: HOURS_IN_DAY }).map((_, hour) => (
             <div key={hour} className="relative" style={{ height: HOUR_HEIGHT }}>

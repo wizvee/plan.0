@@ -25,7 +25,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="flex min-h-screen w-full">
         <AppRail accountOpen={accountOpen} onToggleAccount={() => setAccountOpen((open) => !open)} />
         <InboxPanel />
-        <main className="min-w-0 flex-1 pb-16 sm:pb-0">
+        <main className="min-w-0 flex-1 pb-[var(--tabbar-h)] sm:pb-0">
           <DriveStatusBanner />
           {children}
         </main>

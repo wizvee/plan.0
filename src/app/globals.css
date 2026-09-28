@@ -5,6 +5,8 @@
 
 :root {
   --radius: 0.625rem;
+  /* 모바일 하단 탭바 높이 = 64px + 아이폰 홈 인디케이터 여백(홈 화면 웹앱 · viewport-fit=cover). 데스크톱(sm:)에선 안 씀 */
+  --tabbar-h: calc(4rem + env(safe-area-inset-bottom, 0px));
   --background: #FFFFFF;
   --foreground: #1D1D1F;
   --card: #FFFFFF;

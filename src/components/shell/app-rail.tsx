@@ -36,7 +36,7 @@ export function AppRail({ accountOpen, onToggleAccount }: { accountOpen: boolean
     <nav
       aria-label="주 메뉴"
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-50 flex h-16 items-stretch justify-around border-t border-border bg-secondary/95 backdrop-blur",
+        "fixed bottom-0 left-0 right-0 z-50 flex h-[var(--tabbar-h)] items-stretch pb-[env(safe-area-inset-bottom)] justify-around border-t border-border bg-secondary/95 backdrop-blur",
         "sm:sticky sm:top-0 sm:bottom-auto sm:right-auto sm:h-screen sm:w-[76px] sm:shrink-0 sm:flex-col sm:items-center sm:justify-start sm:gap-1 sm:border-t-0 sm:border-r sm:bg-secondary sm:py-3.5"
       )}
     >
