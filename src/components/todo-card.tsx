@@ -9,10 +9,12 @@ import { GripVertical, StickyNote } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UrlChip } from "@/components/url-chip";
 import { TodoDetailModal } from "@/components/todo-detail-modal";
+import { SubtaskProgress } from "@/components/subtask/subtask-progress";
 import { cn } from "@/lib/utils";
 import type { DragSource, DraggedTodoData } from "@/lib/dnd/drop-targets";
 import { CATEGORY_COLOR_VAR, getParaCategory } from "@/lib/category";
 import type { Area, Project, Resource, Todo, TodoKind } from "@/lib/types";
+import { useSubtasks } from "@/lib/app-data/use-subtasks";
 
 function scheduledDateOf(todo: Todo): Date | null {
   return todo.scheduledDate ? new Date(`${todo.scheduledDate}T00:00:00`) : null;
@@ -57,6 +59,9 @@ export function TodoCard({
   const category = getParaCategory(todo);
   const scheduledDate = scheduledDateOf(todo);
   const isOverdue = scheduledDate ? !todo.completed && isBefore(scheduledDate, startOfDay(new Date())) : false;
+  const { progressOf } = useSubtasks();
+  // 노트는 하위 할 일 UI가 없다 (노트로 바꿔도 데이터는 남아 있지만 숨김)
+  const progress = todo.kind === "task" ? progressOf(todo.id) : { done: 0, total: 0 };
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: todo.id,
@@ -118,8 +123,12 @@ export function TodoCard({
             {todo.content}
           </span>
           {todo.url ? <UrlChip url={todo.url} /> : null}
-          {scheduledDate || badge ? (
+          {scheduledDate || badge || progress.total > 0 ? (
             <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[12px] text-muted-foreground">
+              <SubtaskProgress
+                progress={progress}
+                color={category ? `var(${CATEGORY_COLOR_VAR[category]})` : "var(--muted-foreground)"}
+              />
               {scheduledDate ? (
                 <span className={cn("font-medium tabular-nums", isOverdue && "text-destructive")}>
                   {format(scheduledDate, "yyyy. M. d.")}

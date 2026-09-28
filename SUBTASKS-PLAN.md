@@ -132,6 +132,7 @@ src/components/subtask/subtask-list.tsx      체크리스트 + "하위 할 일 �
 - 모달에 필요한 데이터는 훅으로 직접 읽는다(모달을 여는 3곳 — `todo-card` · `calendar-block` · `month-calendar` — props는 늘리지 않음).
 
 ### 4단계 — 진행률 표시: Inbox · PARA 카드 (시안 ①② 목록)
+> ✅ 완료 (2026-09-28) — `components/subtask/subtask-progress.tsx`(링은 카테고리 색, 숫자는 대비 때문에 보조 텍스트 색), `todo-card.tsx` 메타 줄 맨 앞. 노트 · 하위 0개는 표시 안 함. tsc · eslint · build 통과.
 - `SubtaskProgress`: 13–15px 원형 링(카테고리 색, 트랙은 틴트) + `done/total`(tabular-nums). 전부 완료면 링이 꽉 참.
 - `todo-card.tsx` 메타 줄 맨 앞에 `SubtaskProgress` (날짜 · 소속 배지 앞). 하위 0개면 렌더링 안 함.
   → Inbox · PARA 상세 · 스크랩 목록에 한 번에 적용(노트는 제외).
