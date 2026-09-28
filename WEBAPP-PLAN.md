@@ -73,6 +73,7 @@ DB 변경은 `supabase/migrations/` 새 파일로만(schema.sql은 안 늘림).
 - 확인: 아이폰 홈 화면 아이콘 · 이름 · 전체 화면 · 탭바가 홈 인디케이터 위에 오는지.
 
 ### 2단계 — 서비스 워커
+> ✅ 완료 (2026-09-28) — `public/sw.js`(push → 알림 + `setAppBadge`, 같은 tag는 대체, notificationclick → 열린 창이면 그 주로 이동 · 없으면 새 창), `components/service-worker-register.tsx`(루트 레이아웃), `next.config.ts` sw.js 캐시 금지 헤더, `proxy.ts`에서 sw.js 로그인 예외. **페이로드 약속**: `{ title, body?, url?, badge?, tag? }`. 헤드리스 Chromium + DevTools 푸시로 등록 · 알림 표시 · 같은 tag 대체 확인(알림 클릭 이동과 iOS 배지는 실기기에서).
 - `public/sw.js`: `push` → `showNotification` + `setAppBadge(payload.badge)` (0이면 `clearAppBadge`),
   `notificationclick` → 앱 창 열고 `payload.url`(그 주)로 이동.
 - 앱 시작 시 등록, `next.config.ts`에 `sw.js` 캐시 금지 헤더. 오프라인 캐시는 넣지 않음.
