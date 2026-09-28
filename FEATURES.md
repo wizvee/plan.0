@@ -60,7 +60,7 @@
 | W4 | 오늘 날짜 강조 + 현재 시각 선 (클라이언트에서만 계산) | `week-calendar.tsx`, `lib/use-today.ts` |
 | W5 | 일정 블록 — 카테고리 색, 제목 + 시간 범위, 짧으면 한 줄 compact | `calendar-block.tsx` |
 | W6 | 블록 안 **완료 체크박스**, 완료 시 muted + 취소선 | `calendar-block.tsx` |
-| W7 | 블록 드래그로 다른 요일/시간 이동 | `calendar-block.tsx` |
+| W7 | 블록 드래그로 다른 요일/시간 이동 — **완료된 할 일은 옮길 수 없음**(완료를 풀면 다시 가능) | `calendar-block.tsx` |
 | W8 | 블록 하단 모서리 드래그로 소요 시간 조절 | `calendar-block.tsx` |
 | W9 | 블록 제목 클릭 → 상세 팝업 | `calendar-block.tsx` |
 | W10 | 모바일: 요일+날짜 원형 스트립으로 하루씩 보기 + "39주 · 날짜 요일" 요약 줄 | `week-board.tsx` |

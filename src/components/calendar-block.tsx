@@ -72,9 +72,11 @@ export function CalendarBlock({
   const baseDuration = todo.durationMinutes ?? DEFAULT_DURATION_MINUTES;
   const duration = previewDuration ?? baseDuration;
 
+  // 완료된 할 일은 끌어서 옮길 수 없다 — 끝난 일정이 실수로 다른 날로 밀리지 않게. 완료를 풀면 다시 옮길 수 있다.
+  const locked = todo.completed;
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: todo.id,
-    disabled: overlay,
+    disabled: overlay || locked,
     data: { type: "todo", source: "calendar" } satisfies DraggedTodoData,
   });
 
@@ -156,7 +158,9 @@ export function CalendarBlock({
         {...attributes}
         {...listeners}
         className={cn(
-          "absolute z-[1] flex touch-none select-none flex-col justify-start overflow-hidden rounded-md py-[5px] pl-[9px] pr-[7px] hover:brightness-[0.98]",
+          "absolute z-[1] flex select-none flex-col justify-start overflow-hidden rounded-md py-[5px] pl-[9px] pr-[7px] hover:brightness-[0.98]",
+          // 끌 수 있을 때만 touch-none — 잠긴 블록 위에서는 모바일에서 손가락으로 캘린더를 스크롤할 수 있게
+          !locked && "touch-none",
           todo.completed && "opacity-50",
           isDragging && "z-20 opacity-40",
           compact && "flex-row items-center gap-1.5 py-0"
