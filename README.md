@@ -81,6 +81,32 @@ PARA마다 컨텍스트(회사 · 개인 · …)를 고르면, **지금 컨텍�
 **나중에 공부를 추가할 때**: 앱의 컨텍스트 관리에서 "공부" / `study` 추가 → PARA에서 공부 컨텍스트 고르기 →
 위 3 · 4를 **공부** 집중 모드로 복제하고 켜질 때 값만 `study`로. 코드 · DB 변경은 필요 없습니다.
 
+## 푸시 알림 · 앱 배지 — 할 일 시작 10분 전 (선택)
+
+홈 화면에 추가한 아이폰 웹앱(또는 데스크톱 브라우저)으로 **할 일 시작 10분 전** 알림을 보내고, 앱 아이콘 배지에
+**안 한 일 개수**(오늘 · 시작 시각 지남 · 미완료 · 지금 컨텍스트)를 띄웁니다([WEBAPP-PLAN.md](./WEBAPP-PLAN.md)).
+Supabase `pg_cron`이 1분마다 `/api/push/dispatch`를 부르고, 서버가 `web-push`로 보냅니다.
+
+1. VAPID 키 만들기 (한 번만): `npx web-push generate-vapid-keys` → Public Key / Private Key가 나옵니다.
+2. `.env.local`과 Vercel Environment Variables에 추가 (`SUPABASE_SECRET_KEY`도 필요) → Vercel은 **Redeploy**:
+   - `NEXT_PUBLIC_VAPID_PUBLIC_KEY`: Public Key
+   - `VAPID_PRIVATE_KEY`: Private Key
+   - `PUSH_DISPATCH_SECRET`: 아무 긴 임의 문자열(`openssl rand -hex 32`, 다른 비밀값과 다르게)
+3. Supabase **SQL Editor**에서 비밀값 두 개를 Vault에 넣기 (한 번만, 값은 본인 것으로):
+
+   ```sql
+   select vault.create_secret('https://your-app.vercel.app/api/push/dispatch', 'push_dispatch_url');
+   select vault.create_secret('<PUSH_DISPATCH_SECRET과 같은 값>', 'push_dispatch_secret');
+   ```
+
+4. 이어서 [`supabase/migrations/20260928_push_cron.sql`](./supabase/migrations/20260928_push_cron.sql) 실행
+   (`pg_cron` · `pg_net` 확장을 켜고 1분마다 호출 예약). 1~2분 뒤 파일 맨 아래 확인용 쿼리로 `status_code`가 200인지 확인.
+5. 아이폰: Safari로 앱 열기 → 공유 → **홈 화면에 추가** → 홈 화면 아이콘으로 열고 로그인 → 계정 메뉴 → **알림 켜기** → **테스트**.
+   테스트는 서버에서 실제 푸시를 보내므로, 알림이 오고 배지가 바뀌면 설정이 끝난 것입니다.
+
+"컨텍스트 바뀔 때 알림"(계정 메뉴 스위치, 기본 켬)이 켜져 있으면 집중 모드로 컨텍스트가 바뀔 때 "지금 회사 · 안 한 일 3개"
+알림이 와서 배지가 바로 맞춰집니다(iOS는 알림 없이 배지만 바꿀 수 없음).
+
 ## Google Drive 연동 설정 (Project/Area/Resource별 노트·자료, 선택)
 
 Project/Area/Resource 상세화면의 "자료" 탭에서 노트(마크다운)와 첨부 자료(PPT/PDF/시트 등)를

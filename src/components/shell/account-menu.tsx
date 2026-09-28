@@ -16,7 +16,7 @@ import {
   disablePush,
   enablePush,
   pushEnvironment,
-  showTestNotification,
+  sendTestPush,
   type PushState,
 } from "@/lib/push-client";
 
@@ -191,6 +191,18 @@ function NotificationSection() {
     }
   }
 
+  async function test() {
+    setBusy(true);
+    setError(null);
+    try {
+      await sendTestPush();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "알림을 보내지 못했어요.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const on = state === "on";
 
   return (
@@ -227,8 +239,9 @@ function NotificationSection() {
             <>
               <button
                 type="button"
-                onClick={() => void showTestNotification()}
-                className="flex h-7 items-center rounded-md bg-secondary px-2.5 text-[12.5px] font-medium hover:bg-black/10"
+                disabled={busy}
+                onClick={() => void test()}
+                className="flex h-7 items-center rounded-md bg-secondary px-2.5 text-[12.5px] font-medium hover:bg-black/10 disabled:opacity-60"
               >
                 테스트
               </button>

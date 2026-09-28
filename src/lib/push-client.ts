@@ -14,7 +14,7 @@ export type PushEnvironment =
   | "ios-needs-install"
   /** 이 브라우저는 웹 푸시 미지원 */
   | "unsupported"
-  /** 서버 설정(VAPID 공개키)이 아직 없음 — WEBAPP-PLAN.md 6단계 */
+  /** 서버 설정(VAPID 공개키)이 아직 없음 — README "푸시 알림 설정" */
   | "not-configured";
 
 export type PushState = "on" | "off" | "denied";
@@ -99,13 +99,11 @@ export async function disablePush(): Promise<PushState> {
   return "off";
 }
 
-/** 테스트 알림 — 서버 발송(6단계) 전이라 이 기기에서 서비스 워커로 바로 띄운다. 배지도 같이 확인. */
-export async function showTestNotification() {
-  const registration = await navigator.serviceWorker.ready;
-  await registration.showNotification("plan.0 테스트 알림", {
-    body: "이 기기에서 알림을 받을 수 있어요",
-    icon: "/icons/icon-192.png",
-    tag: "test",
-    data: { url: "/" },
-  });
+/** 테스트 알림 — 서버(`/api/push/test`)가 이 사용자의 모든 기기로 실제 푸시를 보낸다. 실패하면 사유를 던진다. */
+export async function sendTestPush() {
+  const response = await fetch("/api/push/test", { method: "POST" });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error ?? "알림을 보내지 못했어요.");
+  }
 }
