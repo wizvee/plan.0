@@ -344,7 +344,12 @@ export function ContainerDetailScreen({ kind, id, userId, userEmail, googleConne
       const tokenData = await tokenRes.json();
       if (!tokenRes.ok) throw new Error(tokenData.error ?? "액세스 토큰을 가져오지 못했습니다.");
 
-      const picked = await pickDriveFiles(tokenData.accessToken as string, apiKey, folderId);
+      const picked = await pickDriveFiles(
+        tokenData.accessToken as string,
+        apiKey,
+        tokenData.appId as string,
+        folderId
+      );
       if (picked.length === 0) return;
 
       const importRes = await fetch("/api/drive/import", {

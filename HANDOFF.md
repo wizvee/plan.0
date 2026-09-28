@@ -426,6 +426,15 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
       API" 활성화 + API 키 발급(HTTP 리퍼러 제한) 필요, README.md에 단계별로 정리해둠(사용자가
       아직 안 해봄 — 이 설정 전까지는 "가져오기" 버튼을 눌러도 에러 메시지만 뜸).
 
+25. **(2026-09-28 추가) "Drive에서 가져오기" 권한 에러 수정 — Picker `setAppId` 누락**: 사용자가
+    Picker로 구글 시트를 골랐더니 `The user has not granted the app 309998499567 write access to
+    the file ...` 에러. 원인: `drive.file` 스코프에서 Picker 선택으로 파일 권한을 앱에 부여하려면
+    `PickerBuilder.setAppId(<Cloud 프로젝트 번호>)`가 필수인데 빠져 있었음(없어도 Picker는 멀쩡히
+    뜨고 선택도 돼서 `/api/drive/import`의 `files.update`에서야 실패). 프로젝트 번호는 OAuth
+    클라이언트 ID 앞부분(`<번호>-....apps.googleusercontent.com`)과 같아서 `getPickerAppId()`
+    (google-drive.ts)로 서버에서 뽑아 `/api/drive/access-token`이 `appId`로 같이 내려줌 — 새
+    환경변수는 안 늘림.
+
 ## 지금 구현된 것 (기능 목록)
 
 - Todo List(전역 보관함, 사이드 패널) + Mon~Sun **시간 단위 캘린더 그리드** (0~24시, 스크롤 가능)

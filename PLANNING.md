@@ -433,7 +433,10 @@ PARA/
 - `src/lib/google-picker.ts` (클라이언트 전용) — Google Picker 로더 스크립트(`apis.google.com/js/api.js`)를
   동적으로 불러와 Picker를 띄우는 헬퍼. Picker는 npm 패키지가 없어서 구글이 제공하는 스크립트
   태그 방식 그대로 씀. 시작 위치를 그 컨테이너의 Drive 폴더로 제한(`DocsView.setParent`)하고
-  다중 선택을 켬.
+  다중 선택을 켬. **`setAppId(<Cloud 프로젝트 번호>)`가 필수** — 이게 없으면 Picker는 정상적으로
+  뜨고 선택도 되지만 고른 파일의 권한이 앱에 부여되지 않아 이후 API 호출이 "has not granted the
+  app ... access"로 실패한다(2026-09-28 수정). 프로젝트 번호는 OAuth 클라이언트 ID 앞부분과 같아서
+  서버가 `GOOGLE_CLIENT_ID`에서 뽑아 access token과 함께 내려준다.
 - `addFileToFolder`(google-drive.ts) + `POST /api/drive/import` — Picker로 고른 파일들을 이
   컨테이너 폴더의 자식으로 추가한다(`files.update`의 `addParents`). Picker에서 폴더 바깥을
   탐색해서 고르더라도 항상 이 폴더 안으로 들어오게 되어, "가져오기 = 이 프로젝트 자료가 된다"는

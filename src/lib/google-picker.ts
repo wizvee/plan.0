@@ -13,6 +13,7 @@ interface PickerDocsView {
 interface PickerBuilder {
   setOAuthToken: (token: string) => PickerBuilder;
   setDeveloperKey: (key: string) => PickerBuilder;
+  setAppId: (appId: string) => PickerBuilder;
   addView: (view: PickerDocsView) => PickerBuilder;
   enableFeature: (feature: unknown) => PickerBuilder;
   setCallback: (cb: (data: PickerResponse) => void) => PickerBuilder;
@@ -77,8 +78,15 @@ function loadPicker(): Promise<void> {
 }
 
 /** 지정한 Drive 폴더를 시작 위치로 Picker를 띄우고, 사용자가 고른 파일 목록을 돌려준다
- * (취소하면 빈 배열). 고르는 즉시 drive.file 스코프로 그 파일들에 대한 접근 권한이 생긴다. */
-export async function pickDriveFiles(accessToken: string, apiKey: string, folderId: string): Promise<PickedFile[]> {
+ * (취소하면 빈 배열). 고르는 즉시 drive.file 스코프로 그 파일들에 대한 접근 권한이 생긴다 —
+ * 단 `appId`(Cloud 프로젝트 번호)를 넘겨야만 그 권한이 이 앱에 묶인다. 빠뜨리면 Picker는 정상적으로
+ * 뜨고 선택도 되지만 이후 API 호출이 "has not granted the app ... access"로 실패한다. */
+export async function pickDriveFiles(
+  accessToken: string,
+  apiKey: string,
+  appId: string,
+  folderId: string
+): Promise<PickedFile[]> {
   await loadPicker();
   const picker = window.google!.picker;
 
@@ -91,6 +99,7 @@ export async function pickDriveFiles(accessToken: string, apiKey: string, folder
     const builder = new picker.PickerBuilder()
       .setOAuthToken(accessToken)
       .setDeveloperKey(apiKey)
+      .setAppId(appId)
       .addView(view)
       .enableFeature(picker.Feature.MULTISELECT_ENABLED)
       .setCallback((data: PickerResponse) => {

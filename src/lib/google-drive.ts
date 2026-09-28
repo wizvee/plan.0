@@ -43,6 +43,19 @@ export async function getAccessToken(refreshToken: string): Promise<string> {
   return token;
 }
 
+/** Google Picker의 `setAppId`에 넘길 앱 ID(= Cloud 프로젝트 번호). OAuth 클라이언트 ID가
+ * `<프로젝트 번호>-<해시>.apps.googleusercontent.com` 형식이라 그 앞부분을 그대로 쓴다 — 따로
+ * 환경변수를 늘리지 않으려고. drive.file 스코프에서는 이 값이 없으면 Picker로 파일을 골라도
+ * 앱에 접근 권한이 부여되지 않는다(PLANNING.md 9.9 참고). */
+export function getPickerAppId(): string {
+  const { clientId } = getAppOAuthClient();
+  const projectNumber = clientId.split("-")[0];
+  if (!/^\d+$/.test(projectNumber)) {
+    throw new Error("GOOGLE_CLIENT_ID에서 프로젝트 번호를 읽지 못했습니다.");
+  }
+  return projectNumber;
+}
+
 const KIND_FOLDER_NAME: Record<ParaKind, string> = {
   project: "1-Projects",
   area: "2-Areas",
