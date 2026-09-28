@@ -3,7 +3,7 @@
 작성 2026-09-28. 기존 문서(PLANNING / HANDOFF / DESIGN / FEATURES / SUBTASKS-PLAN)는 건드리지 않고 이 파일에만 적습니다.
 연결 시안: https://claude.ai/artifact/6vXMvW1raTc9Dhx9j25yNq (보드 ① 할 일 상세 — 회고 남기기 · ② PARA 상세 회고 탭)
 
-> **상태: 시안 컨펌 → 구현 완료 (2026-09-28).** 남은 것: 사용자가 마이그레이션 실행 + 실제 Supabase · Drive에서 확인(7번).
+> **상태: 시안 컨펌 → 구현 완료 → 마이그레이션 실행 · `main` 머지 (2026-09-28).** 남은 것: 실제 화면에서 확인(7번).
 
 ## 1. 무엇을 왜
 
@@ -166,7 +166,7 @@ export interface Reflection {
 
 ## 7. 확인 체크리스트 (배포 후 실제 화면에서)
 
-- [ ] SQL Editor에서 `supabase/migrations/20260928_todo_reflections.sql` 실행
+- [x] SQL Editor에서 `supabase/migrations/20260928_todo_reflections.sql` 실행
 - [ ] 완료된 할 일을 열면 회고 탭, 미완료는 하위 할 일 탭으로 열린다
 - [ ] 종류를 바꿔가며 Enter로 여러 개 추가, 새로고침해도 남아 있다 / 다른 기기에 실시간으로 뜬다
 - [ ] 프로젝트 회고 탭에 할 일 회고 + 직접 쓴 회고가 3열로 모인다, 출처를 누르면 그 할 일 상세

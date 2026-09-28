@@ -484,7 +484,7 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     - `useDismiss`가 Esc를 `preventDefault()`로 표시하고 상세 팝업은 `defaultPrevented`면 안 닫힘 — 팝업 안 메뉴에서 Esc를 누르면 메뉴만 닫힘.
     - **확인**: tsc · eslint · build + 가짜 Supabase(auth/rest 목 서버)에 붙인 실제 앱을 Playwright로 클릭 확인(탭 · 드롭다운 ·
       추가 · 할 일로 · 노트 편집기 열기 · 삭제 시 회고 제거 · 모바일). 실제 Supabase(RLS · Realtime) · Drive 저장은 확인 못 함.
-    - ⚠️ **사용자가 해야 할 일**: 배포 전에 Supabase SQL Editor에서 `supabase/migrations/20260928_todo_reflections.sql`만 실행.
+    - `supabase/migrations/20260928_todo_reflections.sql`은 사용자가 실행 완료 → `main`에 머지.
 
 ## 지금 구현된 것 (기능 목록)
 
@@ -627,7 +627,7 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
    새 프로젝트는 schema.sql → migrations/ 파일을 날짜순으로 실행.
    - `20260928_todo_subtasks.sql` — 하위 할 일 테이블 (SUBTASKS-PLAN.md 1단계) 실행 완료
    - `20260928_webapp_push.sql` — 컨텍스트 · 웹 푸시 테이블 (WEBAPP-PLAN.md 3단계) **실행 필요**
-   - `20260928_todo_reflections.sql` — 회고 테이블 (REFLECTIONS-PLAN.md) **실행 필요**
+   - `20260928_todo_reflections.sql` — 회고 테이블 (REFLECTIONS-PLAN.md) 실행 완료
 7. `/api/clip` 기능을 실제로 쓰려면 `SUPABASE_SECRET_KEY`/`CLIP_API_SECRET`/`CLIP_USER_ID` 세
    환경변수를 로컬(`.env.local`)과 Vercel 양쪽에 아직 등록 안 함 — README의 해당 섹션 참고해서
    설정하고 애플 단축어까지 만들어야 실제로 동작함. 코드/스키마는 준비 완료 상태.
