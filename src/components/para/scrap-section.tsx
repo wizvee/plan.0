@@ -1,6 +1,6 @@
 "use client";
 
-import { Link2, Plus } from "lucide-react";
+import { Check, Link2, Plus } from "lucide-react";
 
 import { TodoCard } from "@/components/todo-card";
 import { cn } from "@/lib/utils";
@@ -47,40 +47,47 @@ export function ScrapSection({
   onConvert,
 }: ScrapSectionProps) {
   return (
-    <div className="mt-6 flex flex-col">
-      <div className="mb-1.5 flex items-center justify-between">
-        <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">스크랩</span>
+    <section className="flex flex-col">
+      <div className="flex items-center gap-1.5 px-1 pb-1.5">
+        <h2 className="text-[13px] font-bold">스크랩</h2>
+        <span className="text-[13px] text-muted-foreground">{scraps.length}</span>
         {selectMode ? (
-          <button type="button" onClick={onCancelSelect} className="text-[12px] font-bold text-muted-foreground hover:text-foreground">
+          <button type="button" onClick={onCancelSelect} className="ml-auto h-[26px] rounded-md px-2 text-[13px] font-medium text-primary hover:bg-black/5">
             취소
           </button>
         ) : scraps.length > 0 ? (
-          <button type="button" onClick={onStartSelect} className="text-[12px] font-bold text-accent-foreground">
+          <button type="button" onClick={onStartSelect} className="ml-auto h-[26px] rounded-md px-2 text-[13px] font-medium text-primary hover:bg-black/5">
             노트로 만들기
           </button>
         ) : null}
       </div>
 
       {scraps.length === 0 ? (
-        <p className="py-3 text-[13.5px] text-muted-foreground">아직 매핑된 스크랩이 없습니다.</p>
+        <p className="rounded-xl border border-border bg-card px-4 py-3 text-[13px] text-muted-foreground">아직 연결된 스크랩이 없어요.</p>
       ) : selectMode ? (
-        <div className="flex flex-col divide-y divide-border/70">
-          {scraps.map((scrap) => {
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
+          {scraps.map((scrap, index) => {
             const checked = selectedIds.includes(scrap.id);
             return (
               <button
                 key={scrap.id}
                 type="button"
                 onClick={() => onToggleSelect(scrap.id)}
-                className="flex items-center gap-2.5 rounded-md px-1 py-2.5 text-left hover:bg-accent/40"
+                aria-pressed={checked}
+                className={cn(
+                  "flex min-h-[50px] w-full items-center gap-3 px-4 py-1.5 text-left hover:bg-black/[0.03]",
+                  index < scraps.length - 1 && "border-b border-black/[0.06]"
+                )}
               >
                 <span
                   className={cn(
-                    "flex size-4 shrink-0 items-center justify-center rounded-sm border",
-                    checked ? "border-primary bg-primary" : "border-muted-foreground"
+                    "flex size-[18px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] text-primary-foreground",
+                    checked ? "border-primary bg-primary" : "border-input"
                   )}
                   aria-hidden="true"
-                />
+                >
+                  {checked ? <Check className="size-3" strokeWidth={3} /> : null}
+                </span>
                 <Link2 className="size-[15px] shrink-0 text-muted-foreground" aria-hidden="true" />
                 <span className="min-w-0 flex-1 truncate text-[14px]">{scrap.content}</span>
               </button>
@@ -88,7 +95,7 @@ export function ScrapSection({
           })}
         </div>
       ) : (
-        <div className="flex flex-col divide-y divide-border/70">
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
           {scraps.map((scrap) => (
             <TodoCard
               key={scrap.id}
@@ -108,19 +115,21 @@ export function ScrapSection({
       )}
 
       {selectMode ? (
-        <div className="mt-3 flex items-center justify-between rounded-lg bg-accent px-3.5 py-2.5">
-          <span className="text-[13px] font-bold text-accent-foreground">{selectedIds.length}개 선택됨</span>
+        <div className="mt-2.5 flex items-center gap-2.5 rounded-xl bg-accent py-2.5 pl-4 pr-2.5">
+          <span className="flex-1 text-[13.5px] font-semibold text-accent-foreground">
+            {selectedIds.length}개 선택됨 · 하나의 Drive 노트로 합치고 원본은 정리돼요
+          </span>
           <button
             type="button"
             onClick={onPromote}
             disabled={selectedIds.length === 0 || promoting}
-            className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[13px] font-bold text-primary-foreground disabled:opacity-50"
+            className="flex h-[30px] items-center gap-1.5 rounded-[7px] bg-primary px-3.5 text-[13px] font-semibold text-primary-foreground disabled:opacity-50"
           >
             <Plus className="size-[14px]" />
             {promoting ? "만드는 중…" : "노트 만들기"}
           </button>
         </div>
       ) : null}
-    </div>
+    </section>
   );
 }

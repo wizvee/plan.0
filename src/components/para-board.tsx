@@ -6,6 +6,7 @@ import { Bookmark, Compass, Target } from "lucide-react";
 import { useTodos } from "@/lib/app-data/use-todos";
 import { useContainers } from "@/lib/app-data/use-containers";
 import { cn } from "@/lib/utils";
+import { CATEGORY_COLOR_VAR } from "@/lib/category";
 import { PARA_KIND_LABELS, PARA_KINDS, type ParaKind } from "@/lib/types";
 import { ContainerCard } from "@/components/para/container-card";
 import { AddContainerForm } from "@/components/para/add-container-form";
@@ -71,14 +72,14 @@ export function ParaBoard() {
           }));
 
   return (
-    <div className="mx-auto flex w-full max-w-[1100px] flex-col gap-5 px-4 py-6 sm:px-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="mx-auto flex w-full max-w-[1100px] flex-col gap-[22px] px-4 py-6 sm:px-9 sm:py-7">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <header className="flex flex-col gap-1">
-          <h1 className="text-[26px] font-bold tracking-tight">PARA</h1>
-          <p className="text-[14px] text-muted-foreground">할 일을 프로젝트·영역·리소스 중 하나에 매핑합니다</p>
+          <h1 className="text-[28px] font-bold tracking-[-0.5px]">PARA</h1>
+          <p className="text-[13.5px] text-muted-foreground">할 일을 프로젝트 · 영역 · 리소스 중 하나에 연결합니다</p>
         </header>
 
-        <div className="flex gap-0.5 rounded-md bg-border/60 p-0.5">
+        <div role="group" aria-label="종류" className="flex rounded-lg bg-black/[0.06] p-0.5">
           {PARA_KINDS.map((kind) => {
             const Icon = KIND_ICON[kind];
             const selected = kind === activeKind;
@@ -89,11 +90,11 @@ export function ParaBoard() {
                 onClick={() => selectKind(kind)}
                 aria-pressed={selected}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-sm px-3.5 py-1.5 text-[13px] font-semibold transition-colors",
-                  selected ? "bg-card shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  "flex h-[30px] items-center gap-1.5 rounded-md px-3.5 text-[13px] font-semibold transition-colors",
+                  selected ? "bg-card shadow-[0_1px_3px_rgba(0,0,0,0.12)]" : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <Icon className="size-[14px]" />
+                <Icon className="size-[14px]" strokeWidth={1.8} style={selected ? { color: `var(${CATEGORY_COLOR_VAR[kind]})` } : undefined} />
                 {PARA_KIND_LABELS[kind]}
               </button>
             );
@@ -101,7 +102,7 @@ export function ParaBoard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
         {containerRows.map((row) => (
           <ContainerCard
             key={row.id}

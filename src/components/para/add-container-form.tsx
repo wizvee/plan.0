@@ -20,11 +20,11 @@ export function AddContainerForm({ placeholder, onAdd }: { placeholder: string; 
         e.preventDefault();
         submit();
       }}
-      className="flex items-center gap-2.5 rounded-lg border border-dashed border-border px-4 py-3"
+      className="flex min-h-[96px] items-center gap-2.5 rounded-xl border-[1.5px] border-dashed border-black/15 px-4 py-3 focus-within:border-primary/50"
     >
       <button
         type="submit"
-        className="flex size-[21px] shrink-0 items-center justify-center text-muted-foreground disabled:opacity-40"
+        className="flex size-[21px] shrink-0 items-center justify-center text-primary disabled:text-muted-foreground"
         aria-label="추가"
         disabled={!value.trim()}
       >
@@ -34,7 +34,8 @@ export function AddContainerForm({ placeholder, onAdd }: { placeholder: string; 
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
-        className="h-auto flex-1 border-0 bg-transparent px-0 text-[15px] text-muted-foreground shadow-none placeholder:text-muted-foreground focus-visible:ring-0 focus:text-foreground"
+        aria-label={placeholder}
+        className="h-auto flex-1 border-0 bg-transparent px-0 text-[14px] shadow-none placeholder:text-muted-foreground focus-visible:ring-0"
       />
     </form>
   );

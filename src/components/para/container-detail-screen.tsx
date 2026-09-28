@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format, differenceInCalendarDays } from "date-fns";
-import { ArrowLeft, Bookmark, Compass, Target } from "lucide-react";
+import { Bookmark, ChevronLeft, Cloud, Compass, Inbox as InboxIcon, Target } from "lucide-react";
 import { useDroppable } from "@dnd-kit/core";
 
 import { useTodos } from "@/lib/app-data/use-todos";
@@ -11,6 +11,8 @@ import { useContainers } from "@/lib/app-data/use-containers";
 import { useTodoActions } from "@/lib/app-data/todo-actions";
 import type { DropTargetData } from "@/lib/dnd/drop-targets";
 import { cn } from "@/lib/utils";
+import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR } from "@/lib/category";
+import { useSession } from "@/lib/app-data/app-data-provider";
 import {
   PARA_KIND_LABELS,
   type ParaContainer,
@@ -47,6 +49,7 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
   const { todos, setTodos } = useTodos();
   const { projects, updateProject, areas, updateArea, resources, updateResource } = useContainers();
   const actions = useTodoActions();
+  const { googleConnected } = useSession();
 
   // 이 화면도 탭(Overview/Tasks/자료)을 URL(`?tab=`)에서 직접 계산한다 — 다른 화면에 갔다가
   // 뒤로가기를 눌러도 보고 있던 탭 그대로 돌아오게.
@@ -344,30 +347,41 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
     }
   }
 
+  const kindColor = `var(${CATEGORY_COLOR_VAR[kind]})`;
+  const kindTint = `var(${CATEGORY_TINT_VAR[kind]})`;
+  const summaryFacts =
+    kind === "project"
+      ? [{ label: "마감일", value: project!.dueDate ? formatDateLabel(project!.dueDate) : "미설정" }]
+      : [{ label: "만든 날", value: formatDateLabel(container.createdAt.slice(0, 10)) }];
+
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        "mx-auto w-full max-w-[720px] rounded-lg px-4 py-6 transition-shadow sm:px-6",
+        "mx-auto flex w-full max-w-[780px] flex-col rounded-xl px-4 pb-8 pt-4 transition-shadow sm:px-9",
         isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background"
       )}
     >
       <button
         type="button"
         onClick={() => router.push(`/para?kind=${kind}`)}
-        className="mb-4 flex items-center gap-1 text-[13px] font-medium text-muted-foreground hover:text-foreground"
+        className="-ml-1 flex h-[30px] items-center gap-0.5 self-start rounded-[7px] pl-0.5 pr-2 text-[14px] text-primary hover:bg-black/5"
       >
-        <ArrowLeft className="size-3.5" />
-        목록으로
+        <ChevronLeft className="size-[18px]" strokeWidth={2.2} />
+        {PARA_KIND_LABELS[kind]}
       </button>
 
-      <div className="mb-4 flex items-start gap-3">
-        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-          <Icon className="size-5" />
+      <div className="mb-4 mt-3.5 flex items-center gap-3.5">
+        <div
+          className="flex size-12 shrink-0 items-center justify-center rounded-xl"
+          style={{ backgroundColor: kindTint, color: kindColor }}
+        >
+          <Icon className="size-6" strokeWidth={1.8} />
         </div>
         {editingName ? (
           <input
             autoFocus
+            aria-label="이름"
             value={nameDraft}
             onChange={(e) => setNameDraft(e.target.value)}
             onBlur={commitName}
@@ -375,139 +389,109 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
               if (e.key === "Enter") commitName();
               if (e.key === "Escape") setEditingName(false);
             }}
-            className="-mx-1 mt-1.5 min-w-0 flex-1 rounded-md bg-transparent px-1 text-[22px] font-bold leading-tight tracking-tight outline-none ring-1 ring-primary"
+            className="-mx-1 min-w-0 flex-1 rounded-md bg-transparent px-1 text-[28px] font-bold tracking-[-0.5px] outline-none ring-1 ring-primary"
           />
         ) : (
           <h1
             onClick={startEditingName}
-            className="-mx-1 mt-1.5 cursor-pointer rounded-md px-1 text-[22px] font-bold leading-tight tracking-tight hover:bg-accent"
+            title="클릭해서 이름 수정"
+            className="-mx-1 cursor-text rounded-md px-1 text-[28px] font-bold tracking-[-0.5px] hover:bg-black/[0.04]"
           >
             {container.name}
           </h1>
         )}
       </div>
 
-      <div className="mb-5 flex flex-wrap items-center gap-6 rounded-lg border border-border bg-card px-4 py-3.5">
-        <div className="flex flex-col gap-1">
-          <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Status</span>
+      <div className="mb-[18px] flex flex-wrap items-stretch gap-y-3 rounded-xl bg-secondary px-1 py-3">
+        <div className="flex flex-col gap-[5px] px-4">
+          <span className="text-[11.5px] font-semibold text-muted-foreground">상태</span>
           <button
             type="button"
             onClick={toggleStatus}
+            title="눌러서 상태 전환"
             className={cn(
-              "w-fit rounded-sm px-2 py-0.5 text-[11.5px] font-bold",
-              statusDone ? "bg-secondary text-muted-foreground" : "bg-accent text-accent-foreground"
+              "h-6 self-start rounded-[5px] px-[9px] text-[12.5px] font-semibold",
+              statusDone ? "bg-black/[0.08] text-muted-foreground" : "text-foreground"
             )}
+            style={statusDone ? undefined : { backgroundColor: kindTint }}
           >
             {statusLabel}
           </button>
         </div>
+        {summaryFacts.map((fact) => (
+          <div key={fact.label} className="flex flex-col gap-[5px] border-l border-black/[0.08] px-4">
+            <span className="text-[11.5px] font-semibold text-muted-foreground">{fact.label}</span>
+            <span className="text-[14.5px] font-semibold leading-6 tabular-nums">{fact.value}</span>
+          </div>
+        ))}
         {kind === "project" ? (
-          <>
-            <div className="flex flex-col gap-1">
-              <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Due date</span>
-              <span className="text-[14.5px] font-semibold tabular-nums">{project!.dueDate ?? "미설정"}</span>
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Progress</span>
-              <span className="flex items-center gap-2">
-                <span className="h-[5px] w-[100px] overflow-hidden rounded-full bg-secondary">
-                  <span className="block h-full rounded-full bg-primary" style={{ width: `${progress}%` }} />
-                </span>
-                <span className="text-[14.5px] font-semibold tabular-nums">{progress}%</span>
+          <div className="flex flex-col gap-[5px] border-l border-black/[0.08] px-4">
+            <span className="text-[11.5px] font-semibold text-muted-foreground">진행률</span>
+            <span className="flex h-6 items-center gap-2">
+              <span className="h-1.5 w-[110px] overflow-hidden rounded-full bg-black/[0.1]">
+                <span className="block h-full rounded-full" style={{ width: `${progress}%`, backgroundColor: kindColor }} />
               </span>
-            </div>
-          </>
+              <span className="text-[14.5px] font-semibold tabular-nums">{progress}%</span>
+            </span>
+          </div>
         ) : null}
       </div>
 
-      <div className="mb-4 flex gap-5 border-b border-border">
+      <div role="tablist" aria-label="상세 탭" className="mb-4 flex self-start rounded-lg bg-black/[0.06] p-0.5">
         {(["overview", "tasks", "files"] as const).map((t) => (
           <button
             key={t}
             type="button"
-            onClick={() => (t === "files" ? void handleSelectFiles() : selectTab(t))}
+            role="tab"
+            aria-selected={tab === t}
+            onClick={() => (t === "files" && googleConnected ? void handleSelectFiles() : selectTab(t))}
             className={cn(
-              "relative pb-3 text-[14.5px] font-bold text-muted-foreground",
-              tab === t &&
-                "text-foreground after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:rounded-full after:bg-primary"
+              "h-[30px] min-w-[84px] rounded-md px-3.5 text-[13px] font-semibold text-muted-foreground",
+              tab === t && "bg-card text-foreground shadow-[0_1px_3px_rgba(0,0,0,0.12)]"
             )}
           >
-            {t === "overview" ? "Overview" : t === "tasks" ? "Tasks" : "자료"}
+            {t === "overview" ? "개요" : t === "tasks" ? "할 일" : "자료"}
           </button>
         ))}
       </div>
 
       {tab === "overview" ? (
-        <div className="flex flex-col">
-          <div className="flex items-center gap-4 border-b border-border py-3">
-            <span className="w-[130px] shrink-0 text-[14px] text-muted-foreground">Start date</span>
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
+          <OverviewRow label={kind === "project" ? "시작일" : "만든 날"}>
             {kind === "project" ? (
-              <input
-                type="date"
-                value={project!.startDate}
-                onClick={(e) => e.currentTarget.showPicker?.()}
-                onChange={(e) => {
-                  if (e.target.value) void updateProject(id, { startDate: e.target.value });
-                }}
-                className="-mx-1 cursor-pointer rounded-md bg-transparent px-1 text-[14px] tabular-nums text-foreground outline-none hover:bg-accent"
-              />
+              <DateInput value={project!.startDate} onChange={(v) => v && void updateProject(id, { startDate: v })} />
             ) : (
-              <span className="text-[14px] tabular-nums">{format(new Date(container.createdAt), "yyyy-MM-dd")}</span>
+              <span className="tabular-nums">{formatDateLabel(container.createdAt.slice(0, 10))}</span>
             )}
-          </div>
+          </OverviewRow>
           {kind === "project" ? (
             <>
-              <div className="flex items-center gap-4 border-b border-border py-3">
-                <span className="w-[130px] shrink-0 text-[14px] text-muted-foreground">Due date</span>
-                <input
-                  type="date"
-                  value={project!.dueDate ?? ""}
-                  onClick={(e) => e.currentTarget.showPicker?.()}
-                  onChange={(e) => void updateProject(id, { dueDate: e.target.value || null })}
-                  className={cn(
-                    "-mx-1 cursor-pointer rounded-md bg-transparent px-1 text-[14px] tabular-nums outline-none hover:bg-accent",
-                    !project!.dueDate && "text-muted-foreground"
-                  )}
-                />
-              </div>
-              <div className="flex items-center gap-4 border-b border-border py-3">
-                <span className="w-[130px] shrink-0 text-[14px] text-muted-foreground">Completion date</span>
-                <input
-                  type="date"
+              <OverviewRow label="마감일">
+                <DateInput value={project!.dueDate ?? ""} onChange={(v) => void updateProject(id, { dueDate: v || null })} />
+              </OverviewRow>
+              <OverviewRow label="완료일">
+                <DateInput
                   value={project!.completedAt ? project!.completedAt.slice(0, 10) : ""}
-                  onClick={(e) => e.currentTarget.showPicker?.()}
-                  onChange={(e) =>
-                    void updateProject(id, {
-                      completedAt: e.target.value ? new Date(e.target.value).toISOString() : null,
-                    })
-                  }
-                  className={cn(
-                    "-mx-1 cursor-pointer rounded-md bg-transparent px-1 text-[14px] tabular-nums outline-none hover:bg-accent",
-                    !project!.completedAt && "text-muted-foreground"
-                  )}
+                  onChange={(v) => void updateProject(id, { completedAt: v ? new Date(v).toISOString() : null })}
                 />
-              </div>
-              <div className="flex items-center gap-4 py-3">
-                <span className="w-[130px] shrink-0 text-[14px] text-muted-foreground">Days left</span>
-                <span className="text-[14px] tabular-nums">
-                  {project!.dueDate ? daysLeftLabel(project!.dueDate) : "—"}
-                </span>
-              </div>
+              </OverviewRow>
+              <OverviewRow label="남은 기간" last>
+                <span className="tabular-nums">{project!.dueDate ? daysLeftLabel(project!.dueDate) : "—"}</span>
+              </OverviewRow>
             </>
           ) : null}
         </div>
       ) : null}
 
       {tab === "tasks" ? (
-        <div className="flex flex-col">
-          <div className="flex flex-col divide-y divide-border/70">
-            {mappedTasks.length === 0 ? (
-              <p className="py-6 text-[14px] text-muted-foreground">
-                아직 매핑된 할 일이 없습니다. 왼쪽 사이드바(모바일은 하단 Todo 탭)의 &ldquo;할 일 보관함&rdquo;에서 이{" "}
-                {PARA_KIND_LABELS[kind]}로 드래그해보세요.
-              </p>
-            ) : (
-              mappedTasks.map((todo) => (
+        <div className="flex flex-col gap-[22px]">
+          <section>
+            <div className="flex items-baseline gap-1.5 px-1 pb-1.5">
+              <h2 className="text-[13px] font-bold">할 일</h2>
+              <span className="text-[13px] text-muted-foreground">{mappedTasks.length}</span>
+            </div>
+            <div className="overflow-hidden rounded-xl border border-border bg-card">
+              {mappedTasks.map((todo) => (
                 <TodoCard
                   key={todo.id}
                   todo={todo}
@@ -522,9 +506,14 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
                   onAssignPara={actions.assignPara}
                   onConvert={actions.convert}
                 />
-              ))
-            )}
-          </div>
+              ))}
+              <p className="flex min-h-[42px] items-center gap-2 px-4 text-[13px] text-muted-foreground">
+                <InboxIcon className="size-[15px] shrink-0" strokeWidth={1.8} />
+                {mappedTasks.length === 0 ? "아직 연결된 할 일이 없어요. " : ""}Inbox에서 끌어다 놓으면 이{" "}
+                {PARA_KIND_LABELS_KO[kind]}에 연결돼요
+              </p>
+            </div>
+          </section>
 
           <ScrapSection
             scraps={mappedNotes}
@@ -548,12 +537,29 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
         </div>
       ) : null}
 
-      {tab === "files" ? (
+      {tab === "files" && !googleConnected ? (
+        <div className="flex flex-col items-center gap-2.5 rounded-xl bg-secondary px-6 py-12 text-center">
+          <Cloud className="size-[34px] text-muted-foreground/70" strokeWidth={1.6} />
+          <span className="text-[16px] font-semibold">Google Drive가 연결되지 않았어요</span>
+          <span className="max-w-[360px] text-[13.5px] leading-normal text-muted-foreground">
+            연결하면 이 {PARA_KIND_LABELS_KO[kind]} 전용 폴더에 파일과 노트를 모아둘 수 있어요.
+          </span>
+          <a
+            href={`/api/auth/google?next=${encodeURIComponent(`/para/${kind}/${id}`)}`}
+            className="mt-1.5 flex h-8 items-center rounded-lg bg-primary px-4 text-[13.5px] font-semibold text-primary-foreground"
+          >
+            Google Drive 연결
+          </a>
+        </div>
+      ) : null}
+
+      {tab === "files" && googleConnected ? (
         <FilesTab
           mode={filesMode}
           loading={filesLoading}
           error={filesError}
           files={driveFiles}
+          folderLabel={`Drive › ${container.name}`}
           showUpload={showUpload}
           uploading={uploading}
           onToggleUpload={() => setShowUpload((v) => !v)}
@@ -575,5 +581,36 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
         />
       ) : null}
     </div>
+  );
+}
+
+const PARA_KIND_LABELS_KO: Record<ParaKind, string> = { project: "프로젝트", area: "영역", resource: "리소스" };
+
+/** "2026. 10. 15." */
+function formatDateLabel(dateKey: string): string {
+  return format(new Date(`${dateKey}T00:00:00`), "yyyy. M. d.");
+}
+
+function OverviewRow({ label, last, children }: { label: string; last?: boolean; children: ReactNode }) {
+  return (
+    <div className={cn("flex min-h-[46px] items-center px-4 text-[14px]", !last && "border-b border-black/[0.06]")}>
+      <span className="w-[140px] shrink-0 text-muted-foreground">{label}</span>
+      {children}
+    </div>
+  );
+}
+
+function DateInput({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  return (
+    <input
+      type="date"
+      value={value}
+      onClick={(e) => e.currentTarget.showPicker?.()}
+      onChange={(e) => onChange(e.target.value)}
+      className={cn(
+        "-mx-1 cursor-pointer rounded-md bg-transparent px-1 tabular-nums outline-none hover:bg-black/[0.04]",
+        !value && "text-muted-foreground"
+      )}
+    />
   );
 }
