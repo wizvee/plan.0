@@ -409,3 +409,38 @@ PARA/
 5. **Archive된 컨테이너의 Drive 폴더**: 완료/보관 처리된 프로젝트의 폴더를 그대로 둘지, Drive 안에서도
    별도 보관 폴더로 옮길지 — 8.7의 "완료/보관 처리" 열린 질문과 연결되는 사안이라 같이 정리 필요.
    (미해결, 현재는 archive해도 폴더를 그대로 둠)
+
+### 9.9 `drive.file` 스코프의 실사용 한계와 Google Picker 연동 — (2026-09-22, 구현 완료)
+
+**문제**: 사용자가 Drive 웹사이트에서 프로젝트 폴더에 직접 시트/PDF 파일을 넣었는데, 자료 탭에
+안 보이는 문제 발생. 버그가 아니라 `drive.file` 스코프(9.6에서 결정)의 근본적인 특성 — 이 스코프는
+**앱이 만들었거나, 사용자가 Google Picker로 명시적으로 연 파일**에만 접근을 허용한다. Drive
+웹사이트에서 사용자가 직접 폴더에 얹은 파일은 앱이 만들지도 열지도 않았으므로 `files.list`
+쿼리 자체에 아예 안 잡힌다.
+
+**검토한 선택지**:
+| 방법 | 검토 |
+|---|---|
+| 앱의 업로드 버튼으로 다시 올리기 | 코드 변경 없이 바로 됨. 하지만 항상 앱을 거쳐야 하고, 이미 Drive에 있는 파일과는 안 맞음 |
+| 스코프를 `drive.readonly`/`drive`로 확장 | 코드는 제일 간단하지만 "민감한(sensitive)" 스코프가 아니라 "제한된(restricted)" 스코프가 되어, 프로덕션 전환 시 Google 정식 보안 심사가 필요해짐 — 스코프 최소화 원칙(9.6)과 정면으로 배치돼서 기각 |
+| **Google Picker 연동** | **채택.** `drive.file` 스코프를 유지하면서, 사용자가 Picker로 기존 파일을 "고르는" 행위 자체가 그 파일에 대한 접근 권한을 부여한다(Google이 이 스코프를 위해 공식 지원하는 방식) |
+
+**구현**:
+- `src/lib/google-drive.ts`에 `getAccessToken(refreshToken)` 추가 — refresh token으로 단기(약
+  1시간) access token을 교환한다. **refresh token 자체는 절대 브라우저로 내려가지 않고**, 이
+  access token만 매번 새로 발급해서 클라이언트에 전달한다.
+- `GET /api/drive/access-token` — 로그인 + Drive 연결 확인 후 위 access token을 내려주는 라우트.
+- `src/lib/google-picker.ts` (클라이언트 전용) — Google Picker 로더 스크립트(`apis.google.com/js/api.js`)를
+  동적으로 불러와 Picker를 띄우는 헬퍼. Picker는 npm 패키지가 없어서 구글이 제공하는 스크립트
+  태그 방식 그대로 씀. 시작 위치를 그 컨테이너의 Drive 폴더로 제한(`DocsView.setParent`)하고
+  다중 선택을 켬.
+- `addFileToFolder`(google-drive.ts) + `POST /api/drive/import` — Picker로 고른 파일들을 이
+  컨테이너 폴더의 자식으로 추가한다(`files.update`의 `addParents`). Picker에서 폴더 바깥을
+  탐색해서 고르더라도 항상 이 폴더 안으로 들어오게 되어, "가져오기 = 이 프로젝트 자료가 된다"는
+  사용자 기대와 어긋나지 않게 함.
+- 자료 탭(`files-tab.tsx`)에 "Drive에서 가져오기" 버튼 추가 — 클릭 시 access token 발급 →
+  Picker 오픈 → 고른 파일 ID들을 `/api/drive/import`로 전달 → 목록 갱신.
+- 새 환경변수 `NEXT_PUBLIC_GOOGLE_API_KEY` 필요(Google Picker API용 API 키, HTTP 리퍼러로 제한).
+  기존 `GOOGLE_CLIENT_ID`/`SECRET`과 달리 브라우저에 노출되는 게 정상인 값 — README.md 참고.
+- Google Cloud Console에서 "Google Picker API" 활성화 + API 키 발급이 추가로 필요 (README.md에
+  단계별로 정리, 사용자가 직접 진행).

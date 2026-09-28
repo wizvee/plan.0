@@ -110,6 +110,7 @@
 | C9 | 자료 탭 — 파일 업로드 (드래그 앤 드롭 / 클릭) | `files-tab.tsx` |
 | C10 | 자료 탭 — 새 마크다운 노트 + 인앱 편집기 (제목, 태그/링크 속성, 본문, 저장) | `files-tab.tsx`, `api/drive/notes` |
 | C11 | 자료 탭 — md가 아닌 파일은 Drive에서 새 탭으로 열기 | `files-tab.tsx` |
+| C13 | 자료 탭 — **Drive에서 가져오기**: Google Picker로 기존 Drive 파일을 골라 이 컨테이너 폴더로 가져옴 (`NEXT_PUBLIC_GOOGLE_API_KEY` 필요) | `files-tab.tsx`, `lib/google-picker.ts`, `api/drive/access-token`, `api/drive/import` |
 | C12 | 상세 화면 전체가 드롭 영역 — 보관함에서 끌어오면 이 컨테이너로 매핑 | `container-detail-screen.tsx` |
 
 ## 9. 화면이 없는 기능

@@ -7,6 +7,7 @@ import {
   Cloud,
   ExternalLink,
   FileText,
+  FolderOpen,
   Image as ImageIcon,
   Plus,
   Presentation,
@@ -99,8 +100,10 @@ interface FilesTabProps {
   files: DriveFile[];
   showUpload: boolean;
   uploading: boolean;
+  importing: boolean;
   onToggleUpload: () => void;
   onUploadFile: (file: File) => void;
+  onImport: () => void;
   onOpenFile: (file: DriveFile) => void;
   onNewNote: () => void;
 
@@ -126,8 +129,10 @@ export function FilesTab({
   files,
   showUpload,
   uploading,
+  importing,
   onToggleUpload,
   onUploadFile,
+  onImport,
   onOpenFile,
   onNewNote,
   editingTitle,
@@ -240,12 +245,21 @@ export function FilesTab({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <span className="flex min-w-0 items-center gap-1.5 text-[12.5px] text-muted-foreground">
           <Cloud className="size-3.5 shrink-0 text-category-area" strokeWidth={1.8} />
           <span className="truncate">{folderLabel}</span>
         </span>
         <div className="flex-1" />
+        <button
+          type="button"
+          onClick={onImport}
+          disabled={importing}
+          className="flex h-[30px] shrink-0 items-center gap-1.5 rounded-[7px] border border-black/10 bg-card px-3 text-[13px] font-medium hover:bg-black/5 disabled:opacity-50"
+        >
+          <FolderOpen className="size-3.5" strokeWidth={1.8} />
+          {importing ? "가져오는 중…" : "Drive에서 가져오기"}
+        </button>
         <button
           type="button"
           onClick={onToggleUpload}

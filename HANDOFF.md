@@ -15,15 +15,17 @@
 ## 저장소 / 브랜치
 
 - repo: `wizvee/plan.0`
-- 지금까지 작업한 브랜치: `claude/weekly-todo-webapp-plan-hx1le7`
+- **프로덕션 브랜치: `main`** (2026-09-27부터. GitHub 기본 브랜치이자 Vercel Production Branch —
+  이전에는 `claude/weekly-todo-webapp-plan-hx1le7`라는 긴 이름이었는데, 사용자 요청으로 GitHub
+  기본 브랜치 설정 + Vercel Production Branch 설정을 둘 다 `main`으로 바꿈. 옛 브랜치는 당분간
+  그대로 남겨둠 — 필요 없어지면 사용자가 정리하기로 함.)
 - 로컬로 가져오기:
   ```bash
   git clone https://github.com/wizvee/plan.0.git
   cd plan.0
-  git checkout claude/weekly-todo-webapp-plan-hx1le7
+  git checkout main
   npm install
   ```
-- 이 브랜치를 계속 쓸지, main으로 머지/새 브랜치로 옮길지는 사용자가 로컬에서 정하면 됩니다 (아직 PR 안 만듦).
 
 ## 프로젝트가 무엇인지 (한 줄 요약)
 
@@ -408,6 +410,42 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
       그대로 확장한 개발 순서 때문(11~12번 결정). todos/컨테이너 상태를 전역으로 한 번만
       가져오게 리팩터하는 건 범위가 커서 **다음에 별도로 진행하기로 함** — 지금은 착수 안 함.
 
+24. **(2026-09-22 추가) `drive.file` 스코프의 진짜 한계 발견 + Google Picker 연동**: 사용자가
+    프로젝트를 만들고 Drive 폴더가 자동 생성된 뒤, 그 폴더에 Drive 웹사이트에서 직접 시트/PDF
+    파일을 넣었더니 앱의 자료 탭에서 안 보인다고 보고함. 원인은 버그가 아니라 `drive.file`
+    스코프의 정책 자체 — 이 스코프는 앱이 만들었거나 사용자가 Google Picker로 명시적으로 연
+    파일에만 접근을 허용해서, Drive 웹사이트에서 직접 얹은 파일은 API가 원천적으로 못 본다.
+    자세한 검토(스코프 확장 vs Picker vs 재업로드)와 구현 내용은 PLANNING.md 9.9 참고. 요약:
+    - `google-drive.ts`에 `getAccessToken`(refresh token → 단기 access token 교환,
+      **refresh token은 절대 브라우저로 안 나감**) + `addFileToFolder` 추가.
+    - `GET /api/drive/access-token`, `POST /api/drive/import` 두 라우트 추가.
+    - `src/lib/google-picker.ts`(클라이언트 전용) — Google Picker 로더 스크립트를 동적으로
+      불러와 그 컨테이너의 Drive 폴더를 시작 위치로 하는 다중 선택 Picker를 띄움.
+    - 자료 탭에 "Drive에서 가져오기" 버튼 추가(`files-tab.tsx`/`container-detail-screen.tsx`).
+    - 새 환경변수 `NEXT_PUBLIC_GOOGLE_API_KEY` 필요 — Google Cloud Console에서 "Google Picker
+      API" 활성화 + API 키 발급(HTTP 리퍼러 제한) 필요, README.md에 단계별로 정리해둠(사용자가
+      아직 안 해봄 — 이 설정 전까지는 "가져오기" 버튼을 눌러도 에러 메시지만 뜸).
+
+25. **(2026-09-27~28 추가) 공통 앱 셸 리팩토링 + 애플 스타일 리디자인**: 23번에서 미뤄둔 "사이드바를 화면마다
+    배선하는 구조"를 사용자가 직접 지적 — "사이드바는 모든 화면 공통인데 왜 화면별로 따로 그리려 하냐,
+    화면별로 달라질 수 있는 코드라면 리팩토링하라". 계획은 [REFACTORING-PLAN.md](./REFACTORING-PLAN.md)
+    (단계별 진행 상황 · 코드 대조 결과 포함), 시안은 https://claude.ai/artifact/EAnz3ttkMqj676NhTXjP7b.
+    - **1단계 데이터 단일화** `src/lib/app-data/` — `AppDataProvider` + `useTodos`/`useContainers`/`useTodoActions`/`useSession`.
+    - **2단계** `src/app/(app)/layout.tsx` 라우트 그룹 — 사용자 · Drive 연결 조회와 데이터 구독을 한 번만(화면 이동 시 재조회 없음).
+    - **3단계 DnD 단일화** `src/lib/dnd/` — `DndProvider` 하나 + `handle-drop.ts` 한 곳. 드롭 영역은 `data`로 자신을 선언.
+      동작 변화: PARA 화면에서 매핑된 Inbox 항목을 Inbox 안에서 끌면 매핑 해제 → 순서 변경.
+    - **4단계 셸 이전** `src/components/shell/` — 레이아웃에서 한 번만 렌더링, props 없음. **ESLint `no-restricted-imports`로
+      화면에서 셸 import 금지**(DESIGN.md 5번). 이제 화면별로 사이드바가 달라질 수 있는 구조 자체가 없음.
+    - **5단계 코드 대조** — FEATURES.md 기준 누락 없음 확인. 대조 중 Google OAuth 콜백의 오픈 리다이렉트(`state`를 검사 없이
+      redirect에 사용)를 발견해 앱 내부 경로만 허용하도록 수정.
+    - **6단계 리디자인** — 사용자 요구: ① 메뉴에 캘린더 · PARA · Inbox, ② 오른쪽 상단 드롭다운으로 월/주 전환,
+      ③ Inbox는 PC에서 팝업이 아니라 본문을 밀어내서 월요일 등 왼쪽 영역을 가리지 않게, ④ 애플 디자인 + 팔레트를 애플스럽게,
+      ⑤ 미니 캘린더는 애플 캘린더 방식(제목 클릭 팝오버). 260px 사이드바 → 76px 레일 + 밀어내는 Inbox 패널 + 계정 메뉴
+      (Drive 연결/재연결 · 로그아웃), 캘린더 툴바(`calendar-header.tsx`), PARA 목록/상세 재디자인, 팔레트 교체(토큰 이름 유지).
+      자세한 규칙은 DESIGN.md(전면 갱신).
+    - **확인 못 한 것**: 이 세션 환경엔 Supabase 키가 없어 브라우저에서 실제로 띄워보지 못함(타입 검사 · 린트 · `next build`만
+      통과). 드래그 앤 드롭 · 모바일 바텀시트 · Drive 재연결 복귀는 로컬에서 손으로 확인 필요 — REFACTORING-PLAN.md 5단계 목록 참고.
+
 ## 지금 구현된 것 (기능 목록)
 
 - Todo List(전역 보관함, 사이드 패널) + Mon~Sun **시간 단위 캘린더 그리드** (0~24시, 스크롤 가능)
@@ -440,26 +478,6 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
   저장. Tasks 탭 안 스크랩을 여러 개 골라 하나의 노트로 승격 가능, 노트는 옵시디언 Properties
   스타일의 링크형/태그형 속성을 지원 (PLANNING.md 9번, 20번 결정 참고)
 
-24. **(2026-09-27~28 추가) 공통 앱 셸 리팩토링 + 애플 스타일 리디자인**: 23번에서 미뤄둔 "사이드바를 화면마다
-    배선하는 구조"를 사용자가 직접 지적 — "사이드바는 모든 화면 공통인데 왜 화면별로 따로 그리려 하냐,
-    화면별로 달라질 수 있는 코드라면 리팩토링하라". 계획은 [REFACTORING-PLAN.md](./REFACTORING-PLAN.md)
-    (단계별 진행 상황 · 코드 대조 결과 포함), 시안은 https://claude.ai/artifact/EAnz3ttkMqj676NhTXjP7b.
-    - **1단계 데이터 단일화** `src/lib/app-data/` — `AppDataProvider` + `useTodos`/`useContainers`/`useTodoActions`/`useSession`.
-    - **2단계** `src/app/(app)/layout.tsx` 라우트 그룹 — 사용자 · Drive 연결 조회와 데이터 구독을 한 번만(화면 이동 시 재조회 없음).
-    - **3단계 DnD 단일화** `src/lib/dnd/` — `DndProvider` 하나 + `handle-drop.ts` 한 곳. 드롭 영역은 `data`로 자신을 선언.
-      동작 변화: PARA 화면에서 매핑된 Inbox 항목을 Inbox 안에서 끌면 매핑 해제 → 순서 변경.
-    - **4단계 셸 이전** `src/components/shell/` — 레이아웃에서 한 번만 렌더링, props 없음. **ESLint `no-restricted-imports`로
-      화면에서 셸 import 금지**(DESIGN.md 5번). 이제 화면별로 사이드바가 달라질 수 있는 구조 자체가 없음.
-    - **5단계 코드 대조** — FEATURES.md 기준 누락 없음 확인. 대조 중 Google OAuth 콜백의 오픈 리다이렉트(`state`를 검사 없이
-      redirect에 사용)를 발견해 앱 내부 경로만 허용하도록 수정.
-    - **6단계 리디자인** — 사용자 요구: ① 메뉴에 캘린더 · PARA · Inbox, ② 오른쪽 상단 드롭다운으로 월/주 전환,
-      ③ Inbox는 PC에서 팝업이 아니라 본문을 밀어내서 월요일 등 왼쪽 영역을 가리지 않게, ④ 애플 디자인 + 팔레트를 애플스럽게,
-      ⑤ 미니 캘린더는 애플 캘린더 방식(제목 클릭 팝오버). 260px 사이드바 → 76px 레일 + 밀어내는 Inbox 패널 + 계정 메뉴
-      (Drive 연결/재연결 · 로그아웃), 캘린더 툴바(`calendar-header.tsx`), PARA 목록/상세 재디자인, 팔레트 교체(토큰 이름 유지).
-      자세한 규칙은 DESIGN.md(전면 갱신).
-    - **확인 못 한 것**: 이 세션 환경엔 Supabase 키가 없어 브라우저에서 실제로 띄워보지 못함(타입 검사 · 린트 · `next build`만
-      통과). 드래그 앤 드롭 · 모바일 바텀시트 · Drive 재연결 복귀는 로컬에서 손으로 확인 필요 — REFACTORING-PLAN.md 5단계 목록 참고.
-
 ## 파일 맵
 
 ```
@@ -472,7 +490,7 @@ supabase/schema.sql            todos + projects/areas/resources 테이블 + RLS 
                                 재실행해도 안전)
 .env.local.example             필요한 환경변수 템플릿 (진짜 키는 절대 커밋 안 함)
 
-src/app/(app)/layout.tsx        로그인 후 화면 공통 레이아웃 — user · Drive 연결 1회 조회 → AppDataProvider → DndProvider → AppShell (24번)
+src/app/(app)/layout.tsx        로그인 후 화면 공통 레이아웃 — user · Drive 연결 1회 조회 → AppDataProvider → DndProvider → AppShell (25번)
 src/app/(app)/page.tsx          캘린더 화면 (WeekBoard 본문만)
 src/app/login/page.tsx          로그인 폼 (가입 전환 버튼은 주석 처리됨)
 src/app/api/clip/route.ts       공유하기 스크랩용 API — 비밀키 헤더 인증 → Todo List에 새 항목 insert
@@ -484,6 +502,8 @@ src/app/api/drive/folder/route.ts  컨테이너(project/area/resource) → Drive
 src/app/api/drive/files/route.ts   Drive 폴더 내 파일 목록 조회 / 바이너리 파일 업로드
 src/app/api/drive/notes/route.ts   마크다운 노트 파일 생성 / 내용 읽기(GET) / 내용 저장 + 리네임(PUT)
 src/app/api/drive/promote/route.ts 선택한 스크랩(들)을 노트로 승격(폴더 확보 + 마크다운 생성 + 원본 스크랩 삭제, 20번 결정)
+src/app/api/drive/access-token/route.ts  Google Picker용 단기 access token 발급 (24번 결정)
+src/app/api/drive/import/route.ts  Picker로 고른 기존 파일을 컨테이너 폴더의 자식으로 추가 (24번 결정)
 src/proxy.ts                    (구 middleware.ts) 인증 안 된 요청을 /login으로 리다이렉트 (/api/*는 제외)
 
 src/lib/supabase/client.ts      브라우저용 Supabase 클라이언트
@@ -493,7 +513,7 @@ src/lib/supabase/todos.ts       useSupabaseTodos 훅 — fetch + realtime 구독
 src/lib/supabase/containers.ts  useSupabaseProjects/Areas/Resources 훅 — projects/areas/resources 테이블 CRUD + realtime
 src/lib/types.ts                Todo/Project/Area/Resource 타입, TodoKind, ParaKind, isInboxVisible(), 요일 키, 라벨
 src/lib/category.ts             getParaCategory() + 카테고리별 CSS 변수 맵 (DESIGN.md 3번 참고)
-src/lib/app-data/               데이터 단일 출처: AppDataProvider, useTodos, useContainers, useTodoActions, useSession, useSignOut (24번)
+src/lib/app-data/               데이터 단일 출처: AppDataProvider, useTodos, useContainers, useTodoActions, useSession, useSignOut (25번)
 src/lib/dnd/                    DndProvider(앱에 1개), handle-drop.ts(드롭 처리 단일 구현), drop-targets.ts(드롭 data 타입),
                                 collision.ts(preferSpecificTargetCollision — 보관함과 다른 드롭 영역이 겹칠 때 우선순위)
 src/lib/shell-ui.tsx            셸 UI 상태(Inbox 열림 · localStorage 기억, "+"로 열고 입력창 포커스)
@@ -508,9 +528,10 @@ src/lib/google-drive.ts         Google Drive API 서버 전용 래퍼 — 컨테
 src/lib/google-account.ts      google_accounts 조회/저장 + API route 공용 가드 requireGoogleAuth() (18번 결정)
 src/lib/frontmatter.ts         노트 Properties용 YAML frontmatter 파서/직렬화기 (손으로 구현, 20번 결정)
 src/lib/drive-file.ts          Drive 파일 종류 판별(md/pdf/pptx/image) + 수정일 포맷 (클라이언트에서도 씀)
+src/lib/google-picker.ts       클라이언트 전용 Google Picker 헬퍼 — 기존 Drive 파일을 골라 접근 권한을 부여받음 (24번 결정)
 
 src/components/shell/           앱 셸 — 레이아웃에서만 렌더링, 화면에서 import 금지(ESLint). app-shell / app-rail(레일 · 모바일 탭) /
-                                inbox-panel(밀어내는 패널 · 바텀시트) / account-menu / drive-status-banner (24번, DESIGN.md 5번)
+                                inbox-panel(밀어내는 패널 · 바텀시트) / account-menu / drive-status-banner (25번, DESIGN.md 5번)
 src/components/week-board.tsx    캘린더 화면 본문 — URL에서 주/월 계산, 툴바 + 주/월 그리드 조립
 src/components/calendar-header.tsx 캘린더 툴바 — 제목 → 미니 캘린더 팝오버, 보기 드롭다운(주/월), +, 이전/오늘/다음
 src/components/week-calendar.tsx Mon~Sun 시간 단위 캘린더 그리드(요일 헤더 + 0~24시 스크롤 영역 + 현재 시각 라인)
