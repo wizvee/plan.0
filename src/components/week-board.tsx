@@ -37,25 +37,39 @@ export function WeekBoard() {
   const monthParam = searchParams.get("month");
   const displayMonth = useMemo(() => startOfMonth(parseDateKey(monthParam) ?? monday), [monthParam, monday]);
 
-  const [mobileDay, setMobileDay] = useState<DayKey>("mon");
-
   const weekKey = toDateKey(monday);
+  const weekEndKey = toDateKey(addDays(monday, 6));
   const todayKey = useTodayKey();
 
+  // 모바일 주 보기에서 보여줄 요일. 사용자가 고른 요일은 그 주에만 유효하고, 고르지 않았으면
+  // 오늘이 들어 있는 주는 오늘, 다른 주는 월요일을 보여준다.
+  const [pickedDay, setPickedDay] = useState<{ weekKey: string; day: DayKey } | null>(null);
+  const todayInWeek = todayKey !== null && todayKey >= weekKey && todayKey <= weekEndKey;
+  const mobileDay: DayKey =
+    pickedDay?.weekKey === weekKey
+      ? pickedDay.day
+      : todayInWeek
+        ? dayKeyOf(new Date(`${todayKey}T00:00:00`))
+        : "mon";
+
+  function pickDate(date: Date) {
+    setPickedDay({ weekKey: toDateKey(mondayOf(date)), day: dayKeyOf(date) });
+  }
+
   function goToWeek(date: Date) {
+    pickDate(date);
     router.replace(`/?week=${toDateKey(mondayOf(date))}`, { scroll: false });
   }
 
   const scheduledByDay = useMemo(() => {
     const grouped: Record<DayKey, Todo[]> = { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] };
-    const weekEndKey = toDateKey(addDays(monday, 6));
     for (const todo of todos) {
       if (todo.scheduledDate !== null && todo.scheduledDate >= weekKey && todo.scheduledDate <= weekEndKey) {
         grouped[dayKeyOf(new Date(`${todo.scheduledDate}T00:00:00`))].push(todo);
       }
     }
     return grouped;
-  }, [todos, weekKey, monday]);
+  }, [todos, weekKey, weekEndKey]);
 
   const replace = (url: string) => router.replace(url, { scroll: false });
   const weekUrl = (date: Date) => `/?week=${toDateKey(mondayOf(date))}`;
@@ -69,7 +83,10 @@ export function WeekBoard() {
         displayMonth={displayMonth}
         onPrev={() => replace(viewMode === "week" ? weekUrl(shiftWeeks(monday, -1)) : monthUrl(subMonths(displayMonth, 1)))}
         onNext={() => replace(viewMode === "week" ? weekUrl(shiftWeeks(monday, 1)) : monthUrl(addMonths(displayMonth, 1)))}
-        onToday={() => replace(viewMode === "week" ? weekUrl(new Date()) : monthUrl(new Date()))}
+        onToday={() => {
+          setPickedDay(null);
+          replace(viewMode === "week" ? weekUrl(new Date()) : monthUrl(new Date()));
+        }}
         onSelectView={(mode) =>
           replace(
             mode === "month"
@@ -78,7 +95,10 @@ export function WeekBoard() {
                 weekUrl(isSameMonth(displayMonth, new Date()) ? new Date() : displayMonth)
           )
         }
-        onSelectDate={(date) => replace(weekUrl(date))}
+        onSelectDate={(date) => {
+          pickDate(date);
+          replace(weekUrl(date));
+        }}
         onSelectMonth={(month) => replace(monthUrl(month))}
       />
 
@@ -94,7 +114,7 @@ export function WeekBoard() {
                   <button
                     key={day}
                     type="button"
-                    onClick={() => setMobileDay(day)}
+                    onClick={() => setPickedDay({ weekKey, day })}
                     aria-pressed={isSelected}
                     aria-label={format(date, "M월 d일")}
                     className="flex flex-col items-center gap-1 py-1"
