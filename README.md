@@ -60,6 +60,27 @@ Todo List 보관함에 새 항목이 생깁니다(제목 + 원본 링크 임베�
      `{ "title": 위에서 받은 이름, "url": 공유받은 URL, "memo": 위에서 받은 텍스트 }`.
 3. 사파리(또는 아무 앱)에서 링크를 공유 → 방금 만든 단축어 실행 → Todo List에 바로 뜹니다.
 
+## 컨텍스트 단축어 — 아이폰 집중 모드로 회사 / 개인 전환 (선택)
+
+PARA마다 컨텍스트(회사 · 개인 · …)를 고르면, **지금 컨텍스트에 속한 할 일만** 앱 배지와 알림에 뜹니다
+([WEBAPP-PLAN.md](./WEBAPP-PLAN.md)). 지금 컨텍스트는 iOS 단축어 자동화가 집중 모드에 맞춰 `/api/context`로 바꿉니다.
+
+1. `.env.local`과 Vercel Environment Variables에 추가 (위 스크랩과 같은 `SUPABASE_SECRET_KEY` · `CLIP_USER_ID`도 필요):
+   - `CONTEXT_API_SECRET`: 아무 긴 임의 문자열(예: `openssl rand -hex 32`). 스크랩용 `CLIP_API_SECRET`과 **다른 값**으로.
+2. 앱의 계정 메뉴 → **컨텍스트 관리…** 에서 키 확인 (처음엔 회사 `work`, 개인 `personal`(기본)).
+3. 아이폰 **단축어** 앱 → **자동화** 탭 → **+** → **집중 모드** → **업무** 선택 → **"켜질 때"** 만 체크 → **"즉시 실행"** → 다음
+   → **새로운 빈 자동화** → **"URL의 콘텐츠 가져오기"** 추가:
+   - URL: `https://your-app.vercel.app/api/context`
+   - 방법: **POST**
+   - 헤더: `Authorization` = `Bearer <CONTEXT_API_SECRET>`
+   - 요청 본문: **JSON**, 필드 추가 → 텍스트 → 키 `context`, 값 `work`
+4. 같은 방법으로 자동화를 하나 더 — **"꺼질 때"** 만 체크, 본문 값만 `default`(기본 컨텍스트 = 개인).
+5. 확인: 업무 집중 모드를 켜면 앱 계정 메뉴에 "지금 회사"가, 레일 아바타 아래에 "회사"가 보입니다.
+   값이 틀리면 응답에 사용 가능한 키 목록이 옵니다(단축어 편집에서 "결과 보기"로 확인).
+
+**나중에 공부를 추가할 때**: 앱의 컨텍스트 관리에서 "공부" / `study` 추가 → PARA에서 공부 컨텍스트 고르기 →
+위 3 · 4를 **공부** 집중 모드로 복제하고 켜질 때 값만 `study`로. 코드 · DB 변경은 필요 없습니다.
+
 ## Google Drive 연동 설정 (Project/Area/Resource별 노트·자료, 선택)
 
 Project/Area/Resource 상세화면의 "자료" 탭에서 노트(마크다운)와 첨부 자료(PPT/PDF/시트 등)를
