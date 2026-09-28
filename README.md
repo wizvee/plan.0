@@ -1,4 +1,4 @@
-# 주간 Todo Planner
+# plan.0
 
 개인용 주간 할 일 관리 웹앱. 기획 배경과 전체 설계는 [PLANNING.md](./PLANNING.md) 참고.
 

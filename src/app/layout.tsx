@@ -8,8 +8,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "주간 Todo Planner",
-  description: "개인용 주간 할 일 관리 웹앱",
+  title: "plan.0",
+  description: "개인용 할 일 · 캘린더 · PARA 관리 웹앱",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
