@@ -107,6 +107,7 @@ src/components/subtask/subtask-list.tsx      체크리스트 + "하위 할 일 �
 - 사용자에게 SQL 재실행 요청. **이 단계가 끝나야 2단계 이후를 실제로 확인할 수 있다.**
 
 ### 2단계 — 데이터 계층
+> ✅ 완료 (2026-09-28) — `types.ts`(Subtask · SubtaskProgress), `lib/supabase/subtasks.ts`, `app-data/use-subtasks.ts` · `subtask-actions.ts`, `AppDataProvider`에 `subtasks` 스토어, `todoActions.remove`에서 로컬 하위 정리. tsc · eslint · build 통과. 화면 변경 없음.
 - `types.ts`에 `Subtask` · `SubtaskProgress`.
 - `lib/supabase/subtasks.ts`: `todos.ts`와 같은 모양(조회 1회 + `postgres_changes` 채널 `subtasks-${userId}` + 낙관적 업데이트, 실패 시 되돌림).
   - DELETE 이벤트는 `old.id`만 오므로 id로 제거(기존 todos와 동일).

@@ -53,6 +53,26 @@ export interface Todo {
 }
 
 /**
+ * 할 일 하나 아래의 체크리스트 항목(한 단계만). 날짜 · PARA 없이 내용 · 완료 · 순서만 가진다.
+ * `Todo`에 넣지 않고 따로 구독해서 `todoId`로 묶는다 — 하위 체크 때문에 할 일 목록 · 드래그 · 정렬이
+ * 다시 계산되지 않게. (SUBTASKS-PLAN.md)
+ */
+export interface Subtask {
+  id: string;
+  todoId: string;
+  content: string;
+  completed: boolean;
+  position: number;
+  createdAt: string;
+}
+
+/** 하위 할 일 진행률. total이 0이면 진행률 UI를 보여주지 않는다. */
+export interface SubtaskProgress {
+  done: number;
+  total: number;
+}
+
+/**
  * 이 할 일/노트가 Todo List 보관함(Inbox)에 보여야 하는지. 할 일은 캘린더에 배정만 안 됐으면
  * PARA 매핑 여부와 무관하게 항상 보이지만(배지로 표시), 노트는 PARA 어딘가에 매핑되는 순간
  * 그 컨테이너의 Notes 탭으로 "이동"한 것으로 취급해 보관함에서는 사라진다.
