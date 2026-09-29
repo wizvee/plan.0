@@ -134,10 +134,13 @@ export function useSupabaseProjects(userId: string) {
     [supabase]
   );
 
+  /** 삭제가 성공한 뒤에 로컬에서 뺀다(낙관적으로 빼면 실패해도 삭제 확인 창이 사라진다). 성공 여부를 돌려준다. */
   const removeProject = useCallback(
-    async (id: string) => {
+    async (id: string): Promise<boolean> => {
+      const { error } = await supabase.from("projects").delete().eq("id", id);
+      if (error) return false;
       setProjects((prev) => prev.filter((p) => p.id !== id));
-      await supabase.from("projects").delete().eq("id", id);
+      return true;
     },
     [supabase]
   );
@@ -251,10 +254,13 @@ function useSupabaseContainerTable(table: "areas" | "resources", userId: string)
     [supabase, table]
   );
 
+  /** 삭제가 성공한 뒤에 로컬에서 뺀다(낙관적으로 빼면 실패해도 삭제 확인 창이 사라진다). 성공 여부를 돌려준다. */
   const removeItem = useCallback(
-    async (id: string) => {
+    async (id: string): Promise<boolean> => {
+      const { error } = await supabase.from(table).delete().eq("id", id);
+      if (error) return false;
       setItems((prev) => prev.filter((c) => c.id !== id));
-      await supabase.from(table).delete().eq("id", id);
+      return true;
     },
     [supabase, table]
   );

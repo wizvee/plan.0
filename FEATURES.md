@@ -124,6 +124,10 @@
 | C15 | **회고 탭(Project만, `?tab=retro`)** — 프로젝트에 직접 쓰기 + 매핑된 할 일들의 회고를 잘한 점 / 아쉬운 점 / 다음엔 3열로. 출처 할 일을 누르면 그 할 일 상세 | `reflection/project-retro-tab.tsx`, `lib/app-data/use-reflections.ts` |
 | C16 | 회고 탭 — "다음엔" 항목 **할 일로**: Inbox에 이 프로젝트로 매핑된 할 일 생성, "Inbox에 추가됨" 표시(그 할 일을 지우면 다시 가능) | `project-retro-tab.tsx` |
 | C17 | 회고 탭 — **회고 노트로 저장**: 종류별 마크다운을 채운 새 노트를 자료 탭 편집기로 열기(Drive 연결 시) | `project-retro-tab.tsx`, `lib/reflection.ts` `buildRetroMarkdown` |
+| C18 | 할 일 탭 맨 위 **새 할 일** 줄 — 이 컨테이너에 매핑된 할 일 생성(날짜 없음 → Inbox에도 보임), Enter 연속 입력 · Esc 취소. 미완료는 최근 것이 위 | `para/add-mapped-todo-row.tsx`, `todo-actions.ts` `addToContainer` |
+| C19 | 이름 옆 **`···` 메뉴** — 이름 바꾸기 · 완료로 표시(보관하기) · 삭제 | `para/container-menu.tsx` |
+| C20 | **삭제** — 확인 창에서 기본 "함께 삭제"(매핑된 할 일 · 스크랩 · 하위 · 회고 삭제 + Drive 폴더는 Drive 휴지통) 또는 "연결만 끊기". Drive 실패 시 다시 시도 / 폴더는 두고 삭제 | `para/delete-container-dialog.tsx`, `lib/app-data/container-actions.ts`, `api/drive/folder` `DELETE` |
+| C21 | 삭제됐거나 없는 컨테이너 주소 → "찾을 수 없어요" + 목록으로 | `container-detail-screen.tsx` |
 
 ## 9. 화면이 없는 기능
 

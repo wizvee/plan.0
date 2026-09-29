@@ -490,6 +490,22 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     `useDraggable`을 `todo.completed`면 `disabled` — 끝난 일정이 실수로 다른 날로 밀리지 않게. 완료를 풀면 다시 옮길 수 있다.
     잠긴 블록은 `touch-none`도 빼서 모바일에서 그 위로 캘린더를 스크롤할 수 있음. 길이 조절(아래 모서리)·상세 열기·완료 체크는 그대로.
 
+30. **(2026-09-28 추가) 모바일 주 보기 기본 요일 = 오늘**: 이번 주를 열면 월요일 대신 오늘이 선택된다(다른 주는 월요일).
+    고른 요일은 그 주에만 유효, 미니 캘린더/월 보기에서 날짜를 누르면 그 요일, `오늘` 버튼은 오늘로(`week-board.tsx`).
+
+31. **(2026-09-29 추가) PARA 삭제 · 상세에서 할 일 추가**: 사용자 요청 — 한 번 만든 PARA를 지울 수 없고, 상세에서 할 일을
+    못 만들어 불편. 시안 https://claude.ai/artifact/EWAVSDna7Zty2FzGLD2Azb 2차 컨펌 → 계획 [PARA-MANAGE-PLAN.md](./PARA-MANAGE-PLAN.md) → 구현.
+    - **합의 규칙**: 추가 줄은 할 일 목록 **맨 위**(미완료는 최신순으로 바뀜). 삭제 입구는 **상세 `···` 메뉴에만**. 삭제 기본값은
+      **함께 삭제** — 매핑된 할 일 · 스크랩(하위 · 회고 cascade) + **Drive 폴더를 Drive 휴지통으로**(30일 복구 가능). "연결만 끊기"를
+      고르면 할 일 · 스크랩 · Drive 폴더가 남는다. 프로젝트 회고는 어느 쪽이든 삭제.
+    - **순서**(`lib/app-data/container-actions.ts`): ① Drive 휴지통(`DELETE /api/drive/folder` — 폴더 id는 서버가 컨테이너 행에서
+      읽음) → ② 매핑된 할 일 삭제 → ③ 컨테이너 삭제. 앞 단계가 실패하면 멈춘다. Drive 실패면 확인 창에 다시 시도 / "Drive 폴더는 두고 삭제".
+      컨테이너 · 매핑된 할 일 삭제는 낙관적이지 않음(성공 후 로컬 반영) — 실패해도 확인 창이 오류와 함께 남도록.
+    - DB 마이그레이션 없음(기존 FK: todos 매핑 set null, 프로젝트 회고 · 하위 · 할 일 회고 cascade).
+    - **확인**: tsc · eslint · build + 가짜 Supabase(auth/rest 목)에 붙인 실제 앱을 Playwright로 35개 항목 클릭 확인(추가 · Esc ·
+      Inbox 노출 · 메뉴 · 기본값 · Drive 실패 → 두고 삭제 · 연결만 끊기 · 빈 컨테이너 · DB 실패 후 재시도 · 없는 주소 · 모바일).
+      **실제 Supabase(RLS · Realtime)와 실제 Drive 휴지통 이동은 확인 못 함** — 이 환경에 Google 자격 증명이 없어 Drive 성공 경로는 미확인.
+
 ## 지금 구현된 것 (기능 목록)
 
 - Todo List(전역 보관함, 사이드 패널) + Mon~Sun **시간 단위 캘린더 그리드** (0~24시, 스크롤 가능)
@@ -602,6 +618,10 @@ src/components/add-todo-form.tsx  할 일/노트 추가 입력 행 (토글로 �
 src/components/para-board.tsx   PARA 목록 화면 본문 — 세그먼트 컨트롤 + 컨테이너 카드 그리드
 src/components/para/container-card.tsx        Project/Area/Resource 카드 (droppable, 클릭 시 상세로 이동)
 src/components/para/add-container-form.tsx    Project/Area/Resource 생성 입력 행 (Notes 탭의 "새 노트 추가"에도 재사용)
+src/components/para/add-mapped-todo-row.tsx   PARA 상세 할 일 목록 맨 위 "새 할 일" 입력 줄 (31번)
+src/components/para/container-menu.tsx        PARA 상세 이름 옆 ··· 메뉴 (이름 바꾸기 · 상태 · 삭제) (31번)
+src/components/para/delete-container-dialog.tsx  PARA 삭제 확인 창 — 함께 삭제(기본) / 연결만 끊기, body 포털 (31번)
+src/lib/app-data/container-actions.ts         PARA 삭제의 단일 구현 — Drive 휴지통 → 할 일 → 컨테이너 순서 (31번)
 src/components/para/container-detail-screen.tsx  상세 화면 (헤더 + 요약 줄 + Overview/Tasks/자료 탭, 20번 결정)
 src/components/para/scrap-section.tsx         Tasks 탭 안 "스크랩" 섹션 — 선택 모드 + 노트 승격 버튼 (20번 결정)
 src/components/para/files-tab.tsx             자료 탭 — 파일 목록/업로드/새 노트 + 인앱 마크다운 에디터(Properties 포함) (20번 결정)

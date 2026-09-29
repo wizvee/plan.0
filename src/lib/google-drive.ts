@@ -165,6 +165,19 @@ export async function renameFile(refreshToken: string, fileId: string, name: str
   await drive.files.update({ fileId, requestBody: { name } });
 }
 
+/** 파일/폴더를 Drive 휴지통으로 옮긴다 — 완전 삭제가 아니라서 30일 안에 Drive에서 복구할 수 있다.
+ * 폴더를 휴지통에 넣으면 안의 파일도 같이 들어간다. 이미 없는 파일(404)이면 옮길 것도 없으니 성공으로 본다. */
+export async function trashFile(refreshToken: string, fileId: string): Promise<void> {
+  const drive = getDrive(refreshToken);
+  try {
+    await drive.files.update({ fileId, requestBody: { trashed: true } });
+  } catch (err) {
+    const status = (err as { code?: unknown; status?: unknown }).code ?? (err as { status?: unknown }).status;
+    if (status === 404 || status === "404") return;
+    throw err;
+  }
+}
+
 /** Picker로 고른 기존 파일을 이 컨테이너 폴더의 자식으로 추가한다(기존 위치는 그대로 두고 추가만 함) —
  * drive.file 스코프에서 앱이 만들지 않은 파일에 접근하려면 사용자가 Picker로 직접 골라야 하고,
  * 그렇게 고른 파일이라도 이 폴더의 자식이어야 파일 목록(listFiles)에 나타난다. */
