@@ -1,6 +1,7 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
+import { format } from "date-fns";
 
 import { InlineText } from "@/components/inline-text";
 import { cn } from "@/lib/utils";
@@ -20,9 +21,11 @@ interface ContainerCardProps {
   onClick: () => void;
   /** 기본이 아닌 컨텍스트 이름(회사 · 공부 …) — 있으면 이름 옆에 작은 칩 */
   contextName?: string;
+  /** Project 전용 — 시작일 ~ 종료일(yyyy-MM-dd). 종료일이 없으면 null(공란) */
+  period?: { start: string; end: string | null };
 }
 
-export function ContainerCard({ kind, id, name, statusLabel, statusDone, count, progress, onClick, contextName }: ContainerCardProps) {
+export function ContainerCard({ kind, id, name, statusLabel, statusDone, count, progress, onClick, contextName, period }: ContainerCardProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: `para:${kind}:${id}`,
     data: { type: "para-container", kind, id } satisfies DropTargetData,
@@ -39,20 +42,35 @@ export function ContainerCard({ kind, id, name, statusLabel, statusDone, count, 
       onKeyDown={(e) => {
         if (e.key === "Enter") onClick();
       }}
-      style={{ borderTopColor: statusDone ? undefined : colorVar }}
       className={cn(
-        "flex cursor-pointer flex-col gap-3 rounded-xl border border-t-[3px] border-border bg-card px-4 pb-3.5 pt-4 transition-shadow hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)]",
+        "relative flex cursor-pointer flex-col gap-3 rounded-[4px] border border-border bg-card px-4 pb-3.5 pt-[17px] transition-shadow hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)]",
         statusDone && "opacity-60",
         isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background"
       )}
     >
-      <div className="flex min-w-0 items-center gap-2">
-        <span className="min-w-0 flex-1 truncate text-[15.5px] font-semibold tracking-[-0.2px]">
-          <InlineText text={name} />
-        </span>
-        {contextName ? (
-          <span className="shrink-0 rounded-[5px] bg-black/[0.06] px-[7px] py-0.5 text-[11.5px] font-semibold text-foreground/80">
-            {contextName}
+      {/* 캘린더 블록의 CategoryBar와 같은 방식 — 모서리를 따라 휘지 않도록 안쪽으로 3px 띄운 가로 막대 */}
+      <span
+        aria-hidden="true"
+        className={cn(
+          "pointer-events-none absolute left-[3px] right-[3px] top-[3px] h-[3px] rounded-[2px]",
+          statusDone && "bg-black/[0.15]"
+        )}
+        style={statusDone ? undefined : { backgroundColor: colorVar }}
+      />
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="min-w-0 flex-1 truncate text-[15.5px] font-semibold tracking-[-0.2px]">
+            <InlineText text={name} />
+          </span>
+          {contextName ? (
+            <span className="shrink-0 rounded-[5px] bg-black/[0.06] px-[7px] py-0.5 text-[11.5px] font-semibold text-foreground/80">
+              {contextName}
+            </span>
+          ) : null}
+        </div>
+        {period ? (
+          <span className="text-[12.5px] tabular-nums text-muted-foreground">
+            {formatPeriodDate(period.start)} – {period.end ? formatPeriodDate(period.end) : ""}
           </span>
         ) : null}
       </div>
@@ -78,4 +96,10 @@ export function ContainerCard({ kind, id, name, statusLabel, statusDone, count, 
       ) : null}
     </div>
   );
+}
+
+/** 올해면 "9월 1일", 다른 해면 "2025년 9월 1일" */
+function formatPeriodDate(dateKey: string): string {
+  const date = new Date(`${dateKey}T00:00:00`);
+  return format(date, date.getFullYear() === new Date().getFullYear() ? "M월 d일" : "yyyy년 M월 d일");
 }

@@ -99,7 +99,7 @@
 | # | 기능 | 위치 |
 |---|---|---|
 | P1 | Project / Area / Resource 세그먼트 전환 (`?kind=`) | `para-board.tsx` |
-| P2 | 컨테이너 카드 그리드 — 종류별 색 상단 보더, 상태, 할 일 개수, 진행률(Project) | `container-card.tsx` |
+| P2 | 컨테이너 카드 그리드 — 시작일 순 정렬, 종류별 색 위쪽 막대, 기간(Project: 시작일 – 마감일), 상태, 할 일 개수, 진행률(Project) | `container-card.tsx` · `para-board.tsx` |
 | P3 | 새 컨테이너 만들기 | `add-container-form.tsx` |
 | P4 | 카드 클릭 → 상세 화면 | `para-board.tsx` |
 | P5 | 보관함 항목을 카드로 드래그해 매핑 (I9) | `para-board.tsx` |
