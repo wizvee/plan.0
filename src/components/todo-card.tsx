@@ -67,7 +67,7 @@ export function TodoCard({
   const isOverdue = scheduledDate ? !todo.completed && isBefore(scheduledDate, startOfDay(new Date())) : false;
   const { progressOf } = useSubtasks();
   // 노트는 하위 할 일 UI가 없다 (노트로 바꿔도 데이터는 남아 있지만 숨김)
-  const progress = todo.kind === "task" ? progressOf(todo.id) : { done: 0, total: 0 };
+  const progress = todo.kind === "task" ? progressOf(todo.id) : { done: 0, total: 0, carried: 0 };
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: todo.id,

@@ -124,6 +124,8 @@ AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBann
 - **하위 할 일 진행률**(SUBTASKS-PLAN.md): 하위가 0개면 아무것도 그리지 않는다. 목록 카드 = 13px 링 + `2/4`(`SubtaskProgress`),
   주 보기 블록 = 제목 옆 `2/4` + 바닥 3px 바 + 남는 높이만큼 하위 목록, 월 보기 = `2/4` 텍스트만, 상세 팝업 = `2/4 · %` + 4px 바 +
   체크리스트(`SubtaskList`). 체크리스트를 다른 곳에 넣을 때도 `SubtaskList`를 재사용하고 새로 만들지 않는다.
+- **하위 할 일 넘김**(CARRY-OVER-PLAN.md): 넘긴 항목은 체크박스 대신 회색 원 안 `ArrowRight`, 취소선 없이 보조 텍스트 색
+  (취소선 = 완료, 화살표 = 넘김). 주 보기 블록에선 작은 화살표. 진행률은 분모에만 넣는다(3/4).
 - **할 일 상세 팝업**: 머리(체크 · 제목 · 일정 · PARA)와 바닥(노트로 전환 · 삭제)은 고정, 가운데는 세그먼트 탭
   (하위 할 일 · 회고 · 메모·URL). 탭 이름에 내용 표시(`2/4` · 개수 · 점), 탭 본문 높이 고정. 새 항목은 탭으로 추가한다.
 - **회고**(REFLECTIONS-PLAN.md): 종류는 `ReflectionKindIcon`(틴트 원 + lucide `ThumbsUp`/`ThumbsDown`/`Lightbulb`), 색은

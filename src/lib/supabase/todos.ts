@@ -61,10 +61,14 @@ type UpdatablePatch = Partial<
   >
 >;
 
-interface NewItemMapping {
+/** 새 항목의 PARA 매핑 · 캘린더 배치. 비우면 Inbox에 매핑 없이 들어간다. */
+interface NewItemFields {
   projectId?: string | null;
   areaId?: string | null;
   resourceId?: string | null;
+  scheduledDate?: string | null;
+  startMinutes?: number | null;
+  durationMinutes?: number | null;
 }
 
 export function useSupabaseTodos(userId: string) {
@@ -111,7 +115,7 @@ export function useSupabaseTodos(userId: string) {
 
   /** 새 항목을 만들고 그 id를 돌려준다(빈 내용이거나 저장에 실패하면 undefined). */
   const addItem = useCallback(
-    async (content: string, position: number, kind: TodoKind, mapping?: NewItemMapping): Promise<string | undefined> => {
+    async (content: string, position: number, kind: TodoKind, fields?: NewItemFields): Promise<string | undefined> => {
       const trimmed = content.trim();
       if (!trimmed) return undefined;
 
@@ -124,17 +128,17 @@ export function useSupabaseTodos(userId: string) {
           id,
           content: trimmed,
           kind,
-          scheduledDate: null,
+          scheduledDate: fields?.scheduledDate ?? null,
           completed: false,
           position,
           createdAt: new Date().toISOString(),
-          startMinutes: null,
-          durationMinutes: null,
+          startMinutes: fields?.startMinutes ?? null,
+          durationMinutes: fields?.durationMinutes ?? null,
           url: null,
           memo: null,
-          projectId: mapping?.projectId ?? null,
-          areaId: mapping?.areaId ?? null,
-          resourceId: mapping?.resourceId ?? null,
+          projectId: fields?.projectId ?? null,
+          areaId: fields?.areaId ?? null,
+          resourceId: fields?.resourceId ?? null,
         },
       ]);
 
@@ -146,9 +150,12 @@ export function useSupabaseTodos(userId: string) {
           content: trimmed,
           position,
           kind,
-          project_id: mapping?.projectId ?? null,
-          area_id: mapping?.areaId ?? null,
-          resource_id: mapping?.resourceId ?? null,
+          project_id: fields?.projectId ?? null,
+          area_id: fields?.areaId ?? null,
+          resource_id: fields?.resourceId ?? null,
+          scheduled_date: fields?.scheduledDate ?? null,
+          start_minutes: fields?.startMinutes ?? null,
+          duration_minutes: fields?.durationMinutes ?? null,
         })
         .select()
         .single();
@@ -164,12 +171,12 @@ export function useSupabaseTodos(userId: string) {
   );
 
   const addTodo = useCallback(
-    (content: string, position: number, mapping?: NewItemMapping) => addItem(content, position, "task", mapping),
+    (content: string, position: number, fields?: NewItemFields) => addItem(content, position, "task", fields),
     [addItem]
   );
 
   const addNote = useCallback(
-    (content: string, position: number, mapping?: NewItemMapping) => addItem(content, position, "note", mapping),
+    (content: string, position: number, fields?: NewItemFields) => addItem(content, position, "note", fields),
     [addItem]
   );
 

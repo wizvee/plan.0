@@ -64,12 +64,20 @@ export interface Subtask {
   completed: boolean;
   position: number;
   createdAt: string;
+  /** 다음 평일로 넘긴 시각. 넘긴 항목은 체크 · 수정할 수 없고, 진행률 분모에만 남는다. (CARRY-OVER-PLAN.md) */
+  carriedAt: string | null;
 }
 
-/** 하위 할 일 진행률. total이 0이면 진행률 UI를 보여주지 않는다. */
+/** 아직 할 수 있는 하위 할 일 — 완료도 넘김도 아닌 것. */
+export function isSubtaskPending(subtask: Subtask): boolean {
+  return !subtask.completed && subtask.carriedAt === null;
+}
+
+/** 하위 할 일 진행률. total이 0이면 진행률 UI를 보여주지 않는다. 넘긴 항목은 total에만 들어간다. */
 export interface SubtaskProgress {
   done: number;
   total: number;
+  carried: number;
 }
 
 /** 회고 종류 — 잘한 점(keep) · 아쉬운 점(problem) · 다음엔(try). KPT. */
