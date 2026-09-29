@@ -40,7 +40,11 @@ export function ParaBoard() {
     else void addResource(name);
   }
 
-  const containerRows =
+  // 시작일 순(이른 것 먼저). Area/Resource는 시작일이 없으니 만든 날이 시작일 — 같으면 만든 순
+  const byStart = (a: { startKey: string; createdAt: string }, b: { startKey: string; createdAt: string }) =>
+    a.startKey.localeCompare(b.startKey) || a.createdAt.localeCompare(b.createdAt);
+
+  const containerRows = (
     activeKind === "project"
       ? projects.map((p) => ({
           id: p.id,
@@ -55,6 +59,9 @@ export function ParaBoard() {
           })(),
           count: todos.filter((t) => t.projectId === p.id).length,
           contextId: p.contextId,
+          period: { start: p.startDate, end: p.dueDate },
+          startKey: p.startDate,
+          createdAt: p.createdAt,
         }))
       : activeKind === "area"
         ? areas.map((a) => ({
@@ -65,6 +72,9 @@ export function ParaBoard() {
             progress: undefined,
             count: todos.filter((t) => t.areaId === a.id).length,
             contextId: a.contextId,
+            period: undefined,
+            startKey: a.createdAt.slice(0, 10),
+            createdAt: a.createdAt,
           }))
         : resources.map((r) => ({
             id: r.id,
@@ -74,7 +84,11 @@ export function ParaBoard() {
             progress: undefined,
             count: todos.filter((t) => t.resourceId === r.id).length,
             contextId: r.contextId,
-          }));
+            period: undefined,
+            startKey: r.createdAt.slice(0, 10),
+            createdAt: r.createdAt,
+          }))
+  ).sort(byStart);
 
   return (
     <div className="mx-auto flex w-full max-w-[1100px] flex-col gap-[22px] px-4 py-6 sm:px-9 sm:py-7">
@@ -118,6 +132,7 @@ export function ParaBoard() {
             statusDone={row.statusDone}
             count={row.count}
             progress={row.progress}
+            period={row.period}
             contextName={(() => {
               // 기본 컨텍스트는 칩을 달지 않는다(대부분이 기본이라) — 회사 · 공부처럼 기본이 아닌 것만
               const context = contextOfContainer(row.contextId);

@@ -20,7 +20,7 @@ export function AddContainerForm({ placeholder, onAdd }: { placeholder: string; 
         e.preventDefault();
         submit();
       }}
-      className="flex min-h-[96px] items-center gap-2.5 rounded-xl border-[1.5px] border-dashed border-black/15 px-4 py-3 focus-within:border-primary/50"
+      className="flex min-h-[96px] items-center gap-2.5 rounded-[4px] border-[1.5px] border-dashed border-black/15 px-4 py-3 focus-within:border-primary/50"
     >
       <button
         type="submit"
