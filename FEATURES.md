@@ -64,7 +64,7 @@
 | W8 | 블록 하단 모서리 드래그로 소요 시간 조절 | `calendar-block.tsx` |
 | W9 | 블록 제목 클릭 → 상세 팝업 | `calendar-block.tsx` |
 | W10 | 모바일: 요일+날짜 원형 스트립으로 하루씩 보기 + "39주 · 날짜 요일" 요약 줄 | `week-board.tsx` |
-| W11 | 블록 **하위 할 일** — 제목 옆 `2/4`, 44px 이상이면 바닥 진행률 바, 남는 높이만큼 하위 목록(작은 원으로 바로 체크, 넘치면 "외 N개") | `calendar-block.tsx` |
+| W11 | 블록 **하위 할 일** — 제목 옆 `2/4`, 44px 이상이면 바닥 진행률 바, 남는 높이만큼 하위 목록(작은 원으로 바로 체크, 넘긴 항목은 화살표, 넘치면 "외 N개") | `calendar-block.tsx` |
 
 ## 5. 캘린더 — 월 보기
 
@@ -92,6 +92,7 @@
 | D9 | 팝업은 `document.body` 포털 — 어디서 열어도 캘린더 · Inbox 위에 뜸 | `todo-detail-modal.tsx` |
 | D10 | **탭 구조** — 체크 · 제목 · 일정 · PARA는 고정, 아래는 하위 할 일(`2/4`) · 회고(개수) · 메모·URL(내용 있으면 점) 탭. 완료된 할 일은 회고 탭, 미완료는 하위 할 일 탭으로 열림. 노트는 탭 없이 메모 · URL | `todo-detail-modal.tsx` |
 | D11 | **회고** — 잘한 점 · 아쉬운 점 · 다음엔 여러 개. 종류 드롭다운 + Enter로 연속 추가(고른 종류 유지), 누르면 수정(비우면 삭제), × 삭제. 프로젝트에 매핑돼 있으면 "프로젝트 회고에도 모여요" | `reflection/reflection-list.tsx`, `reflection/reflection-kind.tsx`, `lib/app-data/reflection-actions.ts` |
+| D12 | **다음 날로 넘기기** — 캘린더에 배치된 할 일의 안 끝난 하위 할 일을 다음 평일(이름 + PARA가 같은 할 일, 없으면 새로 만듦) 맨 위로 옮겨 적고, 원래 항목은 "넘김"(회색 화살표, 3/4 그대로)으로 남기며 이 할 일은 완료 | `todo-detail-modal.tsx`, `lib/carry-over.ts`, `lib/app-data/todo-actions.ts` |
 
 ## 7. PARA 목록
 

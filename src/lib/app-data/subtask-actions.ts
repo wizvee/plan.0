@@ -20,12 +20,14 @@ export function useSubtaskActions() {
         const position = list.length === 0 ? 0 : list[list.length - 1].position + 1;
         void addSubtask(todoId, content, position);
       },
+      /** 넘긴 항목은 체크할 수 없다 — 그날 못 했다는 기록이라서. */
       toggle(id: string) {
         const current = subtasks.find((s) => s.id === id);
-        if (current) void updateSubtask(id, { completed: !current.completed });
+        if (current && current.carriedAt === null) void updateSubtask(id, { completed: !current.completed });
       },
-      /** 내용을 비우면 삭제한다. */
+      /** 내용을 비우면 삭제한다. 넘긴 항목은 고칠 수 없다. */
       edit(id: string, content: string) {
+        if (subtasks.find((s) => s.id === id)?.carriedAt) return;
         const trimmed = content.trim();
         if (!trimmed) void removeSubtask(id);
         else void updateSubtask(id, { content: trimmed });

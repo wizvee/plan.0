@@ -2,7 +2,22 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Bookmark, Check, ChevronDown, CircleOff, Clock, Compass, ExternalLink, Layers, Link2, StickyNote, Target, Trash2, X } from "lucide-react";
+import {
+  ArrowRight,
+  Bookmark,
+  Check,
+  ChevronDown,
+  CircleOff,
+  Clock,
+  Compass,
+  ExternalLink,
+  Layers,
+  Link2,
+  StickyNote,
+  Target,
+  Trash2,
+  X,
+} from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ko } from "date-fns/locale";
 
@@ -14,8 +29,10 @@ import { InlineText } from "@/components/inline-text";
 import { cn } from "@/lib/utils";
 import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR, getParaCategory } from "@/lib/category";
 import { formatClock, MINUTES_PER_DAY } from "@/lib/time";
-import type { Area, ParaKind, Project, Resource, Todo, TodoKind } from "@/lib/types";
+import { isSubtaskPending, type Area, type ParaKind, type Project, type Resource, type Todo, type TodoKind } from "@/lib/types";
+import { carryDateLabel, findCarryTarget, nextWeekday } from "@/lib/carry-over";
 import { useTodoActions } from "@/lib/app-data/todo-actions";
+import { useTodos } from "@/lib/app-data/use-todos";
 import { useSubtasks } from "@/lib/app-data/use-subtasks";
 import { useReflections } from "@/lib/app-data/use-reflections";
 
@@ -84,8 +101,10 @@ export function TodoDetailModal({
   const [paraOpen, setParaOpen] = useState(false);
   const [paraQuery, setParaQuery] = useState("");
   const paraRef = useRef<HTMLDivElement>(null);
-  const { toggle } = useTodoActions();
-  const { progressOf } = useSubtasks();
+  const { toggle, carryOver } = useTodoActions();
+  const { todos } = useTodos();
+  const { subtasksOf, progressOf } = useSubtasks();
+  const [carrying, setCarrying] = useState(false);
   const { reflectionsOf } = useReflections();
   // 완료된 할 일은 회고 탭으로 연다 — 끝낸 직후가 회고하기 가장 좋은 때라서 (REFLECTIONS-PLAN.md 4번 ①).
   // 모달 안에서만 기억한다(URL · localStorage에 저장하지 않음).
@@ -177,6 +196,19 @@ export function TodoDetailModal({
   const progress = progressOf(todo.id);
   const percent = progress.total ? Math.round((progress.done / progress.total) * 100) : 0;
   const reflections = reflectionsOf(todo.id);
+  // 다음 날로 넘기기 — 캘린더에 배치된 할 일에 안 끝난 하위 할 일이 있을 때만 (CARRY-OVER-PLAN.md)
+  const pendingCount = isTask ? subtasksOf(todo.id).filter(isSubtaskPending).length : 0;
+  const carryDate = isTask && todo.scheduledDate && pendingCount > 0 ? nextWeekday(todo.scheduledDate) : null;
+  const carryTarget = carryDate ? findCarryTarget(todos, todo, carryDate) : null;
+
+  async function handleCarryOver() {
+    setCarrying(true);
+    try {
+      await carryOver(todo.id);
+    } finally {
+      setCarrying(false);
+    }
+  }
   const hasMemoOrUrl = Boolean(todo.memo?.trim() || todo.url?.trim());
   const tabs: { id: DetailTab; label: string; badge: string | null; dot: boolean }[] = [
     { id: "subtasks", label: "하위 할 일", badge: progress.total > 0 ? `${progress.done}/${progress.total}` : null, dot: false },
@@ -435,7 +467,7 @@ export function TodoDetailModal({
               className="mt-3 flex h-[300px] flex-col"
             >
               {tab === "subtasks" ? (
-                <div className="flex min-h-0 flex-col gap-2">
+                <div className="flex min-h-0 flex-1 flex-col gap-2">
                   {progress.total > 0 ? (
                     <div className="flex items-center gap-2 px-0.5">
                       <span className="text-[12.5px] font-semibold tabular-nums" style={{ color }}>
@@ -455,7 +487,9 @@ export function TodoDetailModal({
                           style={{ width: `${percent}%`, backgroundColor: color }}
                         />
                       </div>
-                      <span className="text-[12px] tabular-nums text-muted-foreground">{percent}%</span>
+                      <span className="text-[12px] tabular-nums text-muted-foreground">
+                        {percent}%{progress.carried > 0 ? ` · 넘김 ${progress.carried}` : null}
+                      </span>
                     </div>
                   ) : null}
                   <SubtaskList
@@ -463,6 +497,32 @@ export function TodoDetailModal({
                     color={color}
                     className="min-h-0 overflow-y-auto rounded-[10px] border border-border"
                   />
+                  {carryDate ? (
+                    <button
+                      type="button"
+                      onClick={handleCarryOver}
+                      disabled={carrying}
+                      className="mt-auto flex w-full shrink-0 items-center gap-2.5 rounded-[10px] bg-accent px-3 py-2.5 text-left text-accent-foreground hover:brightness-[0.97] disabled:opacity-60"
+                    >
+                      <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                        <ArrowRight className="size-4" strokeWidth={2} aria-hidden="true" />
+                      </span>
+                      <span className="flex min-w-0 flex-1 flex-col gap-px">
+                        <span className="text-[14px] font-semibold">안 끝난 {pendingCount}개를 다음 날로 넘기기</span>
+                        <span className="truncate text-[12px]">
+                          {carryDateLabel(carryDate)}{" "}
+                          {carryTarget ? (
+                            <>
+                              <InlineText text={carryTarget.content} />에 추가
+                            </>
+                          ) : (
+                            "새로 만들어 추가"
+                          )}{" "}
+                          · 이 할 일은 완료돼요
+                        </span>
+                      </span>
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
 

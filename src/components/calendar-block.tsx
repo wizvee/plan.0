@@ -3,6 +3,7 @@
 import { useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
+import { ArrowRight } from "lucide-react";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { TodoDetailModal } from "@/components/todo-detail-modal";
@@ -203,15 +204,22 @@ export function CalendarBlock({
           <div className="mt-1 flex min-w-0 flex-col gap-px pl-[19px]">
             {visibleSubtasks.map((subtask) => (
               <span key={subtask.id} className="flex h-[14px] min-w-0 items-center gap-[5px] text-[11px] leading-none">
-                {/* 드래그와 겹치지 않게 pointerdown을 막는다 (부모 체크박스와 같은 방식) */}
-                <button
-                  type="button"
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={() => subtaskActions.toggle(subtask.id)}
-                  aria-label={`${subtask.content} ${subtask.completed ? "완료 취소" : "완료 표시"}`}
-                  className="size-2.5 shrink-0 rounded-full border-[1.3px]"
-                  style={{ borderColor: colorVar, backgroundColor: subtask.completed ? colorVar : undefined }}
-                />
+                {subtask.carriedAt ? (
+                  // 넘긴 항목 — 체크 대신 화살표, 취소선 없음 (완료와 구분)
+                  <span className="flex size-2.5 shrink-0 items-center justify-center" aria-label="넘김">
+                    <ArrowRight className="size-2.5" strokeWidth={3} />
+                  </span>
+                ) : (
+                  // 드래그와 겹치지 않게 pointerdown을 막는다 (부모 체크박스와 같은 방식)
+                  <button
+                    type="button"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={() => subtaskActions.toggle(subtask.id)}
+                    aria-label={`${subtask.content} ${subtask.completed ? "완료 취소" : "완료 표시"}`}
+                    className="size-2.5 shrink-0 rounded-full border-[1.3px]"
+                    style={{ borderColor: colorVar, backgroundColor: subtask.completed ? colorVar : undefined }}
+                  />
+                )}
                 <span
                   className={cn(
                     "min-w-0 flex-1 truncate",

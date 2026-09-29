@@ -3,14 +3,16 @@
 import { useState, type CSSProperties, type KeyboardEvent } from "react";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Plus, X } from "lucide-react";
+import { ArrowRight, GripVertical, Plus, X } from "lucide-react";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { InlineText } from "@/components/inline-text";
 import { cn } from "@/lib/utils";
 import type { Subtask } from "@/lib/types";
 import type { DraggedSubtaskData } from "@/lib/dnd/drop-targets";
+import { carryShortDateLabel, nextWeekday } from "@/lib/carry-over";
 import { useSubtasks } from "@/lib/app-data/use-subtasks";
+import { useTodos } from "@/lib/app-data/use-todos";
 import { useSubtaskActions } from "@/lib/app-data/subtask-actions";
 
 /** 한글 조합 중 Enter는 무시 — 안 하면 마지막 글자가 한 번 더 들어간다. */
@@ -26,9 +28,13 @@ function isCommitEnter(e: KeyboardEvent<HTMLInputElement>) {
  */
 export function SubtaskList({ todoId, color, className }: { todoId: string; color: string; className?: string }) {
   const { subtasksOf } = useSubtasks();
+  const { todos } = useTodos();
   const actions = useSubtaskActions();
   const [draft, setDraft] = useState("");
   const items = subtasksOf(todoId);
+  // 넘긴 항목 옆 "9/29 (화)로 넘김" — 넘기면 할 일이 완료돼 끌어 옮길 수 없으므로(완료를 풀지 않는 한) 날짜에서 다시 계산한다
+  const scheduledDate = todos.find((t) => t.id === todoId)?.scheduledDate ?? null;
+  const carriedLabel = scheduledDate ? `${carryShortDateLabel(nextWeekday(scheduledDate))}로 넘김` : "넘김";
 
   function submitDraft() {
     if (!draft.trim()) return;
@@ -41,7 +47,12 @@ export function SubtaskList({ todoId, color, className }: { todoId: string; colo
       <SortableContext items={items.map((s) => s.id)} strategy={verticalListSortingStrategy}>
         {items.map((subtask) => (
           // content를 key에 넣어 다른 기기에서 바뀐 내용이 오면 입력칸을 새 값으로 초기화
-          <SubtaskRow key={`${subtask.id}:${subtask.content}`} subtask={subtask} color={color} />
+          <SubtaskRow
+            key={`${subtask.id}:${subtask.content}`}
+            subtask={subtask}
+            color={color}
+            carriedLabel={carriedLabel}
+          />
         ))}
       </SortableContext>
       <label className="flex min-h-10 items-center gap-2.5 pl-5 pr-2 text-primary">
@@ -66,7 +77,7 @@ export function SubtaskList({ todoId, color, className }: { todoId: string; colo
   );
 }
 
-function SubtaskRow({ subtask, color }: { subtask: Subtask; color: string }) {
+function SubtaskRow({ subtask, color, carriedLabel }: { subtask: Subtask; color: string; carriedLabel: string }) {
   const actions = useSubtaskActions();
   const [text, setText] = useState(subtask.content);
   // 평소엔 `코드`가 보이도록 렌더링된 텍스트, 누르면 원문을 고치는 입력칸
@@ -83,6 +94,25 @@ function SubtaskRow({ subtask, color }: { subtask: Subtask; color: string }) {
       return;
     }
     actions.edit(subtask.id, text); // 비우면 삭제
+  }
+
+  // 넘긴 항목 — 그날 못 했다는 기록. 체크 · 수정 · 삭제 · 순서 변경 없이 회색 화살표로만 보여준다.
+  if (subtask.carriedAt) {
+    return (
+      <div
+        ref={setNodeRef}
+        style={{ transform: CSS.Transform.toString(transform), transition }}
+        className="flex min-h-10 items-center gap-2.5 border-b border-border bg-black/[0.02] pl-5 pr-3"
+      >
+        <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-black/[0.07] text-muted-foreground">
+          <ArrowRight className="size-3" strokeWidth={2.4} aria-hidden="true" />
+        </span>
+        <span className="min-w-0 flex-1 break-words py-2.5 text-[14px] text-muted-foreground">
+          <InlineText text={subtask.content} />
+        </span>
+        <span className="shrink-0 text-[12px] text-muted-foreground">{carriedLabel}</span>
+      </div>
+    );
   }
 
   const checkboxStyle: CSSProperties = {

@@ -14,6 +14,7 @@ interface SubtaskRow {
   completed: boolean;
   position: number;
   created_at: string;
+  carried_at: string | null;
 }
 
 function fromRow(row: SubtaskRow): Subtask {
@@ -24,6 +25,7 @@ function fromRow(row: SubtaskRow): Subtask {
     completed: row.completed,
     position: row.position,
     createdAt: row.created_at,
+    carriedAt: row.carried_at ?? null,
   };
 }
 
@@ -76,16 +78,25 @@ export function useSupabaseSubtasks(userId: string) {
     };
   }, [supabase, userId]);
 
+  /** 저장에 성공하면 true (빈 내용이거나 실패하면 false). */
   const addSubtask = useCallback(
-    async (todoId: string, content: string, position: number) => {
+    async (todoId: string, content: string, position: number): Promise<boolean> => {
       const trimmed = content.trim();
-      if (!trimmed) return;
+      if (!trimmed) return false;
 
       // id를 클라이언트에서 정해서 insert — Realtime INSERT 이벤트가 응답보다 먼저 와도 같은 id라 중복되지 않는다.
       const id = crypto.randomUUID();
       setSubtasks((prev) => [
         ...prev,
-        { id, todoId, content: trimmed, completed: false, position, createdAt: new Date().toISOString() },
+        {
+          id,
+          todoId,
+          content: trimmed,
+          completed: false,
+          position,
+          createdAt: new Date().toISOString(),
+          carriedAt: null,
+        },
       ]);
 
       const { error } = await supabase
@@ -93,6 +104,7 @@ export function useSupabaseSubtasks(userId: string) {
         .insert({ id, user_id: userId, todo_id: todoId, content: trimmed, position });
 
       if (error) setSubtasks((prev) => prev.filter((s) => s.id !== id));
+      return !error;
     },
     [supabase, userId]
   );
@@ -121,6 +133,18 @@ export function useSupabaseSubtasks(userId: string) {
     [supabase]
   );
 
+  /** 하위 할 일들을 "넘김"으로 표시한다(넘긴 시각 저장). 되돌리지 않는다. */
+  const markSubtasksCarried = useCallback(
+    async (ids: string[]) => {
+      if (ids.length === 0) return;
+      const carriedAt = new Date().toISOString();
+      const idSet = new Set(ids);
+      setSubtasks((prev) => prev.map((s) => (idSet.has(s.id) ? { ...s, carriedAt } : s)));
+      await supabase.from("todo_subtasks").update({ carried_at: carriedAt }).in("id", ids);
+    },
+    [supabase]
+  );
+
   /** 순서 변경 결과(새 position)를 한 번에 반영하고 저장한다. */
   const persistSubtaskPositions = useCallback(
     async (changes: { id: string; position: number }[]) => {
@@ -144,6 +168,7 @@ export function useSupabaseSubtasks(userId: string) {
     addSubtask,
     updateSubtask,
     removeSubtask,
+    markSubtasksCarried,
     persistSubtaskPositions,
     dropSubtasksOf,
   };

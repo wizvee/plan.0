@@ -26,11 +26,15 @@ export function useSubtasks() {
 
   const subtasksOf = useCallback((todoId: string): Subtask[] => byTodo.get(todoId) ?? EMPTY, [byTodo]);
 
-  /** 하위가 없으면 `{ done: 0, total: 0 }` — 이때 진행률 UI는 그리지 않는다. */
+  /** 하위가 없으면 `{ done: 0, total: 0 }` — 이때 진행률 UI는 그리지 않는다. 넘긴 항목은 total에만 센다(3/4). */
   const progressOf = useCallback(
     (todoId: string): SubtaskProgress => {
       const list = byTodo.get(todoId) ?? EMPTY;
-      return { done: list.filter((s) => s.completed).length, total: list.length };
+      return {
+        done: list.filter((s) => s.completed).length,
+        total: list.length,
+        carried: list.filter((s) => s.carriedAt !== null).length,
+      };
     },
     [byTodo]
   );
