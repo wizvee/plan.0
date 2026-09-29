@@ -129,9 +129,10 @@ export function CalendarBlock({
   if (overlay) {
     return (
       <div
-        className="w-[200px] rounded-md px-2.5 py-1.5 shadow-lg"
-        style={{ height: renderedHeight, boxShadow: `inset 3px 0 0 ${colorVar}`, backgroundColor: tintVar }}
+        className="relative w-[200px] rounded-[4px] py-1.5 pl-[13px] pr-2.5 shadow-lg"
+        style={{ height: renderedHeight, backgroundColor: tintVar }}
       >
+        <CategoryBar color={colorVar} />
         <p className="truncate text-[12px] font-semibold text-foreground"><InlineText text={todo.content} /></p>
         <p className="truncate text-[11px] text-muted-foreground">
           {minutesRangeLabel(startMinutes, duration)}
@@ -147,7 +148,6 @@ export function CalendarBlock({
     left: 3,
     right: 4,
     transform: CSS.Translate.toString(transform),
-    boxShadow: `inset 3px 0 0 ${colorVar}`,
     backgroundColor: tintVar,
   };
 
@@ -159,7 +159,7 @@ export function CalendarBlock({
         {...attributes}
         {...listeners}
         className={cn(
-          "absolute z-[1] flex select-none flex-col justify-start overflow-hidden rounded-md py-[5px] pl-[9px] pr-[7px] hover:brightness-[0.98]",
+          "absolute z-[1] flex select-none flex-col justify-start overflow-hidden rounded-[4px] py-[5px] pl-[13px] pr-[7px] hover:brightness-[0.98]",
           // 끌 수 있을 때만 touch-none — 잠긴 블록 위에서는 모바일에서 손가락으로 캘린더를 스크롤할 수 있게
           !locked && "touch-none",
           todo.completed && "opacity-50",
@@ -167,6 +167,7 @@ export function CalendarBlock({
           compact && "flex-row items-center gap-1.5 py-0"
         )}
       >
+        <CategoryBar color={colorVar} />
         <div className={cn("flex min-w-0 items-center gap-1.5", compact && "flex-1")}>
           <span onPointerDown={(e) => e.stopPropagation()} className="flex shrink-0">
             <Checkbox
@@ -271,5 +272,19 @@ export function CalendarBlock({
         />
       ) : null}
     </>
+  );
+}
+
+/**
+ * 블록 왼쪽 카테고리 선 — 가장자리에 붙이지 않고 위 · 아래 · 왼쪽에서 3px 띄운 3px 막대(끝은 살짝 둥글게).
+ * 애플 캘린더 방식이라 블록 모서리를 따라 휘지 않는다.
+ */
+function CategoryBar({ color }: { color: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="pointer-events-none absolute bottom-[3px] left-[3px] top-[3px] w-[3px] rounded-[2px]"
+      style={{ backgroundColor: color }}
+    />
   );
 }
