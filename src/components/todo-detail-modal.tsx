@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { SubtaskList } from "@/components/subtask/subtask-list";
 import { ParaMenu } from "@/components/para/para-menu";
 import { TodoReflectionList } from "@/components/reflection/reflection-list";
+import { PhotoTab } from "@/components/photo/photo-tab";
 import { InlineText } from "@/components/inline-text";
 import { cn } from "@/lib/utils";
 import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR, getParaCategory } from "@/lib/category";
@@ -35,6 +36,7 @@ import { useTodoActions } from "@/lib/app-data/todo-actions";
 import { useTodos } from "@/lib/app-data/use-todos";
 import { useSubtasks } from "@/lib/app-data/use-subtasks";
 import { useReflections } from "@/lib/app-data/use-reflections";
+import { usePhotos } from "@/lib/app-data/use-photos";
 
 const KIND_ICON: Record<ParaKind, typeof Target> = {
   project: Target,
@@ -57,7 +59,7 @@ function scheduleLabel(todo: Todo): string | null {
   return `${day} · ${formatClock(todo.startMinutes)} – ${formatClock(end)}`;
 }
 
-type DetailTab = "subtasks" | "retro" | "memo";
+type DetailTab = "subtasks" | "retro" | "memo" | "photos";
 
 interface ParaAssignPatch {
   projectId: string | null;
@@ -105,6 +107,7 @@ export function TodoDetailModal({
   const { subtasksOf, progressOf } = useSubtasks();
   const [carrying, setCarrying] = useState(false);
   const { reflectionsOf } = useReflections();
+  const { photosOf } = usePhotos();
   // 완료된 할 일은 회고 탭으로 연다 — 끝낸 직후가 회고하기 가장 좋은 때라서 (REFLECTIONS-PLAN.md 4번 ①).
   // 모달 안에서만 기억한다(URL · localStorage에 저장하지 않음).
   const [tab, setTab] = useState<DetailTab>(todo.completed ? "retro" : "subtasks");
@@ -182,6 +185,7 @@ export function TodoDetailModal({
   const progress = progressOf(todo.id);
   const percent = progress.total ? Math.round((progress.done / progress.total) * 100) : 0;
   const reflections = reflectionsOf(todo.id);
+  const photoCount = photosOf(todo.id).length;
   // 다음 날로 넘기기 — 캘린더에 배치된 할 일에 안 끝난 하위 할 일이 있을 때만 (CARRY-OVER-PLAN.md)
   const pendingCount = isTask ? subtasksOf(todo.id).filter(isSubtaskPending).length : 0;
   const carryDate = isTask && todo.scheduledDate && pendingCount > 0 ? nextWeekday(todo.scheduledDate) : null;
@@ -206,6 +210,7 @@ export function TodoDetailModal({
     { id: "subtasks", label: "하위 할 일", badge: progress.total > 0 ? `${progress.done}/${progress.total}` : null, dot: false },
     { id: "retro", label: "회고", badge: reflections.length > 0 ? String(reflections.length) : null, dot: false },
     { id: "memo", label: "메모 · URL", badge: null, dot: hasMemoOrUrl },
+    { id: "photos", label: "사진", badge: photoCount > 0 ? String(photoCount) : null, dot: false },
   ];
 
   // 메모 · URL — 할 일은 "메모 · URL" 탭 안에서 탭 높이를 채우고, 노트는 탭 없이 지금처럼 바로 보인다.
@@ -380,7 +385,7 @@ export function TodoDetailModal({
 
         {isTask ? (
           <>
-            <div role="tablist" aria-label="할 일 상세" className="mt-3 grid grid-cols-3 rounded-lg bg-black/[0.06] p-0.5">
+            <div role="tablist" aria-label="할 일 상세" className="mt-3 grid grid-cols-4 rounded-lg bg-black/[0.06] p-0.5">
               {tabs.map((t) => (
                 <button
                   key={t.id}
@@ -485,6 +490,8 @@ export function TodoDetailModal({
               ) : null}
 
               {tab === "memo" ? <div className="flex min-h-0 flex-1 flex-col">{memoAndUrl}</div> : null}
+
+              {tab === "photos" ? <PhotoTab todoId={todo.id} /> : null}
             </div>
           </>
         ) : (

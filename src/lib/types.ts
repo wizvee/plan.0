@@ -102,6 +102,18 @@ export interface Reflection {
   createdAt: string;
 }
 
+/** 할 일에 붙은 사진 한 장. 파일은 사용자 Google Drive에 있고 `/api/photos/<id>`로 불러온다. (PHOTOS-PLAN.md) */
+export interface TodoPhoto {
+  id: string;
+  todoId: string;
+  /** Drive 폴더 — 할 일의 사진이 모이는 곳 (Drive에서 열기) */
+  driveFolderId: string;
+  driveFileId: string;
+  /** 할 일당 하나. 없으면 먼저 올린 사진이 대표 (`coverOf`) */
+  isCover: boolean;
+  createdAt: string;
+}
+
 /**
  * 이 할 일/노트가 Todo List 보관함(Inbox)에 보여야 하는지. 할 일은 캘린더에 배정만 안 됐으면
  * PARA 매핑 여부와 무관하게 항상 보이지만(배지로 표시), 노트는 PARA 어딘가에 매핑되는 순간

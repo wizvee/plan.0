@@ -34,6 +34,9 @@ import type { Area, Project, Resource, Todo } from "@/lib/types";
 import type { DraggedTodoData } from "@/lib/dnd/drop-targets";
 import { useSubtasks } from "@/lib/app-data/use-subtasks";
 import { useSubtaskActions } from "@/lib/app-data/subtask-actions";
+import { usePhotos } from "@/lib/app-data/use-photos";
+import { useSession } from "@/lib/app-data/app-data-provider";
+import { photoUrl } from "@/lib/photos";
 
 /** 블록 안 하위 할 일 목록 배치 — 머리(패딩 · 제목 · 시간) 아래, 진행률 바 위에 들어갈 줄 수를 계산할 때 쓴다. */
 const SUBTASK_HEAD_PX = 40;
@@ -43,6 +46,9 @@ const SUBTASK_ROW_PX = 15;
 const PROGRESS_BAR_MIN_HEIGHT = 44;
 /** 이만큼 움직였으면 클릭이 아니라 드래그 — dnd-provider.tsx의 PointerSensor 시작 거리와 같게 */
 const DRAG_DISTANCE_PX = 4;
+/** 이 높이(≈1시간 30분) 이상이면 대표 사진을 블록 배경으로, 짧으면 오른쪽 위 작은 썸네일 (PHOTOS-PLAN.md, 시안 ② bg) */
+const PHOTO_BG_MIN_HEIGHT = 76;
+const PHOTO_THUMB_PX = 38;
 
 interface CalendarBlockProps {
   todo: Todo;
@@ -83,6 +89,10 @@ export function CalendarBlock({
   const pressPoint = useRef<{ x: number; y: number } | null>(null);
   const { subtasksOf } = useSubtasks();
   const subtaskActions = useSubtaskActions();
+  const { coverOf } = usePhotos();
+  const { googleConnected } = useSession();
+  // Drive 연결이 끊겼거나 파일이 없어서 못 불러온 사진 — 평소 모양으로 돌아간다
+  const [failedPhotoId, setFailedPhotoId] = useState<string | null>(null);
 
   const startMinutes = todo.startMinutes ?? DEFAULT_START_MINUTES;
   const baseDuration = todo.durationMinutes ?? DEFAULT_DURATION_MINUTES;
@@ -162,6 +172,13 @@ export function CalendarBlock({
     rowsThatFit >= subtasks.length ? subtasks : subtasks.slice(0, Math.max(0, rowsThatFit - 1));
   const hiddenSubtaskCount = subtasks.length - visibleSubtasks.length;
 
+  // 대표 사진 — 긴 블록은 배경(흰 글씨, 하위 목록 · 진행률 바는 숨김), 짧으면 썸네일, 한 줄 블록엔 없음
+  const cover = todo.kind === "task" && googleConnected && !compact ? coverOf(todo.id) : null;
+  const photo = cover && cover.id !== failedPhotoId ? cover : null;
+  const photoBg = photo !== null && renderedHeight >= PHOTO_BG_MIN_HEIGHT;
+  const thumbPx = photo && !photoBg ? Math.min(PHOTO_THUMB_PX, renderedHeight - 10) : 0;
+  const thumbPad = thumbPx ? { paddingRight: thumbPx + 4 } : undefined;
+
   if (overlay) {
     return (
       <div
@@ -208,8 +225,29 @@ export function CalendarBlock({
           compact && "flex-row items-center gap-1.5 py-0"
         )}
       >
+        {photo ? (
+          // eslint-disable-next-line @next/next/no-img-element -- Drive에서 읽어오는 사용자 사진이라 next/image 최적화 대상이 아님
+          <img
+            src={photoUrl(photo.id, "thumb")}
+            alt=""
+            draggable={false}
+            onError={() => setFailedPhotoId(photo.id)}
+            className={cn(
+              "pointer-events-none absolute object-cover",
+              photoBg ? "inset-0 size-full" : "right-[5px] top-[5px] rounded-[4px] shadow-[0_0_0_1px_rgba(0,0,0,0.06)]"
+            )}
+            style={photoBg ? undefined : { width: thumbPx, height: thumbPx }}
+          />
+        ) : null}
+        {photoBg ? (
+          // 글자가 있는 위쪽을 어둡게 — 흰 글씨가 어떤 사진 위에서도 읽히게
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.6)_0%,rgba(0,0,0,0.22)_60%,rgba(0,0,0,0.05)_100%)]"
+          />
+        ) : null}
         <CategoryBar color={colorVar} />
-        <div className={cn("flex min-w-0 items-center gap-1.5", compact && "flex-1")}>
+        <div className={cn("relative flex min-w-0 items-center gap-1.5", compact && "flex-1")} style={thumbPad}>
           <span
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
@@ -219,13 +257,17 @@ export function CalendarBlock({
               checked={todo.completed}
               onCheckedChange={() => onToggle?.(todo.id)}
               className="size-[13px] border-[1.5px] [&_svg]:size-2.5"
-              style={{ borderColor: colorVar, backgroundColor: todo.completed ? colorVar : undefined }}
+              style={{
+                borderColor: photoBg ? "white" : colorVar,
+                backgroundColor: todo.completed ? colorVar : undefined,
+              }}
               aria-label="완료 표시"
             />
           </span>
           <span
             className={cn(
-              "min-w-0 flex-1 truncate text-[12px] font-semibold leading-tight text-foreground",
+              "min-w-0 flex-1 truncate text-[12px] font-semibold leading-tight",
+              photoBg ? "text-white" : "text-foreground",
               todo.completed && "line-through"
             )}
           >
@@ -233,7 +275,10 @@ export function CalendarBlock({
           </span>
           {subtasks.length > 0 ? (
             <span
-              className="shrink-0 text-[10.5px] font-bold tabular-nums text-foreground/70"
+              className={cn(
+                "shrink-0 text-[10.5px] font-bold tabular-nums",
+                photoBg ? "text-white/90" : "text-foreground/70"
+              )}
               aria-label={`하위 할 일 ${subtasks.length}개 중 ${subtaskDone}개 완료`}
             >
               {subtaskDone}/{subtasks.length}
@@ -241,11 +286,17 @@ export function CalendarBlock({
           ) : null}
         </div>
         {!compact ? (
-          <span className="mt-0.5 truncate pl-[19px] text-[11px] leading-tight text-foreground/70">
+          <span
+            className={cn(
+              "relative mt-0.5 truncate pl-[19px] text-[11px] leading-tight",
+              photoBg ? "text-white/90" : "text-foreground/70"
+            )}
+            style={thumbPad}
+          >
             {minutesRangeLabel(startMinutes, duration)}
           </span>
         ) : null}
-        {!compact && rowsThatFit > 0 && subtasks.length > 0 ? (
+        {!compact && !photoBg && rowsThatFit > 0 && subtasks.length > 0 ? (
           <div className="mt-1 flex min-w-0 flex-col gap-px pl-[19px]">
             {visibleSubtasks.map((subtask) => (
               <span key={subtask.id} className="flex h-[14px] min-w-0 items-center gap-[5px] text-[11px] leading-none">
@@ -285,7 +336,7 @@ export function CalendarBlock({
             ) : null}
           </div>
         ) : null}
-        {showProgressBar ? (
+        {showProgressBar && !photoBg ? (
           <div
             className="mt-auto h-[3px] shrink-0 overflow-hidden rounded-full"
             style={{ backgroundColor: `color-mix(in srgb, ${colorVar} 20%, transparent)` }}

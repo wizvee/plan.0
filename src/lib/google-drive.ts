@@ -66,7 +66,7 @@ const ROOT_FOLDER_NAME = "PARA";
 
 async function findFolder(drive: drive_v3.Drive, name: string, parentId: string): Promise<string | null> {
   const res = await drive.files.list({
-    q: `'${parentId}' in parents and name = '${name.replace(/'/g, "\\'")}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+    q: `'${parentId}' in parents and name = '${name.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
     fields: "files(id)",
     spaces: "drive",
   });
@@ -93,6 +93,34 @@ export async function ensureContainerFolder(refreshToken: string, kind: ParaKind
   const rootFolderId = await ensureFolder(drive, ROOT_FOLDER_NAME, "root");
   const kindFolderId = await ensureFolder(drive, KIND_FOLDER_NAME[kind], rootFolderId);
   return ensureFolder(drive, name, kindFolderId);
+}
+
+const PHOTO_ROOT_FOLDER_NAME = "plan.0";
+const PHOTO_FOLDER_NAME = "사진";
+const PHOTO_THUMB_FOLDER_NAME = ".thumbs";
+
+async function ensurePhotoRootFolder(drive: drive_v3.Drive): Promise<string> {
+  const rootId = await ensureFolder(drive, PHOTO_ROOT_FOLDER_NAME, "root");
+  return ensureFolder(drive, PHOTO_FOLDER_NAME, rootId);
+}
+
+/** 할 일 사진 폴더 — plan.0/사진/<name> (PHOTOS-PLAN.md). 없으면 만든다. */
+export async function ensurePhotoFolder(refreshToken: string, name: string): Promise<string> {
+  const drive = getDrive(refreshToken);
+  return ensureFolder(drive, name, await ensurePhotoRootFolder(drive));
+}
+
+/** 캘린더용 작은 사진을 모아두는 폴더 — plan.0/사진/.thumbs. 할 일 폴더를 원본만으로 깔끔하게 두려고 따로 둔다. */
+export async function ensurePhotoThumbFolder(refreshToken: string): Promise<string> {
+  const drive = getDrive(refreshToken);
+  return ensureFolder(drive, PHOTO_THUMB_FOLDER_NAME, await ensurePhotoRootFolder(drive));
+}
+
+/** 바이너리 파일 내용(사진 등). */
+export async function getFileBytes(refreshToken: string, fileId: string): Promise<Buffer> {
+  const drive = getDrive(refreshToken);
+  const res = await drive.files.get({ fileId, alt: "media" }, { responseType: "arraybuffer" });
+  return Buffer.from(res.data as ArrayBuffer);
 }
 
 export interface DriveFile {
