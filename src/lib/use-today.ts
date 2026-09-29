@@ -27,3 +27,22 @@ export function useTodayKey(): string | null {
 
   return key;
 }
+
+/** 지금 시각(1분마다 갱신). `useTodayKey`와 같은 이유로 마운트 전에는 null. */
+export function useNow(): Date | null {
+  const [now, setNow] = useState<Date | null>(null);
+
+  useEffect(() => {
+    function update() {
+      setNow(new Date());
+    }
+    const immediate = setTimeout(update, 0);
+    const id = setInterval(update, 60_000);
+    return () => {
+      clearTimeout(immediate);
+      clearInterval(id);
+    };
+  }, []);
+
+  return now;
+}
