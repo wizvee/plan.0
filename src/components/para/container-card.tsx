@@ -43,16 +43,16 @@ export function ContainerCard({ kind, id, name, statusLabel, statusDone, count, 
         if (e.key === "Enter") onClick();
       }}
       className={cn(
-        "relative flex cursor-pointer flex-col gap-3 rounded-[4px] border border-border bg-card px-4 pb-3.5 pt-[17px] transition-shadow hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)]",
+        "relative flex cursor-pointer flex-col gap-3 rounded-[4px] border border-border bg-card pb-3.5 pl-5 pr-4 pt-3.5 transition-shadow hover:shadow-[0_4px_14px_rgba(0,0,0,0.08)]",
         statusDone && "opacity-60",
         isOver && "ring-2 ring-primary ring-offset-2 ring-offset-background"
       )}
     >
-      {/* 캘린더 블록의 CategoryBar와 같은 방식 — 모서리를 따라 휘지 않도록 안쪽으로 3px 띄운 가로 막대 */}
+      {/* 캘린더 블록의 CategoryBar와 같은 모양 — 모서리를 따라 휘지 않도록 안쪽으로 3px 띄운 세로 막대 */}
       <span
         aria-hidden="true"
         className={cn(
-          "pointer-events-none absolute left-[3px] right-[3px] top-[3px] h-[3px] rounded-[2px]",
+          "pointer-events-none absolute bottom-[3px] left-[3px] top-[3px] w-[3px] rounded-[2px]",
           statusDone && "bg-black/[0.15]"
         )}
         style={statusDone ? undefined : { backgroundColor: colorVar }}
