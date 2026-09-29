@@ -1,56 +1,107 @@
-import { DEFAULT_DURATION_MINUTES, DEFAULT_START_MINUTES, HOUR_HEIGHT, MIN_BLOCK_HEIGHT } from "@/lib/time";
+import { BLOCK_GAP, DEFAULT_DURATION_MINUTES, DEFAULT_START_MINUTES, MIN_BLOCK_HEIGHT, minutesToPx } from "@/lib/time";
 import type { Todo } from "@/lib/types";
 
 /**
- * 주 보기에서 겹치는 블록 배치 (구글 캘린더식 들여쓰기, 2026-09-29 시안 ②).
- * 겹치면 늦게 시작한 블록(같은 시각이면 짧은 쪽)이 한 단계 들여서 위에 올라간다.
- * 아래 블록은 전체 너비 그대로라 제목 앞부분과 왼쪽 띠가 늘 보이고 눌린다.
+ * 주 보기에서 겹치는 블록 배치 — 애플 캘린더 방식 (2026-09-29 시안 ④, https://claude.ai/artifact/1xV98C9TMFtRfJDWKgGJcg).
+ * 1. 화면에서 안 겹치면 칸 전체 너비 (딱 붙은 7:00–7:30 · 7:30~ 도 안 겹침)
+ * 2. 겹쳐도 아래 블록의 제목 · 시간 줄을 지나서 시작하면 → 안쪽에 쏙 얹기 (왼쪽 9px · 오른쪽 7px 안)
+ * 3. 그 안에서 시작하면(같은 시각 포함) → 나란히 같은 너비로 나누기 (둘이면 50:50)
  */
 
-/** 한 단계 들여쓰기 — 칸이 넓으면 60px("○ L사"까지 보임), 좁으면 칸의 30% (위 블록이 늘 70% 이상) */
-const INDENT_STEP = "min(60px, 30%)";
-/** 여러 단계가 쌓여도 맨 위 블록이 칸의 절반보다 좁아지지 않게 */
-const MAX_INDENT = "50%";
-/** 블록 기본 왼쪽 여백 (px) */
+/** 블록 머리(위 여백 5 + 제목 줄 15 + 간격 2 + 시간 줄 14) — 이 안에서 시작하면 제목이 가려지므로 나란히 둔다 */
+const TITLE_ZONE_PX = 36;
+/** 안쪽에 얹을 때 — 아래 블록의 왼쪽 색 막대만 보이게 9px, 오른쪽은 7px 안으로 */
+const NEST_LEFT_PX = 9;
+const NEST_RIGHT_PX = 7;
+/** 나란히 둘 때 블록 사이 */
+const COLUMN_GAP_PX = 2;
+/** 칸 가장자리 여백 — 왼쪽 3px · 오른쪽 4px */
 const BASE_LEFT_PX = 3;
+const BASE_RIGHT_PX = 4;
 
-/** 화면에 보이는 길이(분) — 짧은 블록도 최소 높이만큼은 그려지므로 그만큼 겹친다고 본다 */
-function visibleDuration(todo: Todo): number {
-  const minMinutes = (MIN_BLOCK_HEIGHT / HOUR_HEIGHT) * 60;
-  return Math.max(todo.durationMinutes ?? DEFAULT_DURATION_MINUTES, minMinutes);
+/** 블록이 화면에 그려지는 높이 — 짧아도 최소 높이, 아래는 다음 블록과 BLOCK_GAP만큼 띄운다 */
+export function blockHeightPx(durationMinutes: number): number {
+  return Math.max(minutesToPx(durationMinutes), MIN_BLOCK_HEIGHT) - BLOCK_GAP;
 }
 
 export interface PlacedBlock {
   todo: Todo;
-  /** 0 = 들여쓰지 않음, 1 = 한 단계, … */
-  depth: number;
+  /** CSS `left` · `width` (칸 기준 calc 식) */
+  left: string;
+  width: string;
+  /** 다른 블록 안쪽에 얹혔는지 — 흰 테두리 + 살짝 어두운 틴트 */
+  nested: boolean;
+}
+
+interface Item {
+  todo: Todo;
+  top: number;
+  bottom: number;
+  group: Group;
+  box: { left: string; width: string };
+}
+
+/** 나란히 놓이는 블록들. `parent`가 있으면 그 블록 안쪽 영역을 나눠 쓴다. */
+interface Group {
+  parent: Item | null;
+  members: Item[];
 }
 
 /**
- * 하루 칸의 블록들을 그릴 순서와 들여쓰기 단계로 바꾼다.
- * 반환 순서대로 그리면 들여쓴 블록이 항상 자기가 덮는 블록보다 뒤(위)에 온다.
+ * 하루 칸의 블록들을 그릴 순서와 위치로 바꾼다.
+ * 반환 순서대로 그리면 안쪽에 얹힌 블록이 항상 자기가 덮는 블록보다 뒤(위)에 온다.
  */
 export function layoutDayBlocks(todos: Todo[]): PlacedBlock[] {
-  const spans = todos.map((todo) => {
-    const start = todo.startMinutes ?? DEFAULT_START_MINUTES;
-    return { todo, start, end: start + visibleDuration(todo) };
+  const items = todos.map((todo) => {
+    const top = minutesToPx(todo.startMinutes ?? DEFAULT_START_MINUTES);
+    return { todo, top, bottom: top + blockHeightPx(todo.durationMinutes ?? DEFAULT_DURATION_MINUTES) } as Item;
   });
   // 이른 것 먼저, 같은 시각이면 긴 것 먼저 — 긴 블록(업무)이 바닥에 깔린다
-  spans.sort((a, b) => a.start - b.start || b.end - a.end);
+  items.sort((a, b) => a.top - b.top || b.bottom - a.bottom);
 
-  const placed: (PlacedBlock & { start: number; end: number })[] = [];
-  for (const span of spans) {
-    let depth = 0;
-    for (const prev of placed) {
-      if (prev.start < span.end && span.start < prev.end) depth = Math.max(depth, prev.depth + 1);
+  const placed: Item[] = [];
+  for (const item of items) {
+    // 겹침은 그려진 높이로 판단한다(시간이 아니라) — 최소 높이 때문에 실제로 겹쳐 보이는 짧은 블록도 겹침
+    const overlaps = placed.filter((p) => p.top < item.bottom && item.top < p.bottom);
+    if (overlaps.length === 0) {
+      item.group = { parent: null, members: [item] };
+    } else {
+      // 가장 늦게 시작한 블록 기준 — 그 블록의 머리 안에서 시작하면 나란히, 지났으면 그 안쪽에
+      const latest = overlaps.reduce((a, b) => (b.top >= a.top ? b : a));
+      if (item.top - latest.top < TITLE_ZONE_PX) {
+        latest.group.members.push(item);
+        item.group = latest.group;
+      } else {
+        item.group = { parent: latest, members: [item] };
+      }
     }
-    placed.push({ ...span, depth });
+    placed.push(item);
   }
-  return placed.map(({ todo, depth }) => ({ todo, depth }));
-}
 
-/** 들여쓰기 단계 → 블록의 CSS `left` */
-export function blockLeft(depth: number): string {
-  if (depth === 0) return `${BASE_LEFT_PX}px`;
-  return `calc(${BASE_LEFT_PX}px + min(${depth} * ${INDENT_STEP}, ${MAX_INDENT}))`;
+  // 위치는 그룹이 다 정해진 뒤에 — 나중에 합류한 블록 때문에 앞 블록의 너비도 바뀐다. 부모가 항상 먼저 온다.
+  for (const item of items) {
+    const { parent, members } = item.group;
+    const span = parent
+      ? {
+          left: `(${parent.box.left} + ${NEST_LEFT_PX}px)`,
+          width: `(${parent.box.width} - ${NEST_LEFT_PX + NEST_RIGHT_PX}px)`,
+        }
+      : { left: `${BASE_LEFT_PX}px`, width: `(100% - ${BASE_LEFT_PX + BASE_RIGHT_PX}px)` };
+    const n = members.length;
+    const i = members.indexOf(item);
+    item.box =
+      n === 1
+        ? span
+        : {
+            left: `(${span.left} + ${span.width} * ${i} / ${n})`,
+            width: `(${span.width} / ${n}${i < n - 1 ? ` - ${COLUMN_GAP_PX}px` : ""})`,
+          };
+  }
+
+  return items.map((item) => ({
+    todo: item.todo,
+    left: `calc(${item.box.left})`,
+    width: `calc(${item.box.width})`,
+    nested: item.group.parent !== null,
+  }));
 }
