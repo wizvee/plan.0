@@ -106,7 +106,7 @@
   --color-category-area-tint: var(--category-area-tint);
   --color-category-resource: var(--category-resource);
   --color-category-resource-tint: var(--category-resource-tint);
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Apple SD Gothic Neo", "Wanted Sans Variable", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "Wanted Sans Variable", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Apple SD Gothic Neo", "Helvetica Neue", Arial, sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 

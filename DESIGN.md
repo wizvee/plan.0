@@ -139,8 +139,9 @@ AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBann
 
 ## 7. 타이포그래피 / 아이콘
 
-- 폰트: `-apple-system, BlinkMacSystemFont, "SF Pro Text", "Apple SD Gothic Neo"` → `Wanted Sans Variable`(CDN, `layout.tsx`) 순.
-  애플 기기에선 SF Pro, 그 외에선 Wanted Sans. 구글 폰트 새로 추가하지 마세요.
+- 폰트: **모든 기기에서 `Wanted Sans Variable`**(CDN, `layout.tsx`)이 기본. 뒤의 `-apple-system, BlinkMacSystemFont, "SF Pro Text",
+  "Apple SD Gothic Neo"`는 CDN을 못 불러왔을 때의 대체용(2026-09-29 사용자 결정 — 리디자인 때 애플 기기는 SF Pro가 먼저 오도록
+  바뀌었던 걸 되돌림). 구글 폰트 새로 추가하지 마세요.
 - 제목 22–28px bold · 자간 약간 좁게(`tracking-[-0.4px]`), 본문 14px, 보조 12–13px.
 - 아이콘: `lucide-react`만, `strokeWidth={1.8}` 정도로 가늘게. 이모지를 아이콘 대용으로 쓰지 마세요.
 - **인라인 코드**: 사용자가 입력한 텍스트의 `` `VAR` `` 같은 백틱 구간은 인라인 코드(고정폭 · 옅은 회색 배경 `bg-black/[0.06]` ·
