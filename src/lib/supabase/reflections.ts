@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/client";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 import type { Reflection, ReflectionKind } from "@/lib/types";
 
 interface ReflectionRow {
@@ -46,14 +47,11 @@ export function useSupabaseReflections(userId: string) {
   useEffect(() => {
     let active = true;
 
-    supabase
-      .from("todo_reflections")
-      .select("*")
-      .then(({ data, error }) => {
-        if (!active) return;
-        if (!error && data) setReflections((data as ReflectionRow[]).map(fromRow));
-        setLoading(false);
-      });
+    fetchAllRows(supabase, "todo_reflections").then(({ data, error }) => {
+      if (!active) return;
+      if (!error && data) setReflections((data as ReflectionRow[]).map(fromRow));
+      setLoading(false);
+    });
 
     const channel = supabase
       .channel(`reflections-${userId}`)
