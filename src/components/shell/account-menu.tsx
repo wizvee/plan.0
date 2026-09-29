@@ -202,7 +202,7 @@ function NotificationSection() {
           <span className="text-[13px] font-semibold">홈 화면에 추가한 앱에서만 알림을 받을 수 있어요</span>
           <ol className="list-decimal pl-4 text-[12.5px] leading-relaxed text-foreground/80">
             <li>Safari 공유 버튼 → &quot;홈 화면에 추가&quot;</li>
-            <li>홈 화면의 plan.0으로 열고 다시 로그인</li>
+            <li>홈 화면의 PLAN.0으로 열고 다시 로그인</li>
             <li>계정 → 알림 켜기</li>
           </ol>
         </div>

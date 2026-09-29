@@ -54,7 +54,7 @@ export default function LoginPage() {
             <path d="M5 12.5l4.5 4.5L19 7" stroke="white" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
-        <span className="text-[14px] font-bold text-muted-foreground">plan.0</span>
+        <span className="text-[14px] font-bold text-muted-foreground">PLAN.0</span>
       </div>
 
       <div className="flex w-full max-w-[340px] flex-col items-center gap-8">

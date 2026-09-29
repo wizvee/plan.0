@@ -102,7 +102,7 @@ export async function disablePush(): Promise<PushState> {
 /** 테스트 알림 — 서버 발송(6단계) 전이라 이 기기에서 서비스 워커로 바로 띄운다. 배지도 같이 확인. */
 export async function showTestNotification() {
   const registration = await navigator.serviceWorker.ready;
-  await registration.showNotification("plan.0 테스트 알림", {
+  await registration.showNotification("PLAN.0 테스트 알림", {
     body: "이 기기에서 알림을 받을 수 있어요",
     icon: "/icons/icon-192.png",
     tag: "test",

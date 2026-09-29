@@ -95,22 +95,32 @@ export async function ensureContainerFolder(refreshToken: string, kind: ParaKind
   return ensureFolder(drive, name, kindFolderId);
 }
 
-const PHOTO_ROOT_FOLDER_NAME = "plan.0";
+const PHOTO_ROOT_FOLDER_NAME = "PLAN.0";
+/** 2026-09-29 앱 이름을 PLAN.0으로 바꾸기 전의 폴더 이름 — 이 폴더가 있으면 새로 만들지 않고 이름만 바꿔 계속 쓴다 */
+const LEGACY_PHOTO_ROOT_FOLDER_NAME = "plan.0";
 const PHOTO_FOLDER_NAME = "사진";
 const PHOTO_THUMB_FOLDER_NAME = ".thumbs";
 
 async function ensurePhotoRootFolder(drive: drive_v3.Drive): Promise<string> {
-  const rootId = await ensureFolder(drive, PHOTO_ROOT_FOLDER_NAME, "root");
+  let rootId = await findFolder(drive, PHOTO_ROOT_FOLDER_NAME, "root");
+  if (!rootId) {
+    const legacyId = await findFolder(drive, LEGACY_PHOTO_ROOT_FOLDER_NAME, "root");
+    if (legacyId) {
+      await drive.files.update({ fileId: legacyId, requestBody: { name: PHOTO_ROOT_FOLDER_NAME } });
+      rootId = legacyId;
+    }
+  }
+  rootId ??= await ensureFolder(drive, PHOTO_ROOT_FOLDER_NAME, "root");
   return ensureFolder(drive, PHOTO_FOLDER_NAME, rootId);
 }
 
-/** 할 일 사진 폴더 — plan.0/사진/<name> (PHOTOS-PLAN.md). 없으면 만든다. */
+/** 할 일 사진 폴더 — PLAN.0/사진/<name> (PHOTOS-PLAN.md). 없으면 만든다. */
 export async function ensurePhotoFolder(refreshToken: string, name: string): Promise<string> {
   const drive = getDrive(refreshToken);
   return ensureFolder(drive, name, await ensurePhotoRootFolder(drive));
 }
 
-/** 캘린더용 작은 사진을 모아두는 폴더 — plan.0/사진/.thumbs. 할 일 폴더를 원본만으로 깔끔하게 두려고 따로 둔다. */
+/** 캘린더용 작은 사진을 모아두는 폴더 — PLAN.0/사진/.thumbs. 할 일 폴더를 원본만으로 깔끔하게 두려고 따로 둔다. */
 export async function ensurePhotoThumbFolder(refreshToken: string): Promise<string> {
   const drive = getDrive(refreshToken);
   return ensureFolder(drive, PHOTO_THUMB_FOLDER_NAME, await ensurePhotoRootFolder(drive));
