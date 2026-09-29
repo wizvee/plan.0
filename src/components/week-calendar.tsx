@@ -116,11 +116,11 @@ function DayGridColumn({
         <div key={hour} className="border-t border-black/[0.07]" style={{ height: HOUR_HEIGHT }} />
       ))}
       {isToday ? <CurrentTimeLine /> : null}
-      {layoutDayBlocks(items).map(({ todo, depth }) => (
+      {layoutDayBlocks(items).map(({ todo, left, width, nested }) => (
         <CalendarBlock
           key={todo.id}
           todo={todo}
-          depth={depth}
+          placement={{ left, width, nested }}
           projects={projects}
           areas={areas}
           resources={resources}

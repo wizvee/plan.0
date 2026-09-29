@@ -5,8 +5,9 @@ export const SNAP_MINUTES = 15;
 export const MIN_DURATION_MINUTES = 15;
 export const DEFAULT_DURATION_MINUTES = 60;
 export const DEFAULT_START_MINUTES = 9 * 60;
-export const MIN_BLOCK_HEIGHT = 28;
-export const BLOCK_GAP = 2;
+/** 블록 최소 높이 = 30분 칸 — 30분 블록끼리 딱 붙어도 BLOCK_GAP만큼 틈이 보이게 (애플 캘린더처럼) */
+export const MIN_BLOCK_HEIGHT = 26;
+export const BLOCK_GAP = 3;
 export const GUTTER_WIDTH = 56;
 export const INITIAL_SCROLL_HOUR = 7;
 
