@@ -22,6 +22,7 @@ interface TodoRow {
   project_id: string | null;
   area_id: string | null;
   resource_id: string | null;
+  goal_id: string | null;
 }
 
 function fromRow(row: TodoRow): Todo {
@@ -40,6 +41,7 @@ function fromRow(row: TodoRow): Todo {
     projectId: row.project_id,
     areaId: row.area_id,
     resourceId: row.resource_id,
+    goalId: row.goal_id ?? null,
   };
 }
 
@@ -58,6 +60,7 @@ type UpdatablePatch = Partial<
     | "projectId"
     | "areaId"
     | "resourceId"
+    | "goalId"
   >
 >;
 
@@ -66,6 +69,7 @@ interface NewItemFields {
   projectId?: string | null;
   areaId?: string | null;
   resourceId?: string | null;
+  goalId?: string | null;
   scheduledDate?: string | null;
   startMinutes?: number | null;
   durationMinutes?: number | null;
@@ -139,6 +143,7 @@ export function useSupabaseTodos(userId: string) {
           projectId: fields?.projectId ?? null,
           areaId: fields?.areaId ?? null,
           resourceId: fields?.resourceId ?? null,
+          goalId: fields?.goalId ?? null,
         },
       ]);
 
@@ -153,6 +158,7 @@ export function useSupabaseTodos(userId: string) {
           project_id: fields?.projectId ?? null,
           area_id: fields?.areaId ?? null,
           resource_id: fields?.resourceId ?? null,
+          goal_id: fields?.goalId ?? null,
           scheduled_date: fields?.scheduledDate ?? null,
           start_minutes: fields?.startMinutes ?? null,
           duration_minutes: fields?.durationMinutes ?? null,
@@ -197,6 +203,7 @@ export function useSupabaseTodos(userId: string) {
       if (patch.projectId !== undefined) dbPatch.project_id = patch.projectId;
       if (patch.areaId !== undefined) dbPatch.area_id = patch.areaId;
       if (patch.resourceId !== undefined) dbPatch.resource_id = patch.resourceId;
+      if (patch.goalId !== undefined) dbPatch.goal_id = patch.goalId;
 
       await supabase.from("todos").update(dbPatch).eq("id", id);
     },
@@ -242,6 +249,11 @@ export function useSupabaseTodos(userId: string) {
     setTodos((prev) => prev.map((t) => (t[field] === containerId ? { ...t, [field]: null } : t)));
   }, []);
 
+  /** 목표를 지운 뒤 로컬 연결만 비운다 — DB는 FK `on delete set null (goal_id)`가 처리하고, Realtime UPDATE를 기다리지 않게. */
+  const clearGoalLinks = useCallback((goalId: string) => {
+    setTodos((prev) => prev.map((t) => (t.goalId === goalId ? { ...t, goalId: null } : t)));
+  }, []);
+
   return {
     todos,
     setTodos,
@@ -253,6 +265,7 @@ export function useSupabaseTodos(userId: string) {
     persistPositions,
     removeTodosMappedTo,
     clearMappingTo,
+    clearGoalLinks,
   };
 }
 

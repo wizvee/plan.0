@@ -6,12 +6,14 @@ import { useSupabaseTodos } from "@/lib/supabase/todos";
 import { useSupabaseSubtasks } from "@/lib/supabase/subtasks";
 import { useSupabaseReflections } from "@/lib/supabase/reflections";
 import { useSupabaseContexts } from "@/lib/supabase/contexts";
+import { useSupabaseGoals } from "@/lib/supabase/goals";
 import { useSupabaseAreas, useSupabaseProjects, useSupabaseResources } from "@/lib/supabase/containers";
 
 type TodosStore = ReturnType<typeof useSupabaseTodos>;
 type SubtasksStore = ReturnType<typeof useSupabaseSubtasks>;
 type ReflectionsStore = ReturnType<typeof useSupabaseReflections>;
 type ContextsStore = ReturnType<typeof useSupabaseContexts>;
+type GoalsStore = ReturnType<typeof useSupabaseGoals>;
 type ProjectsStore = ReturnType<typeof useSupabaseProjects>;
 type AreasStore = ReturnType<typeof useSupabaseAreas>;
 type ResourcesStore = ReturnType<typeof useSupabaseResources>;
@@ -24,6 +26,7 @@ interface AppData {
   subtasks: SubtasksStore;
   reflections: ReflectionsStore;
   contexts: ContextsStore;
+  goals: GoalsStore;
   projects: ProjectsStore;
   areas: AreasStore;
   resources: ResourcesStore;
@@ -52,12 +55,13 @@ export function AppDataProvider({
   const subtasks = useSupabaseSubtasks(userId);
   const reflections = useSupabaseReflections(userId);
   const contexts = useSupabaseContexts(userId);
+  const goals = useSupabaseGoals(userId);
   const projects = useSupabaseProjects(userId);
   const areas = useSupabaseAreas(userId);
   const resources = useSupabaseResources(userId);
 
   return (
-    <AppDataContext.Provider value={{ userId, userEmail, googleConnected, todos, subtasks, reflections, contexts, projects, areas, resources }}>{children}</AppDataContext.Provider>
+    <AppDataContext.Provider value={{ userId, userEmail, googleConnected, todos, subtasks, reflections, contexts, goals, projects, areas, resources }}>{children}</AppDataContext.Provider>
   );
 }
 
