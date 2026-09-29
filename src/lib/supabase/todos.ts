@@ -74,6 +74,7 @@ interface NewItemFields {
   scheduledDate?: string | null;
   startMinutes?: number | null;
   durationMinutes?: number | null;
+  memo?: string | null;
 }
 
 export function useSupabaseTodos(userId: string) {
@@ -137,7 +138,7 @@ export function useSupabaseTodos(userId: string) {
           startMinutes: fields?.startMinutes ?? null,
           durationMinutes: fields?.durationMinutes ?? null,
           url: null,
-          memo: null,
+          memo: fields?.memo ?? null,
           projectId: fields?.projectId ?? null,
           areaId: fields?.areaId ?? null,
           resourceId: fields?.resourceId ?? null,
@@ -160,6 +161,7 @@ export function useSupabaseTodos(userId: string) {
           scheduled_date: fields?.scheduledDate ?? null,
           start_minutes: fields?.startMinutes ?? null,
           duration_minutes: fields?.durationMinutes ?? null,
+          memo: fields?.memo ?? null,
         })
         .select()
         .single();

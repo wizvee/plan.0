@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, type CSSProperties, type KeyboardEvent } from "react";
+import { useEffect, useState, type CSSProperties, type KeyboardEvent } from "react";
+import { createPortal } from "react-dom";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ArrowRight, GripVertical, Plus, X } from "lucide-react";
+import { ArrowRight, FolderInput, GripVertical, Plus, X } from "lucide-react";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { InlineText } from "@/components/inline-text";
@@ -14,6 +15,11 @@ import { carryShortDateLabel, nextWeekday } from "@/lib/carry-over";
 import { useSubtasks } from "@/lib/app-data/use-subtasks";
 import { useTodos } from "@/lib/app-data/use-todos";
 import { useSubtaskActions } from "@/lib/app-data/subtask-actions";
+import { useTodoActions } from "@/lib/app-data/todo-actions";
+import { useContainers } from "@/lib/app-data/use-containers";
+
+/** "나중에"로 보낸 뒤 되돌리기 알림이 떠 있는 시간 */
+const LATER_TOAST_MS = 5000;
 
 /** 한글 조합 중 Enter는 무시 — 안 하면 마지막 글자가 한 번 더 들어간다. */
 function isCommitEnter(e: KeyboardEvent<HTMLInputElement>) {
@@ -30,11 +36,29 @@ export function SubtaskList({ todoId, color, className }: { todoId: string; colo
   const { subtasksOf } = useSubtasks();
   const { todos } = useTodos();
   const actions = useSubtaskActions();
+  const { moveSubtaskToLater } = useTodoActions();
+  const { containerNameOf } = useContainers();
   const [draft, setDraft] = useState("");
+  const [toast, setToast] = useState<{ message: string; undo: () => void } | null>(null);
   const items = subtasksOf(todoId);
+  const parent = todos.find((t) => t.id === todoId);
+  // "나중에"로 보낼 곳 — 부모 할 일과 같은 PARA, 없으면 Inbox
+  const laterTarget = parent ? containerNameOf(parent) : undefined;
+  const laterLabel = laterTarget ? `${laterTarget} 할 일로` : "Inbox로";
   // 넘긴 항목 옆 "9/29 (화)로 넘김" — 넘기면 할 일이 완료돼 끌어 옮길 수 없으므로(완료를 풀지 않는 한) 날짜에서 다시 계산한다
-  const scheduledDate = todos.find((t) => t.id === todoId)?.scheduledDate ?? null;
+  const scheduledDate = parent?.scheduledDate ?? null;
   const carriedLabel = scheduledDate ? `${carryShortDateLabel(nextWeekday(scheduledDate))}로 넘김` : "넘김";
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = window.setTimeout(() => setToast(null), LATER_TOAST_MS);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
+
+  async function sendLater(subtask: Subtask) {
+    const undo = await moveSubtaskToLater(subtask.id);
+    if (undo) setToast({ message: `${subtask.content} → ${laterLabel} 보냈어요`, undo });
+  }
 
   function submitDraft() {
     if (!draft.trim()) return;
@@ -52,6 +76,8 @@ export function SubtaskList({ todoId, color, className }: { todoId: string; colo
             subtask={subtask}
             color={color}
             carriedLabel={carriedLabel}
+            laterTitle={`나중에 — ${laterLabel} 보내기 (날짜 없이 옮겨서 Inbox에도 보여요 · 넘김 기록은 안 남아요)`}
+            onLater={() => void sendLater(subtask)}
           />
         ))}
       </SortableContext>
@@ -73,11 +99,55 @@ export function SubtaskList({ todoId, color, className }: { todoId: string; colo
           className="min-w-0 flex-1 border-0 bg-transparent py-2.5 text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
         />
       </label>
+      {toast ? (
+        <LaterToast
+          message={toast.message}
+          onUndo={() => {
+            toast.undo();
+            setToast(null);
+          }}
+        />
+      ) : null}
     </div>
   );
 }
 
-function SubtaskRow({ subtask, color, carriedLabel }: { subtask: Subtask; color: string; carriedLabel: string }) {
+/**
+ * "나중에" 뒤 되돌리기 알림 — 화면 아래 가운데. body 포털(모달 · Inbox 패널의 쌓임 맥락에 갇히지 않게).
+ * 클릭은 부모(할 일 카드 등)로 올라가지 않게 막는다 — 포털이어도 React 이벤트는 컴포넌트 트리를 따라 올라간다.
+ */
+function LaterToast({ message, onUndo }: { message: string; onUndo: () => void }) {
+  return createPortal(
+    <div
+      role="status"
+      onClick={(e) => e.stopPropagation()}
+      className="fixed bottom-[calc(24px+var(--tabbar-h,0px))] left-1/2 z-[80] flex max-w-[calc(100vw-32px)] -translate-x-1/2 items-center gap-3 rounded-[10px] bg-foreground/[0.92] px-3.5 py-2.5 text-[13px] text-background shadow-[0_8px_24px_rgba(0,0,0,0.22)]"
+    >
+      <FolderInput className="size-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
+      <span className="min-w-0 truncate">
+        <InlineText text={message} />
+      </span>
+      <button type="button" onClick={onUndo} className="shrink-0 font-bold text-accent hover:opacity-80">
+        되돌리기
+      </button>
+    </div>,
+    document.body
+  );
+}
+
+function SubtaskRow({
+  subtask,
+  color,
+  carriedLabel,
+  laterTitle,
+  onLater,
+}: {
+  subtask: Subtask;
+  color: string;
+  carriedLabel: string;
+  laterTitle: string;
+  onLater: () => void;
+}) {
   const actions = useSubtaskActions();
   const [text, setText] = useState(subtask.content);
   // 평소엔 `코드`가 보이도록 렌더링된 텍스트, 누르면 원문을 고치는 입력칸
@@ -178,6 +248,19 @@ function SubtaskRow({ subtask, color, carriedLabel }: { subtask: Subtask; color:
           <InlineText text={subtask.content} />
         </button>
       )}
+      {/* 나중에 — 안 끝난 항목만. 삭제(×)와 헷갈리지 않게 글자까지 쓴다. 모바일은 항상, 데스크톱은 hover 시 */}
+      {!subtask.completed ? (
+        <button
+          type="button"
+          onClick={onLater}
+          title={laterTitle}
+          aria-label={laterTitle}
+          className="flex h-[26px] shrink-0 items-center gap-1 rounded-md bg-black/[0.06] pl-1.5 pr-2 text-[12.5px] font-semibold text-foreground hover:bg-black/10 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+        >
+          <FolderInput className="size-3.5" strokeWidth={1.8} aria-hidden="true" />
+          나중에
+        </button>
+      ) : null}
       <button
         type="button"
         onClick={() => actions.remove(subtask.id)}

@@ -97,6 +97,7 @@
 | D11 | **회고** — 잘한 점 · 아쉬운 점 · 다음엔 여러 개. 종류 드롭다운 + Enter로 연속 추가(고른 종류 유지), 누르면 수정(비우면 삭제), × 삭제. 프로젝트에 매핑돼 있으면 "프로젝트 회고에도 모여요" | `reflection/reflection-list.tsx`, `reflection/reflection-kind.tsx`, `lib/app-data/reflection-actions.ts` |
 | D12 | **다음 날로 넘기기** — 캘린더에 배치된 할 일의 안 끝난 하위 할 일을 다음 평일(이름 + PARA가 같은 할 일, 없으면 새로 만듦) 맨 위로 옮겨 적고, 원래 항목은 "넘김"(회색 화살표, 3/4 그대로)으로 남기며 이 할 일은 완료. 끝나는 시각 전엔 푸터 작은 "넘기기", 지나면(지난 날짜 포함) 큰 카드 | `todo-detail-modal.tsx`, `lib/carry-over.ts`, `lib/app-data/todo-actions.ts` |
 | D13 | **사진** 탭 — 여러 장 올리기(브라우저에서 2048px · 640px JPEG로 줄여 Drive `PLAN.0/사진/<날짜> <이름>`에 저장), 3열 그리드, ★ 대표(없으면 첫 장), 누르면 크게 보기(대표로 · Drive에서 열기 · 삭제 = Drive 휴지통, ← → · Esc). Drive 미연결이면 연결 안내 | `photo/photo-tab.tsx`, `photo/photo-viewer.tsx`, `lib/supabase/photos.ts`, `app/api/photos/` |
+| D14 | **하위 할 일 "나중에"** — 안 끝난 하위 할 일을 부모와 같은 PARA의 날짜 없는 할 일로 옮김(메모에 "L사 업무(9/30)에서 옮김", 넘김 기록 안 남김), 화면 아래 되돌리기 알림 5초 | `subtask/subtask-list.tsx`, `lib/app-data/todo-actions.ts` |
 
 ## 7. PARA 목록
 

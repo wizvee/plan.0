@@ -135,6 +135,9 @@ AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBann
 - **하위 할 일 넘김**(CARRY-OVER-PLAN.md): 넘긴 항목은 체크박스 대신 회색 원 안 `ArrowRight`, 취소선 없이 보조 텍스트 색
   (취소선 = 완료, 화살표 = 넘김). 주 보기 블록에선 작은 화살표. 진행률은 분모에만 넣는다(3/4).
   넘기기 버튼은 할 일이 끝나기 전엔 푸터 왼쪽 작은 회색 텍스트 버튼, 끝난 뒤엔 하위 할 일 탭 아래 accent 카드(때 맞춰 유도).
+- **하위 할 일 "나중에"**(LATER-PLAN.md): 안 끝난 하위 할 일 행의 × 왼쪽 회색 칩 `FolderInput` + "나중에"(×와 구분되게 글자까지),
+  데스크톱 hover · 터치 항상. 누르면 부모와 같은 PARA의 날짜 없는 할 일로 옮기고(메모 "L사 업무(9/30)에서 옮김"), 화면 아래 가운데
+  어두운 알림 + "되돌리기" 5초(`LaterToast`, body 포털).
 - **할 일 상세 팝업**: 머리(체크 · 제목 · 일정 · PARA)와 바닥(노트로 전환 · 삭제)은 고정, 가운데는 세그먼트 탭
   (하위 할 일 · 회고 · 메모·URL · 사진). 탭 이름에 내용 표시(`2/4` · 개수 · 점), 탭 본문 높이 고정. 새 항목은 탭으로 추가한다.
 - **사진**(PHOTOS-PLAN.md, 시안 https://claude.ai/artifact/4pamL9JChaBcYvJZXvfe2c): 파일은 Google Drive, 화면엔 `/api/photos/<id>`로.
