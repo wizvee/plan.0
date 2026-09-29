@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/client";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 import type { WeeklyGoal } from "@/lib/types";
 
 interface GoalRow {
@@ -46,14 +47,11 @@ export function useSupabaseGoals(userId: string) {
   useEffect(() => {
     let active = true;
 
-    supabase
-      .from("weekly_goals")
-      .select("*")
-      .then(({ data, error }) => {
-        if (!active) return;
-        if (!error && data) setGoals((data as GoalRow[]).map(fromRow));
-        setLoading(false);
-      });
+    fetchAllRows(supabase, "weekly_goals").then(({ data, error }) => {
+      if (!active) return;
+      if (!error && data) setGoals((data as GoalRow[]).map(fromRow));
+      setLoading(false);
+    });
 
     const channel = supabase
       .channel(`goals-${userId}`)

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/client";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 import type { ParaKind, Todo, TodoKind } from "@/lib/types";
 
 interface TodoRow {
@@ -83,14 +84,11 @@ export function useSupabaseTodos(userId: string) {
   useEffect(() => {
     let active = true;
 
-    supabase
-      .from("todos")
-      .select("*")
-      .then(({ data, error }) => {
-        if (!active) return;
-        if (!error && data) setTodos((data as TodoRow[]).map(fromRow));
-        setLoading(false);
-      });
+    fetchAllRows(supabase, "todos").then(({ data, error }) => {
+      if (!active) return;
+      if (!error && data) setTodos((data as TodoRow[]).map(fromRow));
+      setLoading(false);
+    });
 
     const channel = supabase
       .channel(`todos-${userId}`)

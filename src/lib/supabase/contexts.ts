@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/client";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 import type { Context } from "@/lib/types";
 
 interface ContextRow {
@@ -50,12 +51,9 @@ export function useSupabaseContexts(userId: string) {
   useEffect(() => {
     let active = true;
 
-    supabase
-      .from("contexts")
-      .select("*")
-      .then(({ data, error }) => {
-        if (active && !error && data) setContexts((data as ContextRow[]).map(fromRow));
-      });
+    fetchAllRows(supabase, "contexts").then(({ data, error }) => {
+      if (active && !error && data) setContexts((data as ContextRow[]).map(fromRow));
+    });
     supabase
       .from("user_context")
       .select("*")

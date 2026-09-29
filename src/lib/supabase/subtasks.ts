@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/client";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 import type { Subtask } from "@/lib/types";
 
 interface SubtaskRow {
@@ -43,14 +44,11 @@ export function useSupabaseSubtasks(userId: string) {
   useEffect(() => {
     let active = true;
 
-    supabase
-      .from("todo_subtasks")
-      .select("*")
-      .then(({ data, error }) => {
-        if (!active) return;
-        if (!error && data) setSubtasks((data as SubtaskRow[]).map(fromRow));
-        setLoading(false);
-      });
+    fetchAllRows(supabase, "todo_subtasks").then(({ data, error }) => {
+      if (!active) return;
+      if (!error && data) setSubtasks((data as SubtaskRow[]).map(fromRow));
+      setLoading(false);
+    });
 
     const channel = supabase
       .channel(`subtasks-${userId}`)

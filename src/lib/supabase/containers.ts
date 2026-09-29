@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/client";
+import { fetchAllRows } from "@/lib/supabase/fetch-all";
 import type { Area, ParaContainer, Project, Resource } from "@/lib/types";
 
 interface ProjectRow {
@@ -45,14 +46,11 @@ export function useSupabaseProjects(userId: string) {
   useEffect(() => {
     let active = true;
 
-    supabase
-      .from("projects")
-      .select("*")
-      .then(({ data, error }) => {
-        if (!active) return;
-        if (!error && data) setProjects((data as ProjectRow[]).map(projectFromRow));
-        setLoading(false);
-      });
+    fetchAllRows(supabase, "projects").then(({ data, error }) => {
+      if (!active) return;
+      if (!error && data) setProjects((data as ProjectRow[]).map(projectFromRow));
+      setLoading(false);
+    });
 
     const channel = supabase
       .channel(`projects-${userId}`)
@@ -179,14 +177,11 @@ function useSupabaseContainerTable(table: "areas" | "resources", userId: string)
   useEffect(() => {
     let active = true;
 
-    supabase
-      .from(table)
-      .select("*")
-      .then(({ data, error }) => {
-        if (!active) return;
-        if (!error && data) setItems((data as ContainerRow[]).map(containerFromRow));
-        setLoading(false);
-      });
+    fetchAllRows(supabase, table).then(({ data, error }) => {
+      if (!active) return;
+      if (!error && data) setItems((data as ContainerRow[]).map(containerFromRow));
+      setLoading(false);
+    });
 
     const channel = supabase
       .channel(`${table}-${userId}`)
