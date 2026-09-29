@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { nextPosition, useTodos } from "@/lib/app-data/use-todos";
 import { useSubtasks } from "@/lib/app-data/use-subtasks";
 import { useReflections } from "@/lib/app-data/use-reflections";
-import type { TodoKind } from "@/lib/types";
+import type { ParaKind, TodoKind } from "@/lib/types";
 
 export type ParaMappingPatch = { projectId: string | null; areaId: string | null; resourceId: string | null };
 
@@ -57,6 +57,17 @@ export function useTodoActions() {
       addToInbox(content: string, kind: TodoKind) {
         if (kind === "note") void addNote(content, nextPosition(backlogItems));
         else void addTodo(content, nextPosition(backlogItems));
+      },
+      /**
+       * PARA 상세에서 바로 만든 할 일 — 이 컨테이너에 매핑되고, 날짜가 없으니 Inbox 맨 끝에도 보인다.
+       * 만든 할 일 id를 돌려준다(빈 내용 · 저장 실패면 undefined).
+       */
+      addToContainer(content: string, kind: ParaKind, containerId: string) {
+        return addTodo(content, nextPosition(backlogItems), {
+          projectId: kind === "project" ? containerId : null,
+          areaId: kind === "area" ? containerId : null,
+          resourceId: kind === "resource" ? containerId : null,
+        });
       },
     }),
     [todos, backlogItems, addTodo, addNote, updateTodo, removeTodo, dropSubtasksOf, dropReflectionsOfTodo]

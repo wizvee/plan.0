@@ -13,8 +13,10 @@ import type { DropTargetData } from "@/lib/dnd/drop-targets";
 import { cn } from "@/lib/utils";
 import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR } from "@/lib/category";
 import { useSession } from "@/lib/app-data/app-data-provider";
+import { useReflections } from "@/lib/app-data/use-reflections";
 import {
   PARA_KIND_LABELS,
+  PARA_KIND_LABELS_KO,
   type ParaContainer,
   type ParaKind,
 } from "@/lib/types";
@@ -24,6 +26,9 @@ import { InlineText } from "@/components/inline-text";
 import { ScrapSection } from "@/components/para/scrap-section";
 import { FilesTab } from "@/components/para/files-tab";
 import { ProjectRetroTab } from "@/components/reflection/project-retro-tab";
+import { AddMappedTodoRow } from "@/components/para/add-mapped-todo-row";
+import { ContainerMenu } from "@/components/para/container-menu";
+import { DeleteContainerDialog } from "@/components/para/delete-container-dialog";
 import type { DriveFile } from "@/lib/google-drive";
 import { classifyDriveFile } from "@/lib/drive-file";
 import { parseNoteContent, serializeNoteContent, type NoteProperty } from "@/lib/frontmatter";
@@ -51,7 +56,8 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
   const router = useRouter();
   const searchParams = useSearchParams();
   const { todos, setTodos } = useTodos();
-  const { projects, updateProject, areas, updateArea, resources, updateResource } = useContainers();
+  const { projects, updateProject, areas, updateArea, resources, updateResource, containersLoading } = useContainers();
+  const { reflections } = useReflections();
   const actions = useTodoActions();
   const { googleConnected } = useSession();
 
@@ -68,6 +74,12 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
 
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
+
+  // 삭제 (PARA-MANAGE-PLAN.md 2-2). 삭제 중엔 컨테이너가 먼저 사라져도 "찾을 수 없어요"를 잠깐 보여주지 않게.
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  // 이 화면에서 방금 추가한 할 일 — 옅은 파란 배경으로 표시만 한다(저장하지 않음, 화면을 떠나면 사라짐)
+  const [recentTodoIds, setRecentTodoIds] = useState<string[]>([]);
 
   // 스크랩 선택/승격 (PLANNING.md 9.5)
   const [scrapSelectMode, setScrapSelectMode] = useState(false);
@@ -99,8 +111,22 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
     kind === "project" ? project : kind === "area" ? areas.find((a) => a.id === id) : resources.find((r) => r.id === id);
 
   if (!container) {
+    if (containersLoading || deleting) {
+      return <div className="mx-auto max-w-2xl px-4 py-10 text-[15px] text-muted-foreground">불러오는 중...</div>;
+    }
+    // 다른 기기에서 삭제됐거나 잘못된 주소 — Realtime DELETE로 사라지면 여기로 온다
     return (
-      <div className="mx-auto max-w-2xl px-4 py-10 text-[15px] text-muted-foreground">불러오는 중...</div>
+      <div className="mx-auto flex max-w-2xl flex-col items-center gap-2 px-4 py-16 text-center">
+        <span className="text-[16px] font-semibold">이 {PARA_KIND_LABELS_KO[kind]}를 찾을 수 없어요</span>
+        <span className="text-[13.5px] text-muted-foreground">다른 기기에서 삭제됐을 수 있어요.</span>
+        <button
+          type="button"
+          onClick={() => router.replace(`/para?kind=${kind}`)}
+          className="mt-2 flex h-8 items-center rounded-lg bg-primary px-4 text-[13.5px] font-semibold text-primary-foreground"
+        >
+          {PARA_KIND_LABELS[kind]} 목록으로
+        </button>
+      </div>
     );
   }
 
@@ -111,7 +137,8 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
     .filter((t) => t.kind === "task")
     .sort((a, b) => {
       if (a.completed !== b.completed) return a.completed ? 1 : -1;
-      return a.createdAt.localeCompare(b.createdAt);
+      // 미완료는 최근 것이 위 — 맨 위 입력줄에서 추가한 할 일이 바로 아래에 나타나게. 완료는 예전처럼 만든 순서
+      return a.completed ? a.createdAt.localeCompare(b.createdAt) : b.createdAt.localeCompare(a.createdAt);
     });
   const mappedNotes = mappedHere.filter((t) => t.kind === "note");
   const doneCount = mappedTasks.filter((t) => t.completed).length;
@@ -470,6 +497,13 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
             <InlineText text={container.name} />
           </h1>
         )}
+        <ContainerMenu
+          kind={kind}
+          statusDone={statusDone}
+          onRename={startEditingName}
+          onToggleStatus={toggleStatus}
+          onDelete={() => setDeleteOpen(true)}
+        />
       </div>
 
       <div className="mb-[18px] flex flex-wrap items-stretch gap-y-3 rounded-xl bg-secondary px-1 py-3">
@@ -568,29 +602,37 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
               <span className="text-[13px] text-muted-foreground">{mappedTasks.length}</span>
             </div>
             <div className="overflow-hidden rounded-xl border border-border bg-card">
+              <AddMappedTodoRow
+                label={`이 ${PARA_KIND_LABELS_KO[kind]}에 새 할 일 추가`}
+                onAdd={(content) =>
+                  void actions.addToContainer(content, kind, id).then((newId) => {
+                    if (newId) setRecentTodoIds((prev) => [...prev, newId]);
+                  })
+                }
+              />
               {mappedTasks.map((todo) => (
-                <TodoCard
-                  key={todo.id}
-                  todo={todo}
-                  projects={projects}
-                  areas={areas}
-                  resources={resources}
-                  onToggle={actions.toggle}
-                  onRemove={actions.remove}
-                  onEdit={actions.edit}
-                  onMemoEdit={actions.editMemo}
-                  onUrlEdit={actions.editUrl}
-                  onAssignPara={actions.assignPara}
-                  onConvert={actions.convert}
-                  expandable
-                />
+                <div key={todo.id} className={cn(recentTodoIds.includes(todo.id) && "bg-primary/[0.05]")}>
+                  <TodoCard
+                    todo={todo}
+                    projects={projects}
+                    areas={areas}
+                    resources={resources}
+                    onToggle={actions.toggle}
+                    onRemove={actions.remove}
+                    onEdit={actions.edit}
+                    onMemoEdit={actions.editMemo}
+                    onUrlEdit={actions.editUrl}
+                    onAssignPara={actions.assignPara}
+                    onConvert={actions.convert}
+                    expandable
+                  />
+                </div>
               ))}
-              <p className="flex min-h-[42px] items-center gap-2 px-4 text-[13px] text-muted-foreground">
-                <InboxIcon className="size-[15px] shrink-0" strokeWidth={1.8} />
-                {mappedTasks.length === 0 ? "아직 연결된 할 일이 없어요. " : ""}Inbox에서 끌어다 놓으면 이{" "}
-                {PARA_KIND_LABELS_KO[kind]}에 연결돼요
-              </p>
             </div>
+            <p className="mt-2 flex items-start gap-1.5 px-1 text-[12.5px] leading-[1.45] text-muted-foreground">
+              <InboxIcon className="mt-px size-[14px] shrink-0" strokeWidth={1.8} aria-hidden="true" />
+              여기서 만든 할 일은 날짜가 정해질 때까지 Inbox에도 보여요 · Inbox에서 끌어다 놓아도 연결돼요
+            </p>
           </section>
 
           <ScrapSection
@@ -669,11 +711,26 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
           onSave={() => void handleSaveFile()}
         />
       ) : null}
+
+      {deleteOpen ? (
+        <DeleteContainerDialog
+          kind={kind}
+          id={id}
+          name={container.name}
+          taskCount={mappedTasks.length}
+          noteCount={mappedNotes.length}
+          projectRetroCount={kind === "project" ? reflections.filter((r) => r.projectId === id).length : 0}
+          hasDriveFolder={Boolean(container.driveFolderId)}
+          markDoneLabel={statusDone ? null : kind === "project" ? "대신 완료로 표시" : "대신 보관하기"}
+          onMarkDone={toggleStatus}
+          onBusyChange={setDeleting}
+          onDeleted={() => router.replace(`/para?kind=${kind}`)}
+          onClose={() => setDeleteOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }
-
-const PARA_KIND_LABELS_KO: Record<ParaKind, string> = { project: "프로젝트", area: "영역", resource: "리소스" };
 
 type DetailTab = "overview" | "tasks" | "files" | "retro";
 

@@ -114,6 +114,9 @@ export const PARA_KIND_LABELS: Record<ParaKind, string> = {
   resource: "Resource",
 };
 
+/** 문장 안에서 쓰는 한국어 이름 ("이 프로젝트의 할 일", "영역 삭제…") */
+export const PARA_KIND_LABELS_KO: Record<ParaKind, string> = { project: "프로젝트", area: "영역", resource: "리소스" };
+
 export interface Project {
   id: string;
   name: string;

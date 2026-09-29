@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/client";
-import type { Todo, TodoKind } from "@/lib/types";
+import type { ParaKind, Todo, TodoKind } from "@/lib/types";
 
 interface TodoRow {
   id: string;
@@ -213,5 +213,50 @@ export function useSupabaseTodos(userId: string) {
     [supabase]
   );
 
-  return { todos, setTodos, loading, addTodo, addNote, updateTodo, removeTodo, persistPositions };
+  /**
+   * PARA 컨테이너 하나에 매핑된 할 일 · 노트를 전부 지운다(컨테이너 "함께 삭제", PARA-MANAGE-PLAN.md).
+   * 낙관적으로 빼지 않고 DB 삭제가 성공한 뒤에 로컬에서 뺀다 — 실패하면 컨테이너 삭제를 멈춰야 해서.
+   * 하위 할 일 · 회고는 DB cascade. 지운 할 일 id 목록을 돌려준다(실패하면 null).
+   */
+  const removeTodosMappedTo = useCallback(
+    async (kind: ParaKind, containerId: string): Promise<string[] | null> => {
+      const { data, error } = await supabase.from("todos").delete().eq(MAPPING_COLUMN[kind], containerId).select("id");
+      if (error) return null;
+      const ids = new Set((data as { id: string }[]).map((row) => row.id));
+      setTodos((prev) => prev.filter((t) => !ids.has(t.id) && t[MAPPING_FIELD[kind]] !== containerId));
+      return Array.from(ids);
+    },
+    [supabase]
+  );
+
+  /** 컨테이너를 지운 뒤 로컬 매핑만 비운다 — DB는 FK `on delete set null`이 처리하고, Realtime UPDATE를 기다리지 않게. */
+  const clearMappingTo = useCallback((kind: ParaKind, containerId: string) => {
+    const field = MAPPING_FIELD[kind];
+    setTodos((prev) => prev.map((t) => (t[field] === containerId ? { ...t, [field]: null } : t)));
+  }, []);
+
+  return {
+    todos,
+    setTodos,
+    loading,
+    addTodo,
+    addNote,
+    updateTodo,
+    removeTodo,
+    persistPositions,
+    removeTodosMappedTo,
+    clearMappingTo,
+  };
 }
+
+const MAPPING_COLUMN: Record<ParaKind, "project_id" | "area_id" | "resource_id"> = {
+  project: "project_id",
+  area: "area_id",
+  resource: "resource_id",
+};
+
+const MAPPING_FIELD: Record<ParaKind, "projectId" | "areaId" | "resourceId"> = {
+  project: "projectId",
+  area: "areaId",
+  resource: "resourceId",
+};

@@ -116,7 +116,8 @@ AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBann
 - **PARA 목록**: 제목 + 설명, 오른쪽 Project/Area/Resource 세그먼트, 카드 그리드.
 - **PARA 상세**: `‹ Project` 뒤로가기(파란 텍스트), 카테고리 아이콘 타일 + 이름(클릭해서 수정), 회색 요약 줄
   (상태 · 마감일 또는 만든 날 · 진행률), 세그먼트 탭(개요 / 할 일 / 자료 / 회고 — 회고는 Project만), 흰 카드 그룹 리스트.
-  Drive 미연결이면 자료 탭은 연결 안내.
+  Drive 미연결이면 자료 탭은 연결 안내. 이름 오른쪽 끝 `···`(회색 원형 버튼) → 이름 바꾸기 · 상태 · 삭제 메뉴 — **삭제 입구는 여기뿐**
+  (목록 카드에 넣지 않는다). 할 일 카드 맨 위 줄은 `+ 새 할 일` 입력(PARA-MANAGE-PLAN.md).
 - **팝오버/메뉴**: 흰 반투명 + `backdrop-blur` + 큰 그림자, 메뉴 항목은 hover 시 primary 배경 · 흰 글자(macOS 메뉴).
 - **모달**: `createPortal(…, document.body)`로 띄운다. Inbox 패널처럼 sticky인 조상 안에서 그리면 자체 쌓임 맥락에 갇혀
   캘린더의 z-index 요소가 모달 위로 올라온다(2026-09-28 버그).

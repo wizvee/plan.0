@@ -29,5 +29,8 @@ export function useContainers() {
     [nameById]
   );
 
-  return { ...projectStore, ...areaStore, ...resourceStore, containerNameOf };
+  // 세 저장소 모두 `loading`이라 펼치면 덮어써진다 — 셋 중 하나라도 처음 조회 중인지 따로 계산한다
+  const containersLoading = projectStore.loading || areaStore.loading || resourceStore.loading;
+
+  return { ...projectStore, ...areaStore, ...resourceStore, containerNameOf, containersLoading };
 }

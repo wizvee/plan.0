@@ -153,5 +153,26 @@ export function useSupabaseReflections(userId: string) {
     );
   }, []);
 
-  return { reflections, loading, addReflection, updateReflection, removeReflection, dropReflectionsOfTodo };
+  /**
+   * 할 일 여러 개 · 프로젝트를 지울 때 로컬 상태를 한 번에 맞춘다(PARA 컨테이너 삭제, PARA-MANAGE-PLAN.md).
+   * 그 할 일들 · 프로젝트에 붙은 회고는 빼고(DB는 cascade), 지운 할 일을 가리키던 "할 일로" 표시는 비운다.
+   */
+  const dropReflectionsOf = useCallback((todoIds: string[], projectId: string | null) => {
+    const removed = new Set(todoIds);
+    setReflections((prev) =>
+      prev
+        .filter((r) => !(r.todoId && removed.has(r.todoId)) && !(projectId && r.projectId === projectId))
+        .map((r) => (r.convertedTodoId && removed.has(r.convertedTodoId) ? { ...r, convertedTodoId: null } : r))
+    );
+  }, []);
+
+  return {
+    reflections,
+    loading,
+    addReflection,
+    updateReflection,
+    removeReflection,
+    dropReflectionsOfTodo,
+    dropReflectionsOf,
+  };
 }

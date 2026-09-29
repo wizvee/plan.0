@@ -138,6 +138,12 @@ export function useSupabaseSubtasks(userId: string) {
     setSubtasks((prev) => prev.filter((s) => s.todoId !== todoId));
   }, []);
 
+  /** 할 일 여러 개를 한 번에 지울 때(PARA 컨테이너 "함께 삭제") 로컬에서 그 하위를 뺀다 — DB는 cascade. */
+  const dropSubtasksOfMany = useCallback((todoIds: string[]) => {
+    const removed = new Set(todoIds);
+    setSubtasks((prev) => prev.filter((s) => !removed.has(s.todoId)));
+  }, []);
+
   return {
     subtasks,
     loading,
@@ -146,5 +152,6 @@ export function useSupabaseSubtasks(userId: string) {
     removeSubtask,
     persistSubtaskPositions,
     dropSubtasksOf,
+    dropSubtasksOfMany,
   };
 }
