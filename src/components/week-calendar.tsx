@@ -6,6 +6,7 @@ import { useDroppable } from "@dnd-kit/core";
 
 import { CalendarBlock } from "@/components/calendar-block";
 import { cn } from "@/lib/utils";
+import { layoutDayBlocks } from "@/lib/calendar-layout";
 import type { DropTargetData } from "@/lib/dnd/drop-targets";
 import { useTodayKey } from "@/lib/use-today";
 import { DAY_KEYS, DAY_LABELS_KO, type Area, type DayKey, type Project, type Resource, type Todo } from "@/lib/types";
@@ -115,10 +116,11 @@ function DayGridColumn({
         <div key={hour} className="border-t border-black/[0.07]" style={{ height: HOUR_HEIGHT }} />
       ))}
       {isToday ? <CurrentTimeLine /> : null}
-      {items.map((todo) => (
+      {layoutDayBlocks(items).map(({ todo, depth }) => (
         <CalendarBlock
           key={todo.id}
           todo={todo}
+          depth={depth}
           projects={projects}
           areas={areas}
           resources={resources}
