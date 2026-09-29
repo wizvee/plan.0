@@ -61,7 +61,7 @@
 색을 `bg-blue-500`처럼 하드코딩하지 말고 `style={{ backgroundColor: `var(${CATEGORY_TINT_VAR[category]})` }}` 형태로.
 
 적용된 곳:
-- `calendar-block.tsx` — 틴트 배경 + 왼쪽 3px 카테고리 바(`box-shadow: inset`) + 카테고리 색 작은 원형 체크. 완료되면 색은 유지하고 블록 전체를 50%로 흐리게. 매핑 없으면 회색.
+- `calendar-block.tsx` — 틴트 배경(모서리 4px) + 왼쪽 카테고리 선(위 · 아래 · 왼쪽 3px 띄운 3px 막대, 끝 살짝 둥글게 — 애플 캘린더 방식, `CategoryBar`) + 카테고리 색 작은 원형 체크. 완료되면 색은 유지하고 블록 전체를 50%로 흐리게. 매핑 없으면 회색.
 - `month-calendar.tsx` — 일정 한 줄 = 카테고리 색 점 + 제목 + 시작 시각.
 - `todo-card.tsx` — 소속 이름(`badge`) 앞에 카테고리 점. Inbox는 모든 화면에서 이름을 보여준다.
 - `container-card.tsx` / PARA 상세 — 카드 상단 3px 보더, 상태 칩 배경, 진행률 바, 아이콘 타일이 종류별 색.
@@ -74,7 +74,7 @@
 
 - 패널 · 카드 · 그룹 리스트 · 팝오버: `rounded-xl`(14px) 또는 `rounded-[10px]`~`rounded-[12px]`
 - 버튼 · 입력창 · 세그먼트: `rounded-[7px]`~`rounded-lg`, 세그먼트 안 선택 조각은 `rounded-md`/`rounded-[5px]`
-- 캘린더 블록: `rounded-md`, 칩 · 태그: `rounded-[5px]`
+- 캘린더 블록: `rounded-[4px]`(2026-09-29 애플 캘린더 스타일로 8 → 4px), 칩 · 태그: `rounded-[5px]`
 - 체크박스 · 아바타 · 오늘 날짜 · 점 · 개수 배지는 **원형(`rounded-full`) 유지**
 - `rounded-2xl`은 쓰지 마세요.
 
