@@ -113,48 +113,51 @@ export function PhotoTab({ todoId }: { todoId: string }) {
         onChange={(e) => void handleFiles(e.target.files)}
       />
 
-      <div className="grid min-h-0 grid-cols-3 content-start gap-1.5 overflow-y-auto">
-        {photos.map((photo, index) => (
+      {/* 스크롤은 바깥 칸이 맡는다 — 그리드 자체를 줄이면(overflow가 있는 정사각 칸은 최소 높이가 0이라) 줄이 겹쳐 보였다 */}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="grid grid-cols-3 gap-1.5">
+          {photos.map((photo, index) => (
+            <button
+              key={photo.id}
+              type="button"
+              onClick={() => setViewing(index)}
+              aria-label={`사진 ${index + 1}${photo.id === cover?.id ? " (대표)" : ""} 크게 보기`}
+              className="relative aspect-square overflow-hidden rounded-lg bg-muted"
+            >
+              {failed.has(photo.id) ? (
+                <ImageOff className="absolute left-1/2 top-1/2 size-5 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" strokeWidth={1.6} />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element -- Drive에서 읽어오는 사용자 사진이라 next/image 최적화 대상이 아님
+                <img
+                  src={photoUrl(photo.id, "thumb")}
+                  alt=""
+                  loading="lazy"
+                  onError={() => setFailed((prev) => new Set(prev).add(photo.id))}
+                  className="size-full object-cover"
+                />
+              )}
+              {photo.id === cover?.id ? (
+                <span className="absolute left-1.5 top-1.5 flex h-5 items-center gap-[3px] rounded-full bg-black/55 pl-[5px] pr-[7px] text-[10.5px] font-semibold text-white">
+                  <Star className="size-[11px] fill-current" strokeWidth={1.5} />
+                  대표
+                </span>
+              ) : null}
+            </button>
+          ))}
+          {Array.from({ length: uploading }).map((_, i) => (
+            <div key={`uploading-${i}`} className="flex aspect-square items-center justify-center rounded-lg bg-muted">
+              <Loader2 className="size-5 animate-spin text-muted-foreground" strokeWidth={1.8} aria-label="올리는 중" />
+            </div>
+          ))}
           <button
-            key={photo.id}
             type="button"
-            onClick={() => setViewing(index)}
-            aria-label={`사진 ${index + 1}${photo.id === cover?.id ? " (대표)" : ""} 크게 보기`}
-            className="relative aspect-square overflow-hidden rounded-lg bg-muted"
+            onClick={() => inputRef.current?.click()}
+            className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border-[1.5px] border-dashed border-black/[0.18] text-[12px] text-muted-foreground hover:bg-black/[0.03]"
           >
-            {failed.has(photo.id) ? (
-              <ImageOff className="absolute left-1/2 top-1/2 size-5 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" strokeWidth={1.6} />
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element -- Drive에서 읽어오는 사용자 사진이라 next/image 최적화 대상이 아님
-              <img
-                src={photoUrl(photo.id, "thumb")}
-                alt=""
-                loading="lazy"
-                onError={() => setFailed((prev) => new Set(prev).add(photo.id))}
-                className="size-full object-cover"
-              />
-            )}
-            {photo.id === cover?.id ? (
-              <span className="absolute left-1.5 top-1.5 flex h-5 items-center gap-[3px] rounded-full bg-black/55 pl-[5px] pr-[7px] text-[10.5px] font-semibold text-white">
-                <Star className="size-[11px] fill-current" strokeWidth={1.5} />
-                대표
-              </span>
-            ) : null}
+            <ImagePlus className="size-5" strokeWidth={1.8} />
+            사진 추가
           </button>
-        ))}
-        {Array.from({ length: uploading }).map((_, i) => (
-          <div key={`uploading-${i}`} className="flex aspect-square items-center justify-center rounded-lg bg-muted">
-            <Loader2 className="size-5 animate-spin text-muted-foreground" strokeWidth={1.8} aria-label="올리는 중" />
-          </div>
-        ))}
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border-[1.5px] border-dashed border-black/[0.18] text-[12px] text-muted-foreground hover:bg-black/[0.03]"
-        >
-          <ImagePlus className="size-5" strokeWidth={1.8} />
-          사진 추가
-        </button>
+        </div>
       </div>
 
       {error ? <p className="shrink-0 px-0.5 text-[12px] text-destructive">{error}</p> : null}
