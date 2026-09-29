@@ -89,7 +89,7 @@ AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBann
 ```
 
 - **`AppRail`**(`components/shell/app-rail.tsx`) — 데스크톱은 왼쪽 76px 세로 레일, 모바일(`sm:` 미만)은 하단 탭바.
-  한 컴포넌트가 반응형으로 모양만 바꿈. 항목: 캘린더 · PARA · Inbox(열기/닫기, 개수 배지) · 계정(아바타, Drive 미연결이면 주황 점).
+  한 컴포넌트가 반응형으로 모양만 바꿈. 항목: 목표(이번 주 진행률 링) · 캘린더 · PARA · Inbox(열기/닫기, 개수 배지) · 계정(아바타, Drive 미연결이면 주황 점).
 - **`InboxPanel`** — 데스크톱은 레일 옆 320px 패널이 **본문을 밀어냄**(sticky, 팝업 아님), 모바일은 하단 탭 위 바텀시트.
   보관함 드롭 영역 · `SortableContext`는 앱에 하나만 있어야 하므로 이 컴포넌트가 유일한 보관함입니다.
   열림 여부는 `localStorage`에 기억(`src/lib/shell-ui.tsx`).
@@ -130,6 +130,9 @@ AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBann
 - **할 일 상세 팝업**: 머리(체크 · 제목 · 일정 · PARA)와 바닥(노트로 전환 · 삭제)은 고정, 가운데는 세그먼트 탭
   (하위 할 일 · 회고 · 메모·URL). 탭 이름에 내용 표시(`2/4` · 개수 · 점), 탭 본문 높이 고정. 새 항목은 탭으로 추가한다.
 - **회고**(REFLECTIONS-PLAN.md): 종류는 `ReflectionKindIcon`(틴트 원 + lucide `ThumbsUp`/`ThumbsDown`/`Lightbulb`), 색은
+- **주간 목표**(GOALS-PLAN.md): 진행률 링은 `GoalRing` 하나를 레일 · 목표 카드가 같이 쓴다(없음 = 점선, 목표 카드는 PARA 색, 레일은 primary).
+  목표 카드 = 흰 카드 + 링 · 제목 · PARA 칩 · `···` + 헤어라인 할 일 목록 + 파란 텍스트 버튼 2개. 캘린더 본문에는 목표를 그리지 않는다(정보량).
+  PARA 고르기 드롭다운은 `ParaMenu`(`components/para/para-menu.tsx`) 하나만 쓴다.
   `--retro-*` 토큰으로 **아이콘에만**(텍스트는 기본 전경색). 종류 선택은 `ReflectionKindSelect` 드롭다운(macOS 메뉴) 하나만 쓴다.
 
 ## 7. 타이포그래피 / 아이콘

@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Calendar, Inbox, LayoutGrid } from "lucide-react";
+import { Calendar, Check, Flag, Inbox, LayoutGrid } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { mondayOf, toDateKey } from "@/lib/week";
@@ -10,10 +10,13 @@ import { useSession } from "@/lib/app-data/app-data-provider";
 import { useTodos } from "@/lib/app-data/use-todos";
 import { useShellUI } from "@/lib/shell-ui";
 import { useContexts } from "@/lib/app-data/use-contexts";
+import { useGoals } from "@/lib/app-data/use-goals";
+import { useTodayKey } from "@/lib/use-today";
+import { GoalRing } from "@/components/goals/goal-ring";
 
 /**
  * 앱 내비게이션 — 데스크톱은 왼쪽 세로 레일(76px), 모바일은 하단 탭바. 한 컴포넌트가 반응형으로
- * 모양만 바꾼다. 항목: 캘린더 · PARA · Inbox(열기/닫기) · 계정(메뉴).
+ * 모양만 바꾼다. 항목: 목표(이번 주 진행률 링) · 캘린더 · PARA · Inbox(열기/닫기) · 계정(메뉴).
  */
 export function AppRail({ accountOpen, onToggleAccount }: { accountOpen: boolean; onToggleAccount: () => void }) {
   const router = useRouter();
@@ -22,8 +25,15 @@ export function AppRail({ accountOpen, onToggleAccount }: { accountOpen: boolean
   const { backlogItems } = useTodos();
   const { inboxOpen, toggleInbox } = useShellUI();
   const { currentContext } = useContexts();
+  const { weekRatioOf } = useGoals();
+  const todayKey = useTodayKey();
 
   const onPara = pathname.startsWith("/para");
+  const onGoals = pathname.startsWith("/goals");
+
+  // 이번 주 목표 진행률(목표별 평균) — 어느 화면에서든 레일 링으로 보인다 (GOALS-PLAN.md). 목표가 없으면 점선.
+  const goalRatio = todayKey ? weekRatioOf(toDateKey(mondayOf(new Date(`${todayKey}T00:00:00`)))) : null;
+  const goalLabel = goalRatio === null ? "목표 — 이번 주 목표 없음" : `목표 — 이번 주 ${Math.round(goalRatio * 100)}%`;
 
   // "캘린더"는 항상 이번 주 주 보기로. 이미 캘린더 화면이면 히스토리를 쌓지 않는다.
   function goCalendar() {
@@ -48,7 +58,16 @@ export function AppRail({ accountOpen, onToggleAccount }: { accountOpen: boolean
         </svg>
       </div>
 
-      <RailButton label="캘린더" active={!onPara} onClick={goCalendar}>
+      <RailButton label="목표" ariaLabel={goalLabel} active={onGoals} onClick={() => router.push("/goals")}>
+        <GoalRing ratio={goalRatio} size={28} strokeWidth={2.5} color="var(--primary)">
+          {goalRatio !== null && goalRatio >= 1 ? (
+            <Check className="size-[14px]" strokeWidth={2.6} />
+          ) : (
+            <Flag className="size-[13px]" strokeWidth={2} />
+          )}
+        </GoalRing>
+      </RailButton>
+      <RailButton label="캘린더" active={!onPara && !onGoals} onClick={goCalendar}>
         <Calendar className="size-[22px]" strokeWidth={1.8} />
       </RailButton>
       <RailButton label="PARA" active={onPara} onClick={() => router.push("/para")}>
@@ -104,12 +123,15 @@ export function AppRail({ accountOpen, onToggleAccount }: { accountOpen: boolean
 
 function RailButton({
   label,
+  ariaLabel,
   active,
   pressed,
   onClick,
   children,
 }: {
   label: string;
+  /** 보이는 이름과 다른 스크린리더 이름 (목표: "목표 — 이번 주 42%") */
+  ariaLabel?: string;
   active: boolean;
   pressed?: boolean;
   onClick: () => void;
@@ -119,7 +141,7 @@ function RailButton({
     <button
       type="button"
       onClick={onClick}
-      aria-label={label}
+      aria-label={ariaLabel ?? label}
       aria-current={pressed === undefined && active ? "page" : undefined}
       aria-pressed={pressed}
       className={cn(
