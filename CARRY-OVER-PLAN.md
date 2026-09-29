@@ -2,7 +2,7 @@
 
 작성 2026-09-29. 시안: https://claude.ai/artifact/RbacFKdYJEUr211wcZ8KhE (① 팝업 넘기기 전 · ② 넘긴 직후 · ③④ 주 보기 전후)
 
-> **상태: 시안 컨펌 → 구현 완료.** 남은 것: 사용자가 마이그레이션 실행 + 실제 화면 확인.
+> **상태: 시안 컨펌 → 구현 완료 → 마이그레이션 실행 · `main` 머지 (2026-09-29).** 남은 것: 실제 화면 확인.
 
 ## 1. 왜
 
@@ -29,7 +29,7 @@
 ## 3. 구현
 
 - DB: `todo_subtasks.carried_at timestamptz null` — `supabase/migrations/20260929_subtask_carried_at.sql`.
-  ⚠️ **사용자가 SQL Editor에서 이 파일만 실행.**
+  사용자가 SQL Editor에서 실행 완료 (2026-09-29).
 - 규칙(순수 함수): `src/lib/carry-over.ts` — `nextWeekday` · `findCarryTarget` · 날짜 라벨.
 - 동작: `useTodoActions().carryOver(id)` — 대상 찾기/만들기 → 하위 할 일 복사(성공한 것만) → 넘김 표시 → 완료.
 - 화면: `todo-detail-modal.tsx`(버튼 · "넘김 N"), `subtask/subtask-list.tsx`(넘김 행), `calendar-block.tsx`(화살표).
