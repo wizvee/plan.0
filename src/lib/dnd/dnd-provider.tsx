@@ -16,6 +16,7 @@ import { useSubtasks } from "@/lib/app-data/use-subtasks";
 import { useSubtaskActions } from "@/lib/app-data/subtask-actions";
 import { preferSpecificTargetCollision } from "@/lib/dnd/collision";
 import { handleDrop } from "@/lib/dnd/handle-drop";
+import { useGoalActions } from "@/lib/app-data/goal-actions";
 import type { ActiveData, DraggedTodoData } from "@/lib/dnd/drop-targets";
 import { TodoCard } from "@/components/todo-card";
 import { CalendarBlock } from "@/components/calendar-block";
@@ -30,6 +31,7 @@ export function DndProvider({ children }: { children: ReactNode }) {
   const { todos, backlogItems, updateTodo, setTodos, persistPositions } = useTodos();
   const { subtasks, subtasksOf } = useSubtasks();
   const subtaskActions = useSubtaskActions();
+  const goalActions = useGoalActions();
   const [active, setActive] = useState<
     { kind: "todo"; id: string; source: DraggedTodoData["source"] } | { kind: "subtask"; id: string } | null
   >(null);
@@ -53,6 +55,7 @@ export function DndProvider({ children }: { children: ReactNode }) {
       persistPositions,
       subtasksOf,
       reorderSubtasks: subtaskActions.reorder,
+      linkToGoal: goalActions.link,
     });
   }
 

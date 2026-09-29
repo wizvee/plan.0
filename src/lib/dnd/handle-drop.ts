@@ -12,6 +12,8 @@ type DropContext = Pick<
 > & {
   subtasksOf: (todoId: string) => Subtask[];
   reorderSubtasks: (todoId: string, orderedIds: string[]) => void;
+  /** 할 일을 주간 목표에 연결 — PARA가 비어 있으면 목표의 PARA를 채운다(`useGoalActions().link`) */
+  linkToGoal: (goalId: string, todoIds: string[]) => void;
 };
 
 /**
@@ -53,6 +55,12 @@ export function handleDrop(event: DragEndEvent, ctx: DropContext) {
     const rawMinutes = ((itemTop - gridTop) / HOUR_HEIGHT) * 60;
     const startMinutes = clampMinutes(snapMinutes(rawMinutes), 0, MINUTES_PER_DAY - duration);
     void ctx.updateTodo(todo.id, { scheduledDate: target.date, startMinutes, durationMinutes: duration });
+    return;
+  }
+
+  // 주간 목표 카드 → 그 목표에 연결 (노트는 목표에 넣지 않는다)
+  if (target.type === "goal") {
+    if (todo.kind === "task") ctx.linkToGoal(target.id, [todo.id]);
     return;
   }
 

@@ -38,7 +38,9 @@ export type DropTargetData =
   /** 주간 캘린더의 하루 칸 — 실제 날짜(yyyy-MM-dd) */
   | { type: "calendar-day"; date: string }
   /** PARA 카드 또는 PARA 상세 화면 */
-  | { type: "para-container"; kind: ParaKind; id: string };
+  | { type: "para-container"; kind: ParaKind; id: string }
+  /** 주간 목표 카드 — 놓으면 그 목표에 연결 (GOALS-PLAN.md) */
+  | { type: "goal"; id: string };
 
 /** 정렬 가능한 카드(useSortable)는 드래그 대상이자 드롭 대상이라 같은 `data`를 쓴다. */
 export type OverData = DropTargetData | DraggedTodoData | DraggedSubtaskData;

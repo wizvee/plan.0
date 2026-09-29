@@ -1,7 +1,7 @@
 import type { ParaKind, Todo } from "@/lib/types";
 
-/** PARA 매핑(projectId/areaId/resourceId)에서 이 할 일의 카테고리를 읽어온다. 매핑이 없으면 null. */
-export function getParaCategory(todo: Todo): ParaKind | null {
+/** PARA 매핑(projectId/areaId/resourceId)에서 카테고리를 읽어온다(할 일 · 주간 목표). 매핑이 없으면 null. */
+export function getParaCategory(todo: Pick<Todo, "projectId" | "areaId" | "resourceId">): ParaKind | null {
   if (todo.projectId) return "project";
   if (todo.areaId) return "area";
   if (todo.resourceId) return "resource";
