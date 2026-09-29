@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { format, parseISO } from "date-fns";
 
 import { nextPosition, useTodos } from "@/lib/app-data/use-todos";
 import { useSubtasks } from "@/lib/app-data/use-subtasks";
@@ -16,7 +17,7 @@ export type ParaMappingPatch = { projectId: string | null; areaId: string | null
  */
 export function useTodoActions() {
   const { todos, backlogItems, addTodo, addNote, updateTodo, removeTodo } = useTodos();
-  const { subtasksOf, addSubtask, markSubtasksCarried, dropSubtasksOf } = useSubtasks();
+  const { subtasks, subtasksOf, addSubtask, removeSubtask, markSubtasksCarried, dropSubtasksOf } = useSubtasks();
   const { dropReflectionsOfTodo } = useReflections();
 
   return useMemo(
@@ -106,6 +107,34 @@ export function useTodoActions() {
           resourceId: kind === "resource" ? containerId : null,
         });
       },
+      /**
+       * "나중에" — 안 끝난 하위 할 일을 날짜 없는 할 일로 뺀다(LATER-PLAN.md). 부모와 같은 PARA에 매핑돼
+       * PARA 할 일 탭 · Inbox에 보이고, 메모에 "L사 업무(9/30)에서 옮김"을 남긴다. 넘김 기록은 남기지 않는다.
+       * 되돌리기 함수를 돌려준다(원래 자리로 — 새 할 일은 지우고 하위 할 일을 같은 순서 번호로 다시 만든다).
+       */
+      async moveSubtaskToLater(subtaskId: string): Promise<(() => void) | null> {
+        const subtask = subtasks.find((s) => s.id === subtaskId);
+        if (!subtask || subtask.completed || subtask.carriedAt) return null;
+        const parent = todos.find((t) => t.id === subtask.todoId);
+        if (!parent) return null;
+
+        const from = parent.scheduledDate
+          ? `${parent.content}(${format(parseISO(parent.scheduledDate), "M/d")})`
+          : parent.content;
+        const todoId = await addTodo(subtask.content, nextPosition(backlogItems), {
+          projectId: parent.projectId,
+          areaId: parent.areaId,
+          resourceId: parent.resourceId,
+          memo: `${from}에서 옮김`,
+        });
+        if (!todoId) return null;
+        await removeSubtask(subtask.id);
+
+        return () => {
+          void removeTodo(todoId);
+          void addSubtask(subtask.todoId, subtask.content, subtask.position);
+        };
+      },
     }),
     [
       todos,
@@ -114,8 +143,10 @@ export function useTodoActions() {
       addNote,
       updateTodo,
       removeTodo,
+      subtasks,
       subtasksOf,
       addSubtask,
+      removeSubtask,
       markSubtasksCarried,
       dropSubtasksOf,
       dropReflectionsOfTodo,
