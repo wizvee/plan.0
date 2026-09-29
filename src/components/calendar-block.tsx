@@ -16,6 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { TodoDetailModal } from "@/components/todo-detail-modal";
 import { InlineText } from "@/components/inline-text";
 import { cn } from "@/lib/utils";
+import { blockLeft } from "@/lib/calendar-layout";
 import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR, getParaCategory } from "@/lib/category";
 import {
   BLOCK_GAP,
@@ -45,6 +46,8 @@ const DRAG_DISTANCE_PX = 4;
 
 interface CalendarBlockProps {
   todo: Todo;
+  /** 겹침 들여쓰기 단계 (`layoutDayBlocks`) — 0이면 칸 전체 너비 */
+  depth?: number;
   projects?: Project[];
   areas?: Area[];
   resources?: Resource[];
@@ -60,6 +63,7 @@ interface CalendarBlockProps {
 
 export function CalendarBlock({
   todo,
+  depth = 0,
   projects,
   areas,
   resources,
@@ -177,7 +181,7 @@ export function CalendarBlock({
     position: "absolute",
     top: minutesToPx(startMinutes),
     height: renderedHeight,
-    left: 3,
+    left: blockLeft(depth),
     right: 4,
     transform: CSS.Translate.toString(transform),
     backgroundColor: tintVar,
@@ -197,6 +201,8 @@ export function CalendarBlock({
           "absolute z-[1] flex cursor-pointer select-none flex-col justify-start overflow-hidden rounded-[4px] py-[5px] pl-[13px] pr-[7px] hover:brightness-[0.98]",
           // 끌 수 있을 때만 touch-none — 잠긴 블록 위에서는 모바일에서 손가락으로 캘린더를 스크롤할 수 있게
           !locked && "touch-none",
+          // 들여서 얹힌 블록은 흰 테두리로 아래 블록과 경계를 준다
+          depth > 0 && "shadow-[0_0_0_1px_var(--background)]",
           todo.completed && "opacity-50",
           isDragging && "z-20 opacity-40",
           compact && "flex-row items-center gap-1.5 py-0"
