@@ -66,6 +66,7 @@
 | W10 | 모바일: 요일+날짜 원형 스트립으로 하루씩 보기 + "39주 · 날짜 요일" 요약 줄 | `week-board.tsx` |
 | W11 | 블록 **하위 할 일** — 제목 옆 `2/4`, 44px 이상이면 바닥 진행률 바, 남는 높이만큼 하위 목록(작은 원으로 바로 체크, 넘긴 항목은 화살표, 넘치면 "외 N개") | `calendar-block.tsx` |
 | W12 | 겹치는 블록 들여쓰기 — 늦게 시작한(같으면 짧은) 블록을 `min(60px, 30%)`씩 들여 위에 얹고 흰 테두리, 최대 50% | `lib/calendar-layout.ts`, `week-calendar.tsx` |
+| W13 | 대표 사진 — 블록 76px 이상이면 사진 배경 + 흰 글씨(하위 목록 · 진행률 바 숨김), 짧으면 오른쪽 위 썸네일, 한 줄 블록엔 없음 | `calendar-block.tsx` |
 
 ## 5. 캘린더 — 월 보기
 
@@ -77,6 +78,7 @@
 | M4 | 일정 칩 클릭 → 상세 팝업 | `month-calendar.tsx` |
 | M5 | 주/월 전환: 툴바 오른쪽 보기 드롭다운, 또는 미니 캘린더 월 라벨 | `calendar-header.tsx` |
 | M6 | 일정 칩에 하위 할 일 `2/4` | `month-calendar.tsx` |
+| M7 | 사진 있는 날 — 그날 가장 이른 할 일의 대표 사진이 칸 전체 배경(위쪽 어둡게 + 흰 글씨) | `month-calendar.tsx` |
 
 ## 6. 할 일 상세 팝업
 
@@ -91,9 +93,10 @@
 | D7 | 완료 체크박스(제목 왼쪽) + 일정 줄(날짜 · 시간, 캘린더에 배치된 경우) | `todo-detail-modal.tsx` |
 | D8 | **하위 할 일 체크리스트** — 체크 · 그 자리 수정(비우면 삭제) · × 삭제 · Enter로 연속 추가(한글 조합 안전) · 그립으로 순서 변경, `2/4 · 50%` + 진행률 바. 노트엔 없음 | `subtask/subtask-list.tsx`, `lib/app-data/subtask-actions.ts` |
 | D9 | 팝업은 `document.body` 포털 — 어디서 열어도 캘린더 · Inbox 위에 뜸 | `todo-detail-modal.tsx` |
-| D10 | **탭 구조** — 체크 · 제목 · 일정 · PARA는 고정, 아래는 하위 할 일(`2/4`) · 회고(개수) · 메모·URL(내용 있으면 점) 탭. 완료된 할 일은 회고 탭, 미완료는 하위 할 일 탭으로 열림. 노트는 탭 없이 메모 · URL | `todo-detail-modal.tsx` |
+| D10 | **탭 구조** — 체크 · 제목 · 일정 · PARA는 고정, 아래는 하위 할 일(`2/4`) · 회고(개수) · 메모·URL(내용 있으면 점) · 사진(개수) 탭. 완료된 할 일은 회고 탭, 미완료는 하위 할 일 탭으로 열림. 노트는 탭 없이 메모 · URL | `todo-detail-modal.tsx` |
 | D11 | **회고** — 잘한 점 · 아쉬운 점 · 다음엔 여러 개. 종류 드롭다운 + Enter로 연속 추가(고른 종류 유지), 누르면 수정(비우면 삭제), × 삭제. 프로젝트에 매핑돼 있으면 "프로젝트 회고에도 모여요" | `reflection/reflection-list.tsx`, `reflection/reflection-kind.tsx`, `lib/app-data/reflection-actions.ts` |
 | D12 | **다음 날로 넘기기** — 캘린더에 배치된 할 일의 안 끝난 하위 할 일을 다음 평일(이름 + PARA가 같은 할 일, 없으면 새로 만듦) 맨 위로 옮겨 적고, 원래 항목은 "넘김"(회색 화살표, 3/4 그대로)으로 남기며 이 할 일은 완료. 끝나는 시각 전엔 푸터 작은 "넘기기", 지나면(지난 날짜 포함) 큰 카드 | `todo-detail-modal.tsx`, `lib/carry-over.ts`, `lib/app-data/todo-actions.ts` |
+| D13 | **사진** 탭 — 여러 장 올리기(브라우저에서 2048px · 640px JPEG로 줄여 Drive `plan.0/사진/<날짜> <이름>`에 저장), 3열 그리드, ★ 대표(없으면 첫 장), 누르면 크게 보기(대표로 · Drive에서 열기 · 삭제 = Drive 휴지통, ← → · Esc). Drive 미연결이면 연결 안내 | `photo/photo-tab.tsx`, `photo/photo-viewer.tsx`, `lib/supabase/photos.ts`, `app/api/photos/` |
 
 ## 7. PARA 목록
 

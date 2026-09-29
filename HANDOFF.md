@@ -506,6 +506,16 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
       Inbox 노출 · 메뉴 · 기본값 · Drive 실패 → 두고 삭제 · 연결만 끊기 · 빈 컨테이너 · DB 실패 후 재시도 · 없는 주소 · 모바일).
       **실제 Supabase(RLS · Realtime)와 실제 Drive 휴지통 이동은 확인 못 함** — 이 환경에 Google 자격 증명이 없어 Drive 성공 경로는 미확인.
 
+32. **(2026-09-29 추가) 할 일 사진**: 사용자 요청 — 약속 · 여행 같은 일정도 기록하고 싶은데 사진이 있으면 추억 · 다이어리 꾸미기가 된다.
+    시안 https://claude.ai/artifact/4pamL9JChaBcYvJZXvfe2c 컨펌(월 보기 full · 주 보기 bg, 여러 날 일정은 이번엔 뺌) → 계획
+    [PHOTOS-PLAN.md](./PHOTOS-PLAN.md) → 구현.
+    - **저장은 Google Drive**(`plan.0/사진/<날짜> <이름>`, 썸네일은 `plan.0/사진/.thumbs`). DB `todo_photos`엔 Drive 파일 id · 폴더 id · 대표 여부만.
+      화면엔 `GET /api/photos/<id>?size=thumb|full`이 Drive에서 읽어 내려준다(파일 id는 서버가 행에서 읽음, 1년 캐시).
+    - 할 일을 지우면 행만 지워지고 **Drive 사진은 남는다**. 사진 삭제는 Drive 휴지통(30일 복구).
+    - **확인**: tsc · eslint · build + 가짜 Supabase(auth/rest 목)에 붙인 실제 앱을 Playwright로 확인(월 · 주 사진 칸 수, 대표 규칙,
+      사진 탭 · 크게 보기 · 대표로 PATCH 순서 · ← → · Esc는 뷰어만 · 올리기 · 삭제, Drive 미연결 안내, 모바일 월 보기). `/api/photos`는
+      브라우저에서 가로채 응답 — **실제 Drive 업로드 · 읽기 · 휴지통과 실제 Supabase(RLS · Realtime)는 확인 못 함**(이 환경에 자격 증명 없음).
+
 ## 지금 구현된 것 (기능 목록)
 
 - Todo List(전역 보관함, 사이드 패널) + Mon~Sun **시간 단위 캘린더 그리드** (0~24시, 스크롤 가능)
@@ -654,6 +664,7 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
    - `20260928_todo_reflections.sql` — 회고 테이블 (REFLECTIONS-PLAN.md) 실행 완료
    - `20260929_subtask_carried_at.sql` — 하위 할 일 넘김 (CARRY-OVER-PLAN.md) 실행 완료
    - `20260929_weekly_goals.sql` — 주간 목표 테이블 + `todos.goal_id` (GOALS-PLAN.md) 실행 완료
+   - `20260929_todo_photos.sql` — 할 일 사진 테이블 (PHOTOS-PLAN.md) **실행 필요**
 7. `/api/clip` 기능을 실제로 쓰려면 `SUPABASE_SECRET_KEY`/`CLIP_API_SECRET`/`CLIP_USER_ID` 세
    환경변수를 로컬(`.env.local`)과 Vercel 양쪽에 아직 등록 안 함 — README의 해당 섹션 참고해서
    설정하고 애플 단축어까지 만들어야 실제로 동작함. 코드/스키마는 준비 완료 상태.
