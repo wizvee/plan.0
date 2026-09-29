@@ -40,9 +40,13 @@ export function ParaBoard() {
     else void addResource(name);
   }
 
-  // 시작일 순(이른 것 먼저). Area/Resource는 시작일이 없으니 만든 날이 시작일 — 같으면 만든 순
-  const byStart = (a: { startKey: string; createdAt: string }, b: { startKey: string; createdAt: string }) =>
-    a.startKey.localeCompare(b.startKey) || a.createdAt.localeCompare(b.createdAt);
+  // 완료 · 보관은 맨 뒤로, 그 안에서는 시작일 순(이른 것 먼저). Area/Resource는 시작일이 없으니 만든 날이
+  // 시작일 — 같으면 만든 순
+  type SortKey = { statusDone: boolean; startKey: string; createdAt: string };
+  const byStart = (a: SortKey, b: SortKey) =>
+    Number(a.statusDone) - Number(b.statusDone) ||
+    a.startKey.localeCompare(b.startKey) ||
+    a.createdAt.localeCompare(b.createdAt);
 
   const containerRows = (
     activeKind === "project"
