@@ -138,7 +138,7 @@ AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBann
 - **할 일 상세 팝업**: 머리(체크 · 제목 · 일정 · PARA)와 바닥(노트로 전환 · 삭제)은 고정, 가운데는 세그먼트 탭
   (하위 할 일 · 회고 · 메모·URL · 사진). 탭 이름에 내용 표시(`2/4` · 개수 · 점), 탭 본문 높이 고정. 새 항목은 탭으로 추가한다.
 - **사진**(PHOTOS-PLAN.md, 시안 https://claude.ai/artifact/4pamL9JChaBcYvJZXvfe2c): 파일은 Google Drive, 화면엔 `/api/photos/<id>`로.
-  월 보기 = 그날 가장 이른 할 일의 대표 사진이 **칸 전체 배경**(위쪽을 어둡게 덮고 흰 글씨, 점엔 흰 테두리). 주 보기 = 블록 76px 이상이면
+  월 보기 = 그날 가장 이른 할 일의 대표 사진이 **칸 전체 배경**(위쪽을 어둡게 덮고 흰 글씨, 점엔 흰 테두리). 주 보기 = 1시간 30분 이상 블록이면
   **사진 배경**(흰 글씨, 하위 목록 · 진행률 바는 숨김), 짧으면 오른쪽 위 작은 썸네일(모서리 4px), 한 줄 블록엔 없음. 상세 팝업 사진 탭 =
   3열 정사각 그리드(모서리 8px) + ★ 대표 칩 + 점선 추가 칸, 누르면 검은 배경 크게 보기(`PhotoViewer`). 사진을 못 불러오면 조용히 평소 모양.
 - **회고**(REFLECTIONS-PLAN.md): 종류는 `ReflectionKindIcon`(틴트 원 + lucide `ThumbsUp`/`ThumbsDown`/`Lightbulb`), 색은
