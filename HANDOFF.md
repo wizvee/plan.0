@@ -509,7 +509,7 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
 32. **(2026-09-29 추가) 할 일 사진**: 사용자 요청 — 약속 · 여행 같은 일정도 기록하고 싶은데 사진이 있으면 추억 · 다이어리 꾸미기가 된다.
     시안 https://claude.ai/artifact/4pamL9JChaBcYvJZXvfe2c 컨펌(월 보기 full · 주 보기 bg, 여러 날 일정은 이번엔 뺌) → 계획
     [PHOTOS-PLAN.md](./PHOTOS-PLAN.md) → 구현.
-    - **저장은 Google Drive**(`plan.0/사진/<날짜> <이름>`, 썸네일은 `plan.0/사진/.thumbs`). DB `todo_photos`엔 Drive 파일 id · 폴더 id · 대표 여부만.
+    - **저장은 Google Drive**(`PLAN.0/사진/<날짜> <이름>`, 썸네일은 `PLAN.0/사진/.thumbs`). DB `todo_photos`엔 Drive 파일 id · 폴더 id · 대표 여부만.
       화면엔 `GET /api/photos/<id>?size=thumb|full`이 Drive에서 읽어 내려준다(파일 id는 서버가 행에서 읽음, 1년 캐시).
     - 할 일을 지우면 행만 지워지고 **Drive 사진은 남는다**. 사진 삭제는 Drive 휴지통(30일 복구).
     - **확인**: tsc · eslint · build + 가짜 Supabase(auth/rest 목)에 붙인 실제 앱을 Playwright로 확인(월 · 주 사진 칸 수, 대표 규칙,

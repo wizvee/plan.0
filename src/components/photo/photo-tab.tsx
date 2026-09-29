@@ -86,12 +86,12 @@ export function PhotoTab({ todoId }: { todoId: string }) {
             rel="noopener noreferrer"
             className="flex min-w-0 flex-1 items-center gap-1 truncate text-[11.5px] text-muted-foreground hover:text-primary"
           >
-            <span className="truncate">Google Drive › plan.0 › 사진</span>
+            <span className="truncate">Google Drive › PLAN.0 › 사진</span>
             <ExternalLink className="size-3 shrink-0" strokeWidth={1.8} />
           </a>
         ) : (
           <span className="min-w-0 flex-1 truncate text-[11.5px] text-muted-foreground">
-            Google Drive › plan.0 › 사진에 저장돼요
+            Google Drive › PLAN.0 › 사진에 저장돼요
           </span>
         )}
         <button

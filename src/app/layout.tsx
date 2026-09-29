@@ -9,12 +9,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "plan.0",
+  title: "PLAN.0",
   description: "개인용 할 일 · 캘린더 · PARA 관리 웹앱",
   // 아이폰 홈 화면에 추가했을 때(웹앱) — 이름 · 상태 막대. 홈 아이콘은 app/apple-icon.png, 나머지는 app/manifest.ts
   appleWebApp: {
     capable: true,
-    title: "plan.0",
+    title: "PLAN.0",
     statusBarStyle: "default",
   },
 };

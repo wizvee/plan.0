@@ -1,4 +1,4 @@
-// plan.0 서비스 워커 — 웹 푸시 알림 + 앱 아이콘 배지 (WEBAPP-PLAN.md 2단계)
+// PLAN.0 서비스 워커 — 웹 푸시 알림 + 앱 아이콘 배지 (WEBAPP-PLAN.md 2단계)
 // 오프라인 캐시는 일부러 하지 않는다(옛 화면이 남는 문제를 피하려고). fetch 핸들러 없음.
 //
 // 서버(6단계 /api/push/dispatch)가 보내는 페이로드:
@@ -30,10 +30,10 @@ self.addEventListener("push", (event) => {
   try {
     data = event.data ? event.data.json() : {};
   } catch {
-    data = { title: "plan.0", body: event.data ? event.data.text() : "" };
+    data = { title: "PLAN.0", body: event.data ? event.data.text() : "" };
   }
 
-  const title = data.title || "plan.0";
+  const title = data.title || "PLAN.0";
   const options = {
     body: data.body || "",
     icon: "/icons/icon-192.png",
