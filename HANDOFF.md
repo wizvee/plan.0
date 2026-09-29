@@ -664,7 +664,7 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
    - `20260928_todo_reflections.sql` — 회고 테이블 (REFLECTIONS-PLAN.md) 실행 완료
    - `20260929_subtask_carried_at.sql` — 하위 할 일 넘김 (CARRY-OVER-PLAN.md) 실행 완료
    - `20260929_weekly_goals.sql` — 주간 목표 테이블 + `todos.goal_id` (GOALS-PLAN.md) 실행 완료
-   - `20260929_todo_photos.sql` — 할 일 사진 테이블 (PHOTOS-PLAN.md) **실행 필요**
+   - `20260929_todo_photos.sql` — 할 일 사진 테이블 (PHOTOS-PLAN.md) 실행 완료
 7. `/api/clip` 기능을 실제로 쓰려면 `SUPABASE_SECRET_KEY`/`CLIP_API_SECRET`/`CLIP_USER_ID` 세
    환경변수를 로컬(`.env.local`)과 Vercel 양쪽에 아직 등록 안 함 — README의 해당 섹션 참고해서
    설정하고 애플 단축어까지 만들어야 실제로 동작함. 코드/스키마는 준비 완료 상태.

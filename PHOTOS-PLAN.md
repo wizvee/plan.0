@@ -2,8 +2,8 @@
 
 작성 2026-09-29. 시안: https://claude.ai/artifact/4pamL9JChaBcYvJZXvfe2c (① 월 보기 full · ② 주 보기 bg · ③ 상세 팝업 사진 탭)
 
-> **상태: 시안 컨펌(월 full · 주 bg) → 구현 완료.** 남은 것: 마이그레이션 실행(`supabase/migrations/20260929_todo_photos.sql`),
-> 실제 Drive 계정으로 올리기 · 보기 · 지우기 확인.
+> **상태: 시안 컨펌(월 full · 주 bg) → 구현 완료 → 마이그레이션 실행 · `main` 머지 (2026-09-29).**
+> 남은 것: 실제 Drive 계정으로 올리기 · 보기 · 지우기 확인.
 
 ## 1. 왜
 
