@@ -1,7 +1,7 @@
 import { addDays, format, isWeekend, parseISO } from "date-fns";
 import { ko } from "date-fns/locale";
 
-import { DEFAULT_START_MINUTES } from "@/lib/time";
+import { DEFAULT_DURATION_MINUTES, DEFAULT_START_MINUTES } from "@/lib/time";
 import type { Todo } from "@/lib/types";
 
 /**
@@ -13,6 +13,18 @@ export function nextWeekday(dateKey: string): string {
   let date = addDays(parseISO(dateKey), 1);
   while (isWeekend(date)) date = addDays(date, 1);
   return format(date, "yyyy-MM-dd");
+}
+
+/**
+ * 이제 넘길 때인가 — 할 일이 끝나는 시각(시작 + 길이)이 지났거나, 날짜 자체가 지났으면 true.
+ * true면 상세 팝업에 큰 카드로 넘기기를 유도하고, 그 전엔 푸터에 작은 버튼만 둔다.
+ */
+export function isCarryDue(todo: Todo, now: Date): boolean {
+  if (!todo.scheduledDate) return false;
+  const today = format(now, "yyyy-MM-dd");
+  if (todo.scheduledDate !== today) return todo.scheduledDate < today;
+  const end = (todo.startMinutes ?? DEFAULT_START_MINUTES) + (todo.durationMinutes ?? DEFAULT_DURATION_MINUTES);
+  return now.getHours() * 60 + now.getMinutes() >= end;
 }
 
 /** "9월 29일 (화)" */

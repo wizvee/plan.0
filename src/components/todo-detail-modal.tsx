@@ -30,7 +30,8 @@ import { cn } from "@/lib/utils";
 import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR, getParaCategory } from "@/lib/category";
 import { formatClock, MINUTES_PER_DAY } from "@/lib/time";
 import { isSubtaskPending, type Area, type ParaKind, type Project, type Resource, type Todo, type TodoKind } from "@/lib/types";
-import { carryDateLabel, findCarryTarget, nextWeekday } from "@/lib/carry-over";
+import { carryDateLabel, findCarryTarget, isCarryDue, nextWeekday } from "@/lib/carry-over";
+import { useNow } from "@/lib/use-today";
 import { useTodoActions } from "@/lib/app-data/todo-actions";
 import { useTodos } from "@/lib/app-data/use-todos";
 import { useSubtasks } from "@/lib/app-data/use-subtasks";
@@ -200,6 +201,12 @@ export function TodoDetailModal({
   const pendingCount = isTask ? subtasksOf(todo.id).filter(isSubtaskPending).length : 0;
   const carryDate = isTask && todo.scheduledDate && pendingCount > 0 ? nextWeekday(todo.scheduledDate) : null;
   const carryTarget = carryDate ? findCarryTarget(todos, todo, carryDate) : null;
+  // 끝나는 시각 전엔 푸터에 작은 "넘기기"만, 지나면(또는 지난 날짜면) 큰 카드로 유도 — 업무 중 잘못 누르지 않게
+  const now = useNow();
+  const carryDue = carryDate !== null && now !== null && isCarryDue(todo, now);
+  const carrySummary = carryDate
+    ? `안 끝난 ${pendingCount}개를 ${carryDateLabel(carryDate)} ${carryTarget ? `${carryTarget.content}에 추가` : "새 할 일로"} 넘기고 이 할 일은 완료`
+    : "";
 
   async function handleCarryOver() {
     setCarrying(true);
@@ -497,7 +504,7 @@ export function TodoDetailModal({
                     color={color}
                     className="min-h-0 overflow-y-auto rounded-[10px] border border-border"
                   />
-                  {carryDate ? (
+                  {carryDue && carryDate ? (
                     <button
                       type="button"
                       onClick={handleCarryOver}
@@ -545,18 +552,32 @@ export function TodoDetailModal({
         )}
 
         <div className="mt-3.5 flex items-center justify-between border-t border-border pt-2.5">
-          {onConvert ? (
-            <button
-              type="button"
-              onClick={() => onConvert(todo.id, todo.kind === "note" ? "task" : "note")}
-              className="-ml-2 flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[13px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
-            >
-              <StickyNote className="size-3.5" />
-              {todo.kind === "note" ? "할 일로 전환" : "노트로 전환"}
-            </button>
-          ) : (
-            <span />
-          )}
+          <div className="-ml-2 flex items-center gap-0.5">
+            {onConvert ? (
+              <button
+                type="button"
+                onClick={() => onConvert(todo.id, todo.kind === "note" ? "task" : "note")}
+                className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[13px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+              >
+                <StickyNote className="size-3.5" />
+                {todo.kind === "note" ? "할 일로 전환" : "노트로 전환"}
+              </button>
+            ) : null}
+            {/* 끝나는 시각 전의 작은 넘기기 — 삭제 버튼과 떨어진 왼쪽에 둔다 */}
+            {carryDate && !carryDue ? (
+              <button
+                type="button"
+                onClick={handleCarryOver}
+                disabled={carrying}
+                title={carrySummary}
+                aria-label={carrySummary}
+                className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[13px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-60"
+              >
+                <ArrowRight className="size-3.5" strokeWidth={1.8} />
+                넘기기
+              </button>
+            ) : null}
+          </div>
           <button
             type="button"
             onClick={() => {
