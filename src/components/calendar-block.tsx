@@ -1,6 +1,13 @@
 "use client";
 
-import { useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
+import {
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { ArrowRight } from "lucide-react";
@@ -33,6 +40,8 @@ const SUBTASK_FOOT_PX = 9;
 const SUBTASK_ROW_PX = 15;
 /** 진행률 바를 그릴 최소 블록 높이 (그보다 짧으면 제목 옆 개수만) */
 const PROGRESS_BAR_MIN_HEIGHT = 44;
+/** 이만큼 움직였으면 클릭이 아니라 드래그 — dnd-provider.tsx의 PointerSensor 시작 거리와 같게 */
+const DRAG_DISTANCE_PX = 4;
 
 interface CalendarBlockProps {
   todo: Todo;
@@ -66,6 +75,8 @@ export function CalendarBlock({
   const [detailOpen, setDetailOpen] = useState(false);
   const [previewDuration, setPreviewDuration] = useState<number | null>(null);
   const resizeState = useRef<{ startY: number; startDuration: number } | null>(null);
+  // 누른 위치 — 놓았을 때 거의 안 움직였으면 클릭(팝업), 움직였으면 드래그였던 것
+  const pressPoint = useRef<{ x: number; y: number } | null>(null);
   const { subtasksOf } = useSubtasks();
   const subtaskActions = useSubtaskActions();
 
@@ -80,6 +91,27 @@ export function CalendarBlock({
     disabled: overlay || locked,
     data: { type: "todo", source: "calendar" } satisfies DraggedTodoData,
   });
+
+  function handleBlockPointerDown(e: ReactPointerEvent<HTMLDivElement>) {
+    pressPoint.current = { x: e.clientX, y: e.clientY };
+    listeners?.onPointerDown?.(e);
+  }
+
+  // 블록 어디를 눌러도 상세 팝업 — 겹친 블록의 제목이 가려져도 보이는 부분을 누르면 열린다.
+  // 체크박스 · 하위 할 일 동그라미 · 크기 조절 손잡이는 각자 click을 막는다.
+  function handleBlockClick(e: ReactMouseEvent<HTMLDivElement>) {
+    const press = pressPoint.current;
+    pressPoint.current = null;
+    // 드래그 시작 거리(4px, dnd-provider.tsx) 이상 움직였으면 드래그 — 놓자마자 팝업이 뜨지 않게
+    if (press && Math.hypot(e.clientX - press.x, e.clientY - press.y) >= DRAG_DISTANCE_PX) return;
+    if (onEdit) setDetailOpen(true);
+  }
+
+  function handleBlockKeyDown(e: ReactKeyboardEvent<HTMLDivElement>) {
+    if (e.target !== e.currentTarget || (e.key !== "Enter" && e.key !== " ")) return;
+    e.preventDefault();
+    if (onEdit) setDetailOpen(true);
+  }
 
   function handleResizePointerDown(e: ReactPointerEvent<HTMLDivElement>) {
     e.stopPropagation();
@@ -158,8 +190,11 @@ export function CalendarBlock({
         style={style}
         {...attributes}
         {...listeners}
+        onPointerDown={handleBlockPointerDown}
+        onClick={handleBlockClick}
+        onKeyDown={handleBlockKeyDown}
         className={cn(
-          "absolute z-[1] flex select-none flex-col justify-start overflow-hidden rounded-[4px] py-[5px] pl-[13px] pr-[7px] hover:brightness-[0.98]",
+          "absolute z-[1] flex cursor-pointer select-none flex-col justify-start overflow-hidden rounded-[4px] py-[5px] pl-[13px] pr-[7px] hover:brightness-[0.98]",
           // 끌 수 있을 때만 touch-none — 잠긴 블록 위에서는 모바일에서 손가락으로 캘린더를 스크롤할 수 있게
           !locked && "touch-none",
           todo.completed && "opacity-50",
@@ -169,7 +204,11 @@ export function CalendarBlock({
       >
         <CategoryBar color={colorVar} />
         <div className={cn("flex min-w-0 items-center gap-1.5", compact && "flex-1")}>
-          <span onPointerDown={(e) => e.stopPropagation()} className="flex shrink-0">
+          <span
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+            className="flex shrink-0"
+          >
             <Checkbox
               checked={todo.completed}
               onCheckedChange={() => onToggle?.(todo.id)}
@@ -179,9 +218,8 @@ export function CalendarBlock({
             />
           </span>
           <span
-            onClick={() => onEdit && setDetailOpen(true)}
             className={cn(
-              "min-w-0 flex-1 cursor-pointer truncate text-[12px] font-semibold leading-tight text-foreground",
+              "min-w-0 flex-1 truncate text-[12px] font-semibold leading-tight text-foreground",
               todo.completed && "line-through"
             )}
           >
@@ -215,7 +253,10 @@ export function CalendarBlock({
                   <button
                     type="button"
                     onPointerDown={(e) => e.stopPropagation()}
-                    onClick={() => subtaskActions.toggle(subtask.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      subtaskActions.toggle(subtask.id);
+                    }}
                     aria-label={`${subtask.content} ${subtask.completed ? "완료 취소" : "완료 표시"}`}
                     className="size-2.5 shrink-0 rounded-full border-[1.3px]"
                     style={{ borderColor: colorVar, backgroundColor: subtask.completed ? colorVar : undefined }}
@@ -254,6 +295,7 @@ export function CalendarBlock({
           onPointerDown={handleResizePointerDown}
           onPointerMove={handleResizePointerMove}
           onPointerUp={handleResizePointerUp}
+          onClick={(e) => e.stopPropagation()}
           className="absolute inset-x-0 bottom-0 h-2 cursor-ns-resize touch-none"
         />
       </div>
