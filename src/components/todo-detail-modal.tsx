@@ -5,9 +5,7 @@ import { createPortal } from "react-dom";
 import {
   ArrowRight,
   Bookmark,
-  Check,
   ChevronDown,
-  CircleOff,
   Clock,
   Compass,
   ExternalLink,
@@ -24,6 +22,7 @@ import { ko } from "date-fns/locale";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { SubtaskList } from "@/components/subtask/subtask-list";
+import { ParaMenu } from "@/components/para/para-menu";
 import { TodoReflectionList } from "@/components/reflection/reflection-list";
 import { InlineText } from "@/components/inline-text";
 import { cn } from "@/lib/utils";
@@ -100,7 +99,6 @@ export function TodoDetailModal({
   const [editingMemo, setEditingMemo] = useState(false);
   const [url, setUrl] = useState(todo.url ?? "");
   const [paraOpen, setParaOpen] = useState(false);
-  const [paraQuery, setParaQuery] = useState("");
   const paraRef = useRef<HTMLDivElement>(null);
   const { toggle, carryOver } = useTodoActions();
   const { todos } = useTodos();
@@ -123,10 +121,7 @@ export function TodoDetailModal({
   useEffect(() => {
     if (!paraOpen) return;
     function onPointerDown(e: PointerEvent) {
-      if (paraRef.current && !paraRef.current.contains(e.target as Node)) {
-        setParaOpen(false);
-        setParaQuery("");
-      }
+      if (paraRef.current && !paraRef.current.contains(e.target as Node)) setParaOpen(false);
     }
     document.addEventListener("pointerdown", onPointerDown);
     return () => document.removeEventListener("pointerdown", onPointerDown);
@@ -164,13 +159,11 @@ export function TodoDetailModal({
       resourceId: kind === "resource" ? id : null,
     });
     setParaOpen(false);
-    setParaQuery("");
   }
 
   function clearPara() {
     onAssignPara(todo.id, { projectId: null, areaId: null, resourceId: null });
     setParaOpen(false);
-    setParaQuery("");
   }
 
   const category = getParaCategory(todo);
@@ -183,14 +176,6 @@ export function TodoDetailModal({
   const color = category ? `var(${CATEGORY_COLOR_VAR[category]})` : "var(--muted-foreground)";
   const tint = category ? `var(${CATEGORY_TINT_VAR[category]})` : "var(--secondary)";
   const KindIcon = category ? KIND_ICON[category] : Layers;
-
-  const q = paraQuery.trim().toLowerCase();
-  const filterItems = <T extends { name: string }>(list: T[]) =>
-    q ? list.filter((i) => i.name.toLowerCase().includes(q)) : list;
-  const projectMatches = filterItems(projects);
-  const areaMatches = filterItems(areas);
-  const resourceMatches = filterItems(resources);
-  const noMatches = projectMatches.length === 0 && areaMatches.length === 0 && resourceMatches.length === 0;
 
   const isTask = todo.kind === "task";
   const schedule = scheduleLabel(todo);
@@ -381,60 +366,15 @@ export function TodoDetailModal({
           </button>
 
           {paraOpen ? (
-            <div className="absolute inset-x-0 top-[calc(100%+4px)] z-20 max-h-64 overflow-y-auto rounded-lg border border-border bg-card p-1.5 shadow-lg">
-              <div className="p-1">
-                <input
-                  autoFocus
-                  type="text"
-                  value={paraQuery}
-                  onChange={(e) => setParaQuery(e.target.value)}
-                  placeholder="검색"
-                  className="w-full border-0 border-b border-border bg-transparent px-1 py-1.5 text-[13px] outline-none placeholder:text-muted-foreground"
-                />
-              </div>
-
-              <button
-                type="button"
-                onClick={clearPara}
-                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] text-muted-foreground hover:bg-accent"
-              >
-                <CircleOff className="size-3.5" />
-                <span className="flex-1">없음</span>
-              </button>
-
-              <div className="my-1 border-t border-border" />
-
-              {[
-                { kind: "project" as const, items: projectMatches, color: `var(${CATEGORY_COLOR_VAR.project})` },
-                { kind: "area" as const, items: areaMatches, color: `var(${CATEGORY_COLOR_VAR.area})` },
-                { kind: "resource" as const, items: resourceMatches, color: `var(${CATEGORY_COLOR_VAR.resource})` },
-              ].map(({ kind, items, color: dotColor }) =>
-                items.length > 0 ? (
-                  <div key={kind}>
-                    <div className="px-2 pb-1 pt-2 text-[11px] font-bold text-muted-foreground">{KIND_LABEL[kind]}</div>
-                    {items.map((item) => {
-                      const selected = mappedId === item.id && category === kind;
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => pick(kind, item.id)}
-                          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] hover:bg-accent"
-                        >
-                          <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: dotColor }} />
-                          <span className="min-w-0 flex-1 truncate">{item.name}</span>
-                          {selected ? <Check className="size-3.5 shrink-0" style={{ color: dotColor }} /> : null}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : null
-              )}
-
-              {noMatches ? (
-                <div className="px-2 py-3.5 text-center text-[12.5px] text-muted-foreground">검색 결과가 없어요</div>
-              ) : null}
-            </div>
+            <ParaMenu
+              projects={projects}
+              areas={areas}
+              resources={resources}
+              selected={category && mappedId ? { kind: category, id: mappedId } : null}
+              onPick={pick}
+              onClear={clearPara}
+              className="absolute inset-x-0 top-[calc(100%+4px)]"
+            />
           ) : null}
         </div>
 

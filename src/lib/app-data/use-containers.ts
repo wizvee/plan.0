@@ -20,9 +20,9 @@ export function useContainers() {
     return map;
   }, [projects, areas, resources]);
 
-  /** 할 일이 매핑된 Project/Area/Resource 이름. 매핑이 없으면 undefined. */
+  /** 할 일(또는 주간 목표)이 매핑된 Project/Area/Resource 이름. 매핑이 없으면 undefined. */
   const containerNameOf = useCallback(
-    (todo: Todo): string | undefined => {
+    (todo: Pick<Todo, "projectId" | "areaId" | "resourceId">): string | undefined => {
       const mappedId = todo.projectId ?? todo.areaId ?? todo.resourceId;
       return mappedId ? nameById.get(mappedId) : undefined;
     },

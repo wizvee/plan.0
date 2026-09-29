@@ -50,6 +50,8 @@ export interface Todo {
   projectId: string | null;
   areaId: string | null;
   resourceId: string | null;
+  /** 주간 목표 연결 — 최대 1개. 날짜와 무관(다른 주로 옮겨도 그 목표에서 센다). (GOALS-PLAN.md) */
+  goalId: string | null;
 }
 
 /**
@@ -168,3 +170,19 @@ export interface Context {
 
 export type Area = ParaContainer;
 export type Resource = ParaContainer;
+
+/**
+ * 주간 목표 — 한 주(월요일 시작)의 한 줄 목표 + PARA 하나(선택). 내가 정한 개인 목표만 둔다.
+ * 진행률은 저장하지 않고 연결된 할 일(`Todo.goalId`)에서 매번 계산한다. (GOALS-PLAN.md)
+ */
+export interface WeeklyGoal {
+  id: string;
+  /** 그 주 월요일 (yyyy-MM-dd) */
+  weekStart: string;
+  content: string;
+  projectId: string | null;
+  areaId: string | null;
+  resourceId: string | null;
+  position: number;
+  createdAt: string;
+}

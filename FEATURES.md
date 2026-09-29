@@ -23,12 +23,12 @@
 
 | # | 기능 | 위치 |
 |---|---|---|
-| N1 | 캘린더 ↔ PARA 이동(레일, 모바일 하단 탭). "캘린더"는 항상 이번 주 주 보기로 | `shell/app-rail.tsx` |
+| N1 | 목표 · 캘린더 · PARA 이동(레일, 모바일 하단 탭). "캘린더"는 항상 이번 주 주 보기로, "목표"는 이번 주 목표로 | `shell/app-rail.tsx` |
 | N2 | 브랜드 마크 (레일 맨 위 체크 아이콘) | `shell/app-rail.tsx` |
 | N3 | "+" 버튼 (캘린더 툴바) — Inbox를 열고 입력창에 포커스 | `calendar-header.tsx`, `lib/shell-ui.tsx` |
 | N4 | **미니 캘린더** — 캘린더 제목("2026년 9월 ⌄")을 누르면 팝오버. 이전/다음 달, 날짜 → 그 주, 월 라벨 → 월 보기, 보는 주 강조 | `mini-calendar.tsx`, `calendar-header.tsx` |
-| N5 | 모바일 하단 탭바 (캘린더 / PARA / Inbox / 계정) + Inbox 탭 → 바텀시트. Inbox 열림 상태는 기억됨 | `shell/app-rail.tsx`, `shell/inbox-panel.tsx` |
-| N6 | 화면 상태가 URL에 저장됨 (`?week=`, `?view=month&month=`, `?kind=`, `?tab=`) — 뒤로가기로 복원 | 각 화면 |
+| N5 | 모바일 하단 탭바 (목표 / 캘린더 / PARA / Inbox / 계정) + Inbox 탭 → 바텀시트. Inbox 열림 상태는 기억됨 | `shell/app-rail.tsx`, `shell/inbox-panel.tsx` |
+| N6 | 화면 상태가 URL에 저장됨 (`?week=` — 캘린더 · 목표, `?view=month&month=`, `?kind=`, `?tab=`) — 뒤로가기로 복원 | 각 화면 |
 
 ## 3. 할 일 보관함 (Inbox / Todo List)
 
@@ -137,6 +137,20 @@
 | X1 | 애플 단축어 "공유하기 → 스크랩" API — 보관함에 URL 항목 생성 | `api/clip/route.ts` |
 | X3 | 백틱으로 감싼 `VAR`는 인라인 코드로 표시 — 할 일 · 하위 할 일 · 메모 · 스크랩 · PARA 이름. 편집 칸은 누르면 원문으로 바뀜 | `inline-text.tsx` |
 | X2 | Supabase Realtime으로 여러 기기 실시간 동기화 (하위 할 일 포함) | `lib/supabase` 훅 |
+
+
+## 10. 주간 목표 (GOALS-PLAN.md)
+
+| # | 기능 | 위치 |
+|---|---|---|
+| G1 | **레일 맨 위 "목표" + 진행률 링** — 이번 주 목표별 진행률의 평균, 어느 화면에서든 보임. 목표 없으면 점선, 100%면 체크 | `shell/app-rail.tsx`, `goals/goal-ring.tsx` |
+| G2 | 목표 화면(`/goals?week=`) — "이번 주 목표" · 주 이동 `‹ 이번 주 ›` · 요약 줄(% · 연결된 할 일 N개 중 M개) | `goals/goals-screen.tsx` |
+| G3 | 목표 카드 — 진행률 링(PARA 색, `2/4`) · 이름 눌러서 수정 · PARA 칩으로 변경 · `···`(이름 바꾸기 · 삭제, 할 일은 남음) | `goals/goal-card.tsx` |
+| G4 | 연결된 할 일 목록 — 체크 · 요일/시각(다른 주면 날짜, 캘린더에 안 올렸으면 Inbox) · × 목표에서 빼기. 없으면 "아직 캘린더에 시간이 안 잡혔어요" | `goals/goal-card.tsx` |
+| G5 | "+ 새 할 일" — 목표 + 목표의 PARA가 붙은 할 일을 Inbox에(연속 입력) | `goals/goal-card.tsx`, `app-data/goal-actions.ts` |
+| G6 | "이번 주 할 일 연결" — 그 주 캘린더 할 일을 요일별로 체크(검색, 다른 목표 것은 옮겨짐, 같은 이름 3일 이상 · 노트 제외) | `goals/goal-link-popover.tsx`, `lib/goals.ts` |
+| G7 | Inbox 항목을 목표 카드로 끌어다 놓으면 연결(할 일에 PARA가 없으면 목표의 PARA로) | `lib/dnd/handle-drop.ts` |
+| G8 | "목표 추가" — 3개 이하 권장 안내(막지 않음). 목표가 없는 주는 목표 적기 + 좋은 목표 확인 질문 3개 + 지난주 요약 | `goals/goals-screen.tsx` |
 
 ---
 
