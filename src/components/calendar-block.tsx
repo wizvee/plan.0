@@ -44,8 +44,11 @@ const SUBTASK_ROW_PX = 15;
 const PROGRESS_BAR_MIN_HEIGHT = 44;
 /** 이만큼 움직였으면 클릭이 아니라 드래그 — dnd-provider.tsx의 PointerSensor 시작 거리와 같게 */
 const DRAG_DISTANCE_PX = 4;
-/** 이 높이(≈1시간 30분) 이상이면 대표 사진을 블록 배경으로, 짧으면 오른쪽 위 작은 썸네일 (PHOTOS-PLAN.md, 시안 ② bg) */
-const PHOTO_BG_MIN_HEIGHT = 76;
+/**
+ * 1시간 30분 이상 블록이면 대표 사진을 블록 배경으로, 짧으면 오른쪽 위 작은 썸네일 (PHOTOS-PLAN.md, 시안 ② bg).
+ * 픽셀이 아니라 시간으로 정한다 — 블록 사이 간격(BLOCK_GAP)을 바꿨을 때 1px 차이로 기준이 어긋났었다.
+ */
+const PHOTO_BG_MIN_HEIGHT = blockHeightPx(90);
 const PHOTO_THUMB_PX = 38;
 
 interface CalendarBlockProps {
