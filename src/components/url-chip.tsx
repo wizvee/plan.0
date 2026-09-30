@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Link2 } from "lucide-react";
+import { LinkSimple } from "@/components/icons";
 
 export function UrlChip({ url }: { url: string }) {
   const [faviconFailed, setFaviconFailed] = useState(false);
@@ -22,7 +22,7 @@ export function UrlChip({ url }: { url: string }) {
       className="flex h-6 w-fit max-w-full items-center gap-1.5 rounded-md bg-black/[0.05] pl-1.5 pr-2 text-[12px] text-foreground/75 transition-colors hover:bg-black/[0.09]"
     >
       {faviconFailed ? (
-        <Link2 className="size-3.5 shrink-0" />
+        <LinkSimple weight="bold" className="size-3.5 shrink-0" />
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
         <img

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Check, ChevronDown } from "lucide-react";
+import { CaretDown, Check } from "@/components/icons";
 
 import { cn } from "@/lib/utils";
 import { useDismiss } from "@/lib/use-dismiss";
@@ -23,7 +23,7 @@ export function ReflectionKindIcon({ kind, size = 22, className }: { kind: Refle
         color: `var(${REFLECTION_COLOR_VAR[kind]})`,
       }}
     >
-      <Icon style={{ width: size * 0.58, height: size * 0.58 }} strokeWidth={1.9} aria-hidden="true" />
+      <Icon weight="bold" style={{ width: size * 0.58, height: size * 0.58 }} aria-hidden="true" />
     </span>
   );
 }
@@ -57,7 +57,7 @@ export function ReflectionKindSelect({
       >
         <ReflectionKindIcon kind={value} size={20} />
         {REFLECTION_META[value].label}
-        <ChevronDown className="size-3 text-muted-foreground" strokeWidth={2.2} aria-hidden="true" />
+        <CaretDown weight="bold" className="size-3 text-muted-foreground" aria-hidden="true" />
       </button>
       {open ? (
         <div
@@ -84,12 +84,11 @@ export function ReflectionKindSelect({
                 className="group flex h-[30px] w-full items-center gap-2 rounded-md px-2 text-left text-[13.5px] hover:bg-primary hover:text-primary-foreground"
               >
                 <span className="flex w-[13px] justify-center text-primary group-hover:text-primary-foreground">
-                  {checked ? <Check className="size-[13px]" strokeWidth={2.6} /> : null}
+                  {checked ? <Check weight="bold" className="size-[13px]" /> : null}
                 </span>
                 <Icon
                   className="size-[15px] group-hover:text-primary-foreground!"
                   style={{ color: `var(${REFLECTION_COLOR_VAR[kind]})` }}
-                  strokeWidth={1.9}
                   aria-hidden="true"
                 />
                 {REFLECTION_META[kind].label}

@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { addDays } from "date-fns";
-import { ChevronDown, ChevronLeft, ChevronRight, Info, Plus } from "lucide-react";
+import { CaretDown, CaretLeft, CaretRight, Info, Plus } from "@/components/icons";
 
 import { GoalCard } from "@/components/goals/goal-card";
 import { ParaMenu } from "@/components/para/para-menu";
@@ -64,7 +64,7 @@ export function GoalsScreen() {
             aria-label="지난 주"
             className="flex h-8 w-9 items-center justify-center rounded-md hover:bg-black/5 sm:h-7 sm:w-8"
           >
-            <ChevronLeft className="size-4" strokeWidth={2} />
+            <CaretLeft className="size-4" />
           </button>
           <button
             type="button"
@@ -82,7 +82,7 @@ export function GoalsScreen() {
             aria-label="다음 주"
             className="flex h-8 w-9 items-center justify-center rounded-md hover:bg-black/5 sm:h-7 sm:w-8"
           >
-            <ChevronRight className="size-4" strokeWidth={2} />
+            <CaretRight className="size-4" />
           </button>
         </div>
       </div>
@@ -160,7 +160,7 @@ function AddGoalCard({ weekKey, count }: { weekKey: string; count: number }) {
       onClick={() => setOpen(true)}
       className="flex min-h-[150px] flex-col items-center justify-center gap-1.5 rounded-xl border-[1.5px] border-dashed border-black/15 text-primary hover:bg-accent/50"
     >
-      <Plus className="size-[22px]" strokeWidth={1.8} aria-hidden="true" />
+      <Plus className="size-[22px]" aria-hidden="true" />
       <span className="text-[14px] font-semibold">목표 추가</span>
       <span className="text-[12px] text-muted-foreground">
         {RECOMMENDED_GOAL_COUNT}개 이하를 권해요 · 지금 {count}개
@@ -199,7 +199,7 @@ function AddGoalForm({
           {number}
         </span>
       ) : (
-        <Plus className="size-5 shrink-0 text-primary" strokeWidth={2} aria-hidden="true" />
+        <Plus className="size-5 shrink-0 text-primary" aria-hidden="true" />
       )}
       <input
         autoFocus={autoFocus}
@@ -251,7 +251,7 @@ function ParaChipPicker({ value, onChange }: { value: GoalParaPatch; onChange: (
           <span className="size-[7px] rounded-full" style={{ backgroundColor: `var(${CATEGORY_COLOR_VAR[category]})` }} />
         ) : null}
         <span className="max-w-[120px] truncate">{name ? <InlineText text={name} /> : "PARA 없음"}</span>
-        <ChevronDown className="size-3 text-muted-foreground" strokeWidth={2} aria-hidden="true" />
+        <CaretDown weight="bold" className="size-3 text-muted-foreground" aria-hidden="true" />
       </button>
       {open ? (
         <ParaMenu
@@ -305,7 +305,7 @@ function EmptyWeek({
           <AddGoalForm weekKey={weekKey} number={1} autoFocus />
         </div>
         <div className="flex items-center gap-2 border-t border-border bg-secondary px-4 py-2.5 text-[12.5px] text-muted-foreground">
-          <Info className="size-3.5 shrink-0" strokeWidth={1.8} aria-hidden="true" />
+          <Info className="size-3.5 shrink-0" aria-hidden="true" />
           Enter로 추가해요. 목표는 다음 주로 넘어가지 않아요 — 이어서 할 거면 새로 적어요.
         </div>
       </section>

@@ -1,11 +1,11 @@
-import { Lightbulb, ThumbsDown, ThumbsUp } from "lucide-react";
+import { Lightbulb, ThumbsDown, ThumbsUp, type Icon } from "@/components/icons";
 
 import type { ReflectionKind } from "@/lib/types";
 
 /** 회고 종류별 라벨 · 아이콘 · 입력칸 안내 문구. 색은 `REFLECTION_COLOR_VAR` · `REFLECTION_TINT_VAR`. */
 export const REFLECTION_META: Record<
   ReflectionKind,
-  { label: string; placeholder: string; icon: typeof ThumbsUp; markdownHeading: string }
+  { label: string; placeholder: string; icon: Icon; markdownHeading: string }
 > = {
   keep: { label: "잘한 점", placeholder: "잘한 점 추가", icon: ThumbsUp, markdownHeading: "잘한 점" },
   problem: { label: "아쉬운 점", placeholder: "아쉬운 점 추가", icon: ThumbsDown, markdownHeading: "아쉬운 점" },

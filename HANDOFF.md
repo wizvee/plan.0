@@ -530,6 +530,14 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     - **확인**: tsc · eslint + 가짜 Supabase에 붙인 실제 앱에서 16개 항목(버튼 hover · 완료 항목엔 없음 · 만든 할 일의 이름 · 날짜 없음 · 프로젝트 ·
       메모, 하위 삭제, 알림 문구, 되돌리기로 새 할 일 삭제 + 같은 순서로 복구, 5초 뒤 알림 닫힘, Inbox에 보임). 알림은 시안(팝업 안)과 달리
       화면 아래 가운데 — PARA 상세 펼침에서도 같은 알림을 쓰려고.
+35. **(2026-09-30 추가) 아이콘 lucide → Phosphor 교체**: 메모 줄 표시 시안을 보다가 사용자 요청 — "좀 둥글둥글한 아이콘으로".
+    시안 https://claude.ai/artifact/JfkwtcvcU885kzNkdJGV7Q ⑥에서 Lucide · Phosphor · Hugeicons · Solar를 같은 아이콘 · 같은 메모 줄로 비교 → Phosphor 선택.
+    - 모든 아이콘은 `src/components/icons.ts` 한 곳에서 Phosphor를 **아이콘별 경로**(`@phosphor-icons/react/dist/csr/<Name>`)로 re-export.
+      패키지 루트 import는 아이콘 수천 개를 다 읽어 개발 서버가 느려지고(Next가 자동 최적화하는 목록에 Phosphor는 없음), ESLint `no-restricted-imports`로
+      `lucide-react` · Phosphor 직접 import를 막음(셸 파일도 별도 블록으로 같은 규칙).
+    - 이름은 Phosphor 이름 그대로(ChevronLeft → `CaretLeft`, Trash2 → `Trash`, Inbox → `Tray`, Search → `MagnifyingGlass` 등).
+      굵기: lucide `strokeWidth` ≥ 2.2이거나 14px 이하 아이콘은 `weight="bold"`, `fill-current`였던 ★는 `weight="fill"`, 나머지 기본 regular.
+    - **확인**: tsc · eslint, 가짜 Supabase 앱에서 캘린더 · Inbox · 할 일 팝업(하위 할 일 · 회고 · 사진) · PARA 화면 스크린샷.
 
 ## 지금 구현된 것 (기능 목록)
 

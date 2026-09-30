@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, CircleOff } from "lucide-react";
+import { Check, Prohibit } from "@/components/icons";
 
 import { cn } from "@/lib/utils";
 import { CATEGORY_COLOR_VAR } from "@/lib/category";
@@ -69,7 +69,7 @@ export function ParaMenu({
         onClick={onClear}
         className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] text-muted-foreground hover:bg-accent"
       >
-        <CircleOff className="size-3.5" />
+        <Prohibit weight="bold" className="size-3.5" />
         <span className="flex-1">없음</span>
       </button>
 
@@ -91,7 +91,7 @@ export function ParaMenu({
                 >
                   <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: dotColor }} />
                   <span className="min-w-0 flex-1 truncate">{item.name}</span>
-                  {isSelected ? <Check className="size-3.5 shrink-0" style={{ color: dotColor }} /> : null}
+                  {isSelected ? <Check weight="bold" className="size-3.5 shrink-0" style={{ color: dotColor }} /> : null}
                 </button>
               );
             })}

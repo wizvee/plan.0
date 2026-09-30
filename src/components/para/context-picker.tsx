@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Check, ChevronsUpDown, Plus } from "lucide-react";
+import { CaretUpDown, Check, Plus } from "@/components/icons";
 
 import { useDismiss } from "@/lib/use-dismiss";
 import { useShellUI } from "@/lib/shell-ui";
@@ -30,7 +30,7 @@ export function ContextPicker({ contextId, onChange }: { contextId: string | nul
         className="flex h-[30px] items-center gap-1.5 rounded-[7px] bg-black/[0.06] pl-2.5 pr-2 text-[13.5px] font-semibold hover:bg-black/10"
       >
         {selected?.name ?? "—"}
-        <ChevronsUpDown className="size-3 text-muted-foreground" strokeWidth={2.2} aria-hidden="true" />
+        <CaretUpDown weight="bold" className="size-3 text-muted-foreground" aria-hidden="true" />
       </button>
       {open ? (
         <div
@@ -53,7 +53,7 @@ export function ContextPicker({ contextId, onChange }: { contextId: string | nul
                 className="group flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13.5px] hover:bg-primary hover:text-primary-foreground"
               >
                 <span className="flex w-[13px] justify-center">
-                  {checked ? <Check className="size-[13px]" strokeWidth={2.6} /> : null}
+                  {checked ? <Check weight="bold" className="size-[13px]" /> : null}
                 </span>
                 <span className="flex-1">
                   {context.name}
@@ -77,7 +77,7 @@ export function ContextPicker({ contextId, onChange }: { contextId: string | nul
             }}
             className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13.5px] hover:bg-primary hover:text-primary-foreground"
           >
-            <Plus className="size-[13px]" strokeWidth={2} />
+            <Plus weight="bold" className="size-[13px]" />
             새 컨텍스트…
           </button>
           <button

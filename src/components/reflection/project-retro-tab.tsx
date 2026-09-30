@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, CircleCheck, FileText, Plus, X } from "lucide-react";
+import { Check, CheckCircle, FileText, Plus, X } from "@/components/icons";
 
 import { InlineText } from "@/components/inline-text";
 import { TodoDetailModal } from "@/components/todo-detail-modal";
@@ -67,7 +67,7 @@ export function ProjectRetroTab({
             title={items.length === 0 ? "회고가 쌓이면 노트로 저장할 수 있어요" : "자료 탭에 새 노트로 열어요"}
             className="flex h-[44px] shrink-0 items-center gap-1.5 rounded-xl border border-border bg-card px-3 text-[13px] font-medium hover:bg-black/[0.03] disabled:cursor-default disabled:text-muted-foreground disabled:hover:bg-card"
           >
-            <FileText className="size-[15px]" strokeWidth={1.8} aria-hidden="true" />
+            <FileText className="size-[15px]" aria-hidden="true" />
             <span className="hidden sm:inline">회고 노트로 저장</span>
             <span className="sm:hidden">노트로</span>
           </button>
@@ -141,7 +141,7 @@ function RetroRow({
               aria-label="회고 삭제"
               className="-mr-1 -mt-px flex size-[22px] shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-black/5 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
             >
-              <X className="size-3" strokeWidth={2.2} />
+              <X weight="bold" className="size-3" />
             </button>
           </>
         )}
@@ -154,7 +154,7 @@ function RetroRow({
             title="할 일 열기"
             className="flex min-w-0 max-w-full items-center gap-1 rounded-[5px] hover:text-foreground"
           >
-            <CircleCheck className="size-3 shrink-0" strokeWidth={2} aria-hidden="true" />
+            <CheckCircle weight="bold" className="size-3 shrink-0" aria-hidden="true" />
             <span className="truncate">
               <InlineText text={sourceTodo.content} />
             </span>
@@ -166,7 +166,7 @@ function RetroRow({
         {reflection.kind === "try" ? (
           converted ? (
             <span className="ml-auto flex shrink-0 items-center gap-0.5 font-semibold text-[var(--retro-keep)]">
-              <Check className="size-3" strokeWidth={2.4} aria-hidden="true" />
+              <Check weight="bold" className="size-3" aria-hidden="true" />
               Inbox에 추가됨
             </span>
           ) : (
@@ -180,7 +180,7 @@ function RetroRow({
               title="같은 내용의 할 일을 Inbox에 만들고 이 프로젝트에 연결해요"
               className="ml-auto flex h-[22px] shrink-0 items-center gap-0.5 rounded-[5px] px-1.5 font-semibold text-primary hover:bg-accent disabled:opacity-50"
             >
-              <Plus className="size-3" strokeWidth={2.4} aria-hidden="true" />
+              <Plus weight="bold" className="size-3" aria-hidden="true" />
               할 일로
             </button>
           )

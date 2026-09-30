@@ -4,7 +4,7 @@ import { useEffect, useState, type CSSProperties, type KeyboardEvent } from "rea
 import { createPortal } from "react-dom";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ArrowRight, FolderInput, GripVertical, Plus, X } from "lucide-react";
+import { ArrowRight, DotsSixVertical, FolderSimplePlus, Plus, X } from "@/components/icons";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { InlineText } from "@/components/inline-text";
@@ -82,7 +82,7 @@ export function SubtaskList({ todoId, color, className }: { todoId: string; colo
         ))}
       </SortableContext>
       <label className="flex min-h-10 items-center gap-2.5 pl-5 pr-2 text-primary">
-        <Plus className="size-5 shrink-0" strokeWidth={1.8} aria-hidden="true" />
+        <Plus className="size-5 shrink-0" aria-hidden="true" />
         <input
           type="text"
           value={draft}
@@ -123,7 +123,7 @@ function LaterToast({ message, onUndo }: { message: string; onUndo: () => void }
       onClick={(e) => e.stopPropagation()}
       className="fixed bottom-[calc(24px+var(--tabbar-h,0px))] left-1/2 z-[80] flex max-w-[calc(100vw-32px)] -translate-x-1/2 items-center gap-3 rounded-[10px] bg-foreground/[0.92] px-3.5 py-2.5 text-[13px] text-background shadow-[0_8px_24px_rgba(0,0,0,0.22)]"
     >
-      <FolderInput className="size-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
+      <FolderSimplePlus className="size-4 shrink-0" aria-hidden="true" />
       <span className="min-w-0 truncate">
         <InlineText text={message} />
       </span>
@@ -175,7 +175,7 @@ function SubtaskRow({
         className="flex min-h-10 items-center gap-2.5 border-b border-border bg-black/[0.02] pl-5 pr-3"
       >
         <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-black/[0.07] text-muted-foreground">
-          <ArrowRight className="size-3" strokeWidth={2.4} aria-hidden="true" />
+          <ArrowRight weight="bold" className="size-3" aria-hidden="true" />
         </span>
         <span className="min-w-0 flex-1 break-words py-2.5 text-[14px] text-muted-foreground">
           <InlineText text={subtask.content} />
@@ -207,7 +207,7 @@ function SubtaskRow({
         {...attributes}
         {...listeners}
       >
-        <GripVertical className="size-3.5" />
+        <DotsSixVertical weight="bold" className="size-3.5" />
       </button>
       <Checkbox
         checked={subtask.completed}
@@ -257,7 +257,7 @@ function SubtaskRow({
           aria-label={laterTitle}
           className="flex h-[26px] shrink-0 items-center gap-1 rounded-md bg-black/[0.06] pl-1.5 pr-2 text-[12.5px] font-semibold text-foreground hover:bg-black/10 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
         >
-          <FolderInput className="size-3.5" strokeWidth={1.8} aria-hidden="true" />
+          <FolderSimplePlus className="size-3.5" aria-hidden="true" />
           나중에
         </button>
       ) : null}
@@ -267,7 +267,7 @@ function SubtaskRow({
         aria-label="하위 할 일 삭제"
         className="flex size-[26px] shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-black/5 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
       >
-        <X className="size-3.5" strokeWidth={2} />
+        <X weight="bold" className="size-3.5" />
       </button>
     </div>
   );

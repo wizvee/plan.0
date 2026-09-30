@@ -17,7 +17,7 @@
   💡 상담 전날 필요 서류 목록을 은행에 먼저 물어보기
 ```
 
-(위 이모지는 문서 설명용. 화면은 DESIGN.md 7번대로 lucide `ThumbsUp` / `ThumbsDown` / `Lightbulb` 아이콘.)
+(위 이모지는 문서 설명용. 화면은 DESIGN.md 7번대로 `ThumbsUp` / `ThumbsDown` / `Lightbulb` 아이콘.)
 
 ## 2. 합의된 규칙 (2026-09-28 사용자 확정 — 바뀌면 여기부터 고친다)
 

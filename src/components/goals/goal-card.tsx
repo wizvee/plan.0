@@ -4,7 +4,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { format, parseISO } from "date-fns";
 import { ko } from "date-fns/locale";
-import { ChevronDown, Clock, Ellipsis, Link2, Pencil, Plus, Trash2, X } from "lucide-react";
+import { CaretDown, Clock, DotsThree, LinkSimple, PencilSimple, Plus, Trash, X } from "@/components/icons";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { InlineText } from "@/components/inline-text";
@@ -140,7 +140,7 @@ export function GoalCard({ goal, weekDays }: { goal: WeeklyGoal; weekDays: strin
       <div className="border-t border-border">
         {linked.length === 0 ? (
           <div className="flex flex-col items-center gap-1.5 px-4 pb-4 pt-5 text-center">
-            <Clock className="size-[22px] text-warning" strokeWidth={1.8} aria-hidden="true" />
+            <Clock className="size-[22px] text-warning" aria-hidden="true" />
             <span className="text-[14px] font-semibold">아직 캘린더에 시간이 안 잡혔어요</span>
             <span className="text-[12.5px] text-muted-foreground">할 일로 쪼개서 캘린더에 올리면 진행률이 쌓여요</span>
           </div>
@@ -181,7 +181,7 @@ export function GoalCard({ goal, weekDays }: { goal: WeeklyGoal; weekDays: strin
                   title="목표에서 빼기"
                   className="flex size-[26px] shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-black/5 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
                 >
-                  <X className="size-3.5" strokeWidth={2} />
+                  <X weight="bold" className="size-3.5" />
                 </button>
               </div>
             );
@@ -196,7 +196,7 @@ export function GoalCard({ goal, weekDays }: { goal: WeeklyGoal; weekDays: strin
 
         {adding ? (
           <label className="flex min-h-10 items-center gap-2.5 border-b border-border pl-3.5 pr-2 text-primary">
-            <Plus className="size-[18px] shrink-0" strokeWidth={2} aria-hidden="true" />
+            <Plus className="size-[18px] shrink-0" aria-hidden="true" />
             <input
               autoFocus
               value={draft}
@@ -223,7 +223,7 @@ export function GoalCard({ goal, weekDays }: { goal: WeeklyGoal; weekDays: strin
         ) : null}
 
         <div className="flex flex-wrap items-center gap-1 px-2 py-1.5">
-          <FooterButton onClick={() => setAdding(true)} icon={<Plus className="size-[15px]" strokeWidth={2} />}>
+          <FooterButton onClick={() => setAdding(true)} icon={<Plus className="size-[15px]" />}>
             새 할 일
           </FooterButton>
           <GoalLinkPopover goal={goal} weekDays={weekDays}>
@@ -232,7 +232,7 @@ export function GoalCard({ goal, weekDays }: { goal: WeeklyGoal; weekDays: strin
                 onClick={toggleOpen}
                 active={open}
                 ariaExpanded={open}
-                icon={<Link2 className="size-[15px]" strokeWidth={1.8} />}
+                icon={<LinkSimple className="size-[15px]" />}
               >
                 이번 주 할 일 연결
               </FooterButton>
@@ -309,7 +309,7 @@ function GoalParaChip({
           <span className="size-[7px] rounded-full" style={{ backgroundColor: `var(${CATEGORY_COLOR_VAR[category]})` }} />
         ) : null}
         {name ? <InlineText text={name} /> : "PARA 없음"}
-        <ChevronDown className="size-3" strokeWidth={2} aria-hidden="true" />
+        <CaretDown weight="bold" className="size-3" aria-hidden="true" />
       </button>
       {open ? (
         <ParaMenu
@@ -360,7 +360,7 @@ function GoalMenu({ onRename, onDelete }: { onRename: () => void; onDelete: () =
           open && "bg-black/[0.12]"
         )}
       >
-        <Ellipsis className="size-4" strokeWidth={2} />
+        <DotsThree className="size-4" />
       </button>
       {open ? (
         <div
@@ -374,7 +374,7 @@ function GoalMenu({ onRename, onDelete }: { onRename: () => void; onDelete: () =
             onClick={() => pick(onRename)}
             className="flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-left text-[13.5px] hover:bg-primary hover:text-primary-foreground"
           >
-            <Pencil className="size-[15px]" strokeWidth={1.8} />
+            <PencilSimple className="size-[15px]" />
             이름 바꾸기
           </button>
           <div className="mx-2 my-[5px] h-px bg-black/10" role="separator" />
@@ -384,7 +384,7 @@ function GoalMenu({ onRename, onDelete }: { onRename: () => void; onDelete: () =
             onClick={() => pick(onDelete)}
             className="flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-left text-[13.5px] text-destructive hover:bg-primary hover:text-primary-foreground"
           >
-            <Trash2 className="size-[15px]" strokeWidth={1.8} />
+            <Trash className="size-[15px]" />
             목표 삭제 (할 일은 남아요)
           </button>
         </div>

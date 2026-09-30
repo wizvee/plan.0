@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type ReactNode } from "react";
-import { Archive, ArchiveRestore, CircleCheck, Ellipsis, Pencil, RotateCcw, Trash2 } from "lucide-react";
+import { Archive, ArrowCounterClockwise, BoxArrowUp, CheckCircle, DotsThree, PencilSimple, Trash } from "@/components/icons";
 
 import { cn } from "@/lib/utils";
 import { useDismiss } from "@/lib/use-dismiss";
@@ -32,10 +32,10 @@ export function ContainerMenu({
   const statusItem =
     kind === "project"
       ? statusDone
-        ? { icon: RotateCcw, label: "진행중으로 되돌리기" }
-        : { icon: CircleCheck, label: "완료로 표시" }
+        ? { icon: ArrowCounterClockwise, label: "진행중으로 되돌리기" }
+        : { icon: CheckCircle, label: "완료로 표시" }
       : statusDone
-        ? { icon: ArchiveRestore, label: "보관 해제" }
+        ? { icon: BoxArrowUp, label: "보관 해제" }
         : { icon: Archive, label: "보관하기" };
 
   function pick(action: () => void) {
@@ -56,7 +56,7 @@ export function ContainerMenu({
           open && "bg-black/[0.12]"
         )}
       >
-        <Ellipsis className="size-[18px]" strokeWidth={2} />
+        <DotsThree className="size-[18px]" />
       </button>
       {open ? (
         <div
@@ -64,14 +64,14 @@ export function ContainerMenu({
           aria-label={`${PARA_KIND_LABELS_KO[kind]} 메뉴`}
           className="absolute right-0 top-[calc(100%+6px)] z-30 w-[220px] rounded-[10px] border border-black/10 bg-popover/95 p-[5px] shadow-[0_12px_32px_rgba(0,0,0,0.16),0_2px_6px_rgba(0,0,0,0.06)] backdrop-blur"
         >
-          <MenuItem icon={<Pencil className="size-[15px]" strokeWidth={1.8} />} onClick={() => pick(onRename)}>
+          <MenuItem icon={<PencilSimple className="size-[15px]" />} onClick={() => pick(onRename)}>
             이름 바꾸기
           </MenuItem>
-          <MenuItem icon={<statusItem.icon className="size-[15px]" strokeWidth={1.8} />} onClick={() => pick(onToggleStatus)}>
+          <MenuItem icon={<statusItem.icon className="size-[15px]" />} onClick={() => pick(onToggleStatus)}>
             {statusItem.label}
           </MenuItem>
           <div className="mx-2 my-[5px] h-px bg-black/10" role="separator" />
-          <MenuItem icon={<Trash2 className="size-[15px]" strokeWidth={1.8} />} onClick={() => pick(onDelete)} destructive>
+          <MenuItem icon={<Trash className="size-[15px]" />} onClick={() => pick(onDelete)} destructive>
             {PARA_KIND_LABELS_KO[kind]} 삭제…
           </MenuItem>
         </div>

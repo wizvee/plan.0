@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type KeyboardEvent } from "react";
-import { X } from "lucide-react";
+import { X } from "@/components/icons";
 
 import { cn } from "@/lib/utils";
 import { InlineText } from "@/components/inline-text";
@@ -142,7 +142,7 @@ export function TodoReflectionList({ todoId, reflections }: { todoId: string; re
                 aria-label="회고 삭제"
                 className="flex size-6 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-black/5 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
               >
-                <X className="size-3.5" strokeWidth={2} />
+                <X weight="bold" className="size-3.5" />
               </button>
             </div>
           ))}

@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
-import { ChevronLeft, ChevronRight, ExternalLink, Star, Trash2, X } from "lucide-react";
+import { ArrowSquareOut, CaretLeft, CaretRight, Star, Trash, X } from "@/components/icons";
 
 import { driveFileUrl, photoUrl } from "@/lib/photos";
 import type { TodoPhoto } from "@/lib/types";
@@ -58,14 +58,14 @@ export function PhotoViewer({
           aria-label="닫기"
           className="flex size-9 items-center justify-center rounded-full hover:bg-white/15"
         >
-          <X className="size-5" strokeWidth={1.8} />
+          <X className="size-5" />
         </button>
         <span className="flex-1 text-center text-[13px] tabular-nums text-white/70">
           {count > 1 ? `${index + 1} / ${count}` : null}
         </span>
         {isCover ? (
           <span className="flex h-9 items-center gap-1.5 px-3 text-[13px] font-semibold text-white/80">
-            <Star className="size-4 fill-current" strokeWidth={1.8} />
+            <Star weight="fill" className="size-4" />
             대표 사진
           </span>
         ) : (
@@ -74,7 +74,7 @@ export function PhotoViewer({
             onClick={() => onSetCover(photo.id)}
             className="flex h-9 items-center gap-1.5 rounded-lg px-3 text-[13px] font-semibold hover:bg-white/15"
           >
-            <Star className="size-4" strokeWidth={1.8} />
+            <Star className="size-4" />
             대표로
           </button>
         )}
@@ -84,7 +84,7 @@ export function PhotoViewer({
           rel="noopener noreferrer"
           className="flex h-9 items-center gap-1.5 rounded-lg px-3 text-[13px] font-semibold hover:bg-white/15"
         >
-          <ExternalLink className="size-4" strokeWidth={1.8} />
+          <ArrowSquareOut className="size-4" />
           Drive
         </a>
         <button
@@ -94,7 +94,7 @@ export function PhotoViewer({
           title="Drive 휴지통으로 옮겨요 — 30일 안에 Drive에서 되살릴 수 있어요"
           className="flex size-9 items-center justify-center rounded-full text-destructive hover:bg-white/15"
         >
-          <Trash2 className="size-[18px]" strokeWidth={1.8} />
+          <Trash className="size-[18px]" />
         </button>
       </div>
 
@@ -118,7 +118,7 @@ export function PhotoViewer({
               aria-label="이전 사진"
               className="absolute left-3 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 hover:bg-black/60"
             >
-              <ChevronLeft className="size-5" strokeWidth={1.8} />
+              <CaretLeft className="size-5" />
             </button>
             <button
               type="button"
@@ -129,7 +129,7 @@ export function PhotoViewer({
               aria-label="다음 사진"
               className="absolute right-3 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 hover:bg-black/60"
             >
-              <ChevronRight className="size-5" strokeWidth={1.8} />
+              <CaretRight className="size-5" />
             </button>
           </>
         ) : null}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus } from "@/components/icons";
 
 /**
  * PARA 상세 할 일 목록 맨 위 "새 할 일" 줄 (PARA-MANAGE-PLAN.md 2-1). Enter로 추가하고 입력칸은 비운 채 남아서
@@ -13,7 +13,7 @@ export function AddMappedTodoRow({ label, onAdd }: { label: string; onAdd: (cont
 
   return (
     <label className="flex min-h-[46px] cursor-text items-center gap-3 border-b border-border pl-12 pr-4 text-primary">
-      <Plus className="size-5 shrink-0" strokeWidth={2} aria-hidden="true" />
+      <Plus className="size-5 shrink-0" aria-hidden="true" />
       <input
         value={value}
         onChange={(e) => setValue(e.target.value)}

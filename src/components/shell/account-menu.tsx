@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { format, isToday } from "date-fns";
 import { ko } from "date-fns/locale";
-import { Bell, BellOff, Cloud, ListTree, LogOut, RefreshCw } from "lucide-react";
+import { ArrowsClockwise, Bell, BellSlash, Cloud, SignOut, TreeStructure } from "@/components/icons";
 
 import { useSession } from "@/lib/app-data/app-data-provider";
 import { useSignOut } from "@/lib/app-data/use-sign-out";
@@ -81,7 +81,6 @@ export function AccountMenu({ open, onClose }: { open: boolean; onClose: () => v
       <div className="flex items-center gap-2.5 px-2.5 pb-2 pt-1">
         <Cloud
           className={googleConnected ? "size-[18px] text-category-area" : "size-[18px] text-warning"}
-          strokeWidth={1.8}
           aria-hidden="true"
         />
         <div className="flex flex-1 flex-col">
@@ -96,7 +95,7 @@ export function AccountMenu({ open, onClose }: { open: boolean; onClose: () => v
             role="menuitem"
             className="flex h-7 items-center gap-1.5 rounded-md bg-secondary px-2.5 text-[12.5px] font-medium hover:bg-black/10"
           >
-            <RefreshCw className="size-[13px]" strokeWidth={1.8} />
+            <ArrowsClockwise className="size-[13px]" />
             재연결
           </a>
         ) : (
@@ -117,7 +116,7 @@ export function AccountMenu({ open, onClose }: { open: boolean; onClose: () => v
         onClick={() => void signOut()}
         className="mt-0.5 flex h-[34px] w-full items-center gap-2.5 rounded-md px-2.5 text-left text-[13.5px] hover:bg-primary hover:text-primary-foreground"
       >
-        <LogOut className="size-4" strokeWidth={1.8} />
+        <SignOut className="size-4" />
         로그아웃
       </button>
     </div>
@@ -151,7 +150,7 @@ function ContextSection({ onOpenManager }: { onOpenManager: () => void }) {
         }}
         className="flex h-[34px] w-full items-center gap-2.5 rounded-md px-2.5 text-left text-[13.5px] hover:bg-primary hover:text-primary-foreground"
       >
-        <ListTree className="size-4" strokeWidth={1.8} />
+        <TreeStructure className="size-4" />
         <span className="flex-1">컨텍스트 관리…</span>
         <span className="text-[12px] opacity-70">{contexts.length}개</span>
       </button>
@@ -213,9 +212,9 @@ function NotificationSection() {
       ) : (
         <div className="flex items-center gap-2.5 px-2.5 pb-2 pt-0.5">
           {on ? (
-            <Bell className="size-[18px] shrink-0 text-category-area" strokeWidth={1.8} aria-hidden="true" />
+            <Bell className="size-[18px] shrink-0 text-category-area" aria-hidden="true" />
           ) : (
-            <BellOff className="size-[18px] shrink-0 text-warning" strokeWidth={1.8} aria-hidden="true" />
+            <BellSlash className="size-[18px] shrink-0 text-warning" aria-hidden="true" />
           )}
           <div className="flex min-w-0 flex-1 flex-col">
             <span className="text-[13.5px]">{state === null ? "확인 중…" : on ? "켜짐" : state === "denied" ? "차단됨" : "꺼짐"}</span>
