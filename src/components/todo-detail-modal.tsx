@@ -219,10 +219,12 @@ export function TodoDetailModal({
     }
   }
   const hasMemoOrUrl = Boolean(todo.memo?.trim() || todo.url?.trim());
-  const tabs: { id: DetailTab; label: string; badge: string | null; dot: boolean }[] = [
-    { id: "subtasks", label: "하위 할 일", badge: progress.total > 0 ? `${progress.done}/${progress.total}` : null, dot: false },
-    { id: "memo", label: "메모 · URL", badge: null, dot: hasMemoOrUrl },
-    { id: "photos", label: "사진", badge: photoCount > 0 ? String(photoCount) : null, dot: false },
+  // 메모에 남은 일 — 열린 질문 [?] + 열린 확인 [ ] (시안 ⑰). 있으면 회색 알약 숫자, 없으면 내용 점
+  const openMarks = parseMemoLines(memo).filter((line) => line.state === " " || line.state === "?").length;
+  const tabs: { id: DetailTab; label: string; badge: string | null; pill: number; dot: boolean }[] = [
+    { id: "subtasks", label: "하위 할 일", badge: progress.total > 0 ? `${progress.done}/${progress.total}` : null, pill: 0, dot: false },
+    { id: "memo", label: "메모 · URL", badge: null, pill: openMarks, dot: openMarks === 0 && hasMemoOrUrl },
+    { id: "photos", label: "사진", badge: photoCount > 0 ? String(photoCount) : null, pill: 0, dot: false },
   ];
 
   // 메모 · URL — 할 일은 "메모 · URL" 탭 안에서 탭 높이를 채우고, 노트는 탭 없이 지금처럼 바로 보인다.
@@ -441,6 +443,14 @@ export function TodoDetailModal({
                   <span className="truncate">{t.label}</span>
                   {t.badge ? (
                     <span className="text-[12px] font-medium tabular-nums text-muted-foreground">{t.badge}</span>
+                  ) : null}
+                  {t.pill > 0 ? (
+                    <span
+                      className="flex h-[17px] min-w-[17px] shrink-0 items-center justify-center rounded-full bg-black/10 px-[5px] text-[11px] font-bold tabular-nums text-foreground"
+                      aria-label={`남은 질문 · 확인 ${t.pill}개`}
+                    >
+                      {t.pill}
+                    </span>
                   ) : null}
                   {t.dot ? (
                     <span className="size-[5px] shrink-0 rounded-full bg-muted-foreground" aria-label="내용 있음" />
