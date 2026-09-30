@@ -10,7 +10,7 @@ import {
 } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight } from "@/components/icons";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { TodoDetailModal } from "@/components/todo-detail-modal";
@@ -305,7 +305,7 @@ export function CalendarBlock({
                 {subtask.carriedAt ? (
                   // 넘긴 항목 — 체크 대신 화살표, 취소선 없음 (완료와 구분)
                   <span className="flex size-2.5 shrink-0 items-center justify-center" aria-label="넘김">
-                    <ArrowRight className="size-2.5" strokeWidth={3} />
+                    <ArrowRight weight="bold" className="size-2.5" />
                   </span>
                 ) : (
                   // 드래그와 겹치지 않게 pointerdown을 막는다 (부모 체크박스와 같은 방식)

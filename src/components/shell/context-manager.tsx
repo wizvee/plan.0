@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, Copy, MoreHorizontal, X } from "lucide-react";
+import { Check, Copy, DotsThree, X } from "@/components/icons";
 
 import { cn } from "@/lib/utils";
 import type { Context } from "@/lib/types";
@@ -65,7 +65,7 @@ export function ContextManager() {
             aria-label="닫기"
             className="flex size-7 items-center justify-center rounded-full bg-black/5 text-muted-foreground hover:bg-black/10"
           >
-            <X className="size-3.5" strokeWidth={2.2} />
+            <X weight="bold" className="size-3.5" />
           </button>
         </div>
         <p className="text-[13px] leading-relaxed text-muted-foreground">
@@ -199,7 +199,7 @@ function ContextRow({ context, count, isCurrent }: { context: Context; count: nu
         aria-label={`${context.key} 복사`}
         className="flex size-7 items-center justify-center rounded-[7px] text-muted-foreground hover:bg-black/5"
       >
-        {copied ? <Check className="size-3.5 text-category-area" strokeWidth={2.4} /> : <Copy className="size-3.5" strokeWidth={1.8} />}
+        {copied ? <Check weight="bold" className="size-3.5 text-category-area" /> : <Copy className="size-3.5" />}
       </button>
       <div ref={menuRef} className="relative">
         <button
@@ -210,7 +210,7 @@ function ContextRow({ context, count, isCurrent }: { context: Context; count: nu
           aria-expanded={menuOpen}
           className="flex size-7 items-center justify-center rounded-[7px] text-muted-foreground hover:bg-black/5"
         >
-          <MoreHorizontal className="size-4" strokeWidth={1.8} />
+          <DotsThree className="size-4" />
         </button>
         {menuOpen ? (
           <div

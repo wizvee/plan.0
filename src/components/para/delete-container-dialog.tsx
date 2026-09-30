@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Cloud, Trash2 } from "lucide-react";
+import { Cloud, Trash } from "@/components/icons";
 
 import { cn } from "@/lib/utils";
 import { useSession } from "@/lib/app-data/app-data-provider";
@@ -108,7 +108,7 @@ export function DeleteContainerDialog({
         onClick={(e) => e.stopPropagation()}
       >
         <span className="flex size-11 items-center justify-center rounded-full bg-destructive/[0.12] text-destructive">
-          <Trash2 className="size-[22px]" strokeWidth={1.8} aria-hidden="true" />
+          <Trash className="size-[22px]" aria-hidden="true" />
         </span>
         <h2 id="delete-container-title" className="mb-1 mt-3.5 text-[19px] font-bold tracking-[-0.3px]">
           ‘<InlineText text={name} />’ {OBJECT_LABEL[kind]} 삭제할까요?
@@ -151,13 +151,13 @@ export function DeleteContainerDialog({
           <ul className="mt-3.5 flex flex-col gap-1.5 text-[12.5px] text-muted-foreground">
             {projectRetroCount > 0 ? (
               <li className="flex items-center gap-[7px]">
-                <Trash2 className="size-3.5 shrink-0" strokeWidth={1.8} aria-hidden="true" />
+                <Trash className="size-3.5 shrink-0" aria-hidden="true" />
                 프로젝트 회고 {projectRetroCount}개는 함께 삭제돼요
               </li>
             ) : null}
             {driveLine ? (
               <li className="flex items-center gap-[7px]">
-                <Cloud className="size-3.5 shrink-0" strokeWidth={1.8} aria-hidden="true" />
+                <Cloud className="size-3.5 shrink-0" aria-hidden="true" />
                 {driveLine}
               </li>
             ) : null}

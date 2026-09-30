@@ -2,20 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import {
-  ArrowRight,
-  Bookmark,
-  ChevronDown,
-  Clock,
-  Compass,
-  ExternalLink,
-  Layers,
-  Link2,
-  StickyNote,
-  Target,
-  Trash2,
-  X,
-} from "lucide-react";
+import { ArrowRight, ArrowSquareOut, BookmarkSimple, CaretDown, Clock, Compass, LinkSimple, Note, Stack, Target, Trash, X } from "@/components/icons";
 import { format, parseISO } from "date-fns";
 import { ko } from "date-fns/locale";
 
@@ -41,7 +28,7 @@ import { usePhotos } from "@/lib/app-data/use-photos";
 const KIND_ICON: Record<ParaKind, typeof Target> = {
   project: Target,
   area: Compass,
-  resource: Bookmark,
+  resource: BookmarkSimple,
 };
 
 const KIND_LABEL: Record<ParaKind, string> = {
@@ -178,7 +165,7 @@ export function TodoDetailModal({
 
   const color = category ? `var(${CATEGORY_COLOR_VAR[category]})` : "var(--muted-foreground)";
   const tint = category ? `var(${CATEGORY_TINT_VAR[category]})` : "var(--secondary)";
-  const KindIcon = category ? KIND_ICON[category] : Layers;
+  const KindIcon = category ? KIND_ICON[category] : Stack;
 
   const isTask = todo.kind === "task";
   const schedule = scheduleLabel(todo);
@@ -247,7 +234,7 @@ export function TodoDetailModal({
       )}
 
       <div className="mt-3 flex shrink-0 items-center gap-1.5 rounded-md bg-muted pl-2.5 pr-1">
-        <Link2 className="size-4 shrink-0 text-muted-foreground" />
+        <LinkSimple className="size-4 shrink-0 text-muted-foreground" />
         <input
           type="text"
           value={url}
@@ -268,7 +255,7 @@ export function TodoDetailModal({
             aria-label="새 탭에서 열기"
             className="flex size-[26px] shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-card"
           >
-            <ExternalLink className="size-3.5" />
+            <ArrowSquareOut weight="bold" className="size-3.5" />
           </a>
         ) : null}
       </div>
@@ -324,7 +311,7 @@ export function TodoDetailModal({
             )}
             {schedule ? (
               <span className="flex items-center gap-[5px] text-[12.5px] text-muted-foreground">
-                <Clock className="size-[13px] shrink-0" strokeWidth={1.8} aria-hidden="true" />
+                <Clock className="size-[13px] shrink-0" aria-hidden="true" />
                 {schedule}
               </span>
             ) : null}
@@ -365,7 +352,7 @@ export function TodoDetailModal({
                 {mappedName ?? "선택 안 함"}
               </span>
             </span>
-            <ChevronDown
+            <CaretDown
               className={cn("size-[15px] shrink-0 text-muted-foreground transition-transform", paraOpen && "rotate-180")}
             />
           </button>
@@ -457,7 +444,7 @@ export function TodoDetailModal({
                       className="mt-auto flex w-full shrink-0 items-center gap-2.5 rounded-[10px] bg-accent px-3 py-2.5 text-left text-accent-foreground hover:brightness-[0.97] disabled:opacity-60"
                     >
                       <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                        <ArrowRight className="size-4" strokeWidth={2} aria-hidden="true" />
+                        <ArrowRight className="size-4" aria-hidden="true" />
                       </span>
                       <span className="flex min-w-0 flex-1 flex-col gap-px">
                         <span className="text-[14px] font-semibold">안 끝난 {pendingCount}개를 다음 날로 넘기기</span>
@@ -506,7 +493,7 @@ export function TodoDetailModal({
                 onClick={() => onConvert(todo.id, todo.kind === "note" ? "task" : "note")}
                 className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[13px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
               >
-                <StickyNote className="size-3.5" />
+                <Note weight="bold" className="size-3.5" />
                 {todo.kind === "note" ? "할 일로 전환" : "노트로 전환"}
               </button>
             ) : null}
@@ -520,7 +507,7 @@ export function TodoDetailModal({
                 aria-label={carrySummary}
                 className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[13px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-60"
               >
-                <ArrowRight className="size-3.5" strokeWidth={1.8} />
+                <ArrowRight className="size-3.5" />
                 넘기기
               </button>
             ) : null}
@@ -534,7 +521,7 @@ export function TodoDetailModal({
             aria-label="삭제"
             className="-mr-1.5 flex size-8 items-center justify-center rounded-md text-destructive hover:bg-destructive/10"
           >
-            <Trash2 className="size-[17px]" />
+            <Trash className="size-[17px]" />
           </button>
         </div>
       </div>

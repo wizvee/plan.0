@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus } from "@/components/icons";
 
 import { cn } from "@/lib/utils";
 import type { TodoKind } from "@/lib/types";
@@ -33,7 +33,7 @@ export function AddTodoForm({ onAdd }: { onAdd: (content: string, kind: TodoKind
         disabled={!value.trim()}
         className="flex shrink-0 items-center justify-center text-primary disabled:opacity-60"
       >
-        <Plus className="size-[18px]" strokeWidth={2} />
+        <Plus className="size-[18px]" />
       </button>
       <input
         data-add-input=""

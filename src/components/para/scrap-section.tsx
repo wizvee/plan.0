@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Link2, Plus } from "lucide-react";
+import { Check, LinkSimple, Plus } from "@/components/icons";
 
 import { TodoCard } from "@/components/todo-card";
 import { InlineText } from "@/components/inline-text";
@@ -87,9 +87,9 @@ export function ScrapSection({
                   )}
                   aria-hidden="true"
                 >
-                  {checked ? <Check className="size-3" strokeWidth={3} /> : null}
+                  {checked ? <Check weight="bold" className="size-3" /> : null}
                 </span>
-                <Link2 className="size-[15px] shrink-0 text-muted-foreground" aria-hidden="true" />
+                <LinkSimple className="size-[15px] shrink-0 text-muted-foreground" aria-hidden="true" />
                 <span className="min-w-0 flex-1 truncate text-[14px]">
                   <InlineText text={scrap.content} />
                 </span>
@@ -128,7 +128,7 @@ export function ScrapSection({
             disabled={selectedIds.length === 0 || promoting}
             className="flex h-[30px] items-center gap-1.5 rounded-[7px] bg-primary px-3.5 text-[13px] font-semibold text-primary-foreground disabled:opacity-50"
           >
-            <Plus className="size-[14px]" />
+            <Plus weight="bold" className="size-[14px]" />
             {promoting ? "만드는 중…" : "노트 만들기"}
           </button>
         </div>

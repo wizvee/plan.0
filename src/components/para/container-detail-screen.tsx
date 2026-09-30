@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format, differenceInCalendarDays } from "date-fns";
-import { Bookmark, ChevronLeft, Cloud, Compass, Inbox as InboxIcon, Target } from "lucide-react";
+import { BookmarkSimple, CaretLeft, Cloud, Compass, Target, Tray as InboxIcon } from "@/components/icons";
 import { useDroppable } from "@dnd-kit/core";
 
 import { useTodos } from "@/lib/app-data/use-todos";
@@ -37,7 +37,7 @@ import { pickDriveFiles } from "@/lib/google-picker";
 const KIND_ICON: Record<ParaKind, typeof Target> = {
   project: Target,
   area: Compass,
-  resource: Bookmark,
+  resource: BookmarkSimple,
 };
 
 function daysLeftLabel(dueDate: string): string {
@@ -464,7 +464,7 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
         onClick={() => router.push(`/para?kind=${kind}`)}
         className="-ml-1 flex h-[30px] items-center gap-0.5 self-start rounded-[7px] pl-0.5 pr-2 text-[14px] text-primary hover:bg-black/5"
       >
-        <ChevronLeft className="size-[18px]" strokeWidth={2.2} />
+        <CaretLeft weight="bold" className="size-[18px]" />
         {PARA_KIND_LABELS[kind]}
       </button>
 
@@ -473,7 +473,7 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
           className="flex size-12 shrink-0 items-center justify-center rounded-xl"
           style={{ backgroundColor: kindTint, color: kindColor }}
         >
-          <Icon className="size-6" strokeWidth={1.8} />
+          <Icon className="size-6" />
         </div>
         {editingName ? (
           <input
@@ -630,7 +630,7 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
               ))}
             </div>
             <p className="mt-2 flex items-start gap-1.5 px-1 text-[12.5px] leading-[1.45] text-muted-foreground">
-              <InboxIcon className="mt-px size-[14px] shrink-0" strokeWidth={1.8} aria-hidden="true" />
+              <InboxIcon className="mt-px size-[14px] shrink-0" aria-hidden="true" />
               여기서 만든 할 일은 날짜가 정해질 때까지 Inbox에도 보여요 · Inbox에서 끌어다 놓아도 연결돼요
             </p>
           </section>
@@ -668,7 +668,7 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
 
       {tab === "files" && !googleConnected ? (
         <div className="flex flex-col items-center gap-2.5 rounded-xl bg-secondary px-6 py-12 text-center">
-          <Cloud className="size-[34px] text-muted-foreground/70" strokeWidth={1.6} />
+          <Cloud className="size-[34px] text-muted-foreground/70" />
           <span className="text-[16px] font-semibold">Google Drive가 연결되지 않았어요</span>
           <span className="max-w-[360px] text-[13.5px] leading-normal text-muted-foreground">
             연결하면 이 {PARA_KIND_LABELS_KO[kind]} 전용 폴더에 파일과 노트를 모아둘 수 있어요.

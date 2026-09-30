@@ -1,19 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import {
-  Check,
-  ChevronLeft,
-  Cloud,
-  ExternalLink,
-  FileText,
-  FolderOpen,
-  Image as ImageIcon,
-  Plus,
-  Presentation,
-  Tag as TagIcon,
-  Upload,
-} from "lucide-react";
+import { ArrowSquareOut, CaretLeft, Check, Cloud, FileText, FolderOpen, Image as ImageIcon, Plus, Presentation, Tag as TagIcon, UploadSimple } from "@/components/icons";
 
 import { classifyDriveFile, formatModified } from "@/lib/drive-file";
 import type { DriveFile } from "@/lib/google-drive";
@@ -76,7 +64,7 @@ function TagPropertyValues({
           aria-label="태그 추가"
           className="flex size-6 items-center justify-center rounded-[5px] border border-dashed border-black/20 text-muted-foreground hover:text-foreground"
         >
-          <Plus className="size-[11px]" />
+          <Plus weight="bold" className="size-[11px]" />
         </button>
       )}
     </div>
@@ -160,7 +148,7 @@ export function FilesTab({
             onClick={onBackToList}
             className="-ml-1 flex h-[30px] items-center gap-0.5 rounded-[7px] pl-0.5 pr-2 text-[14px] text-primary hover:bg-black/5"
           >
-            <ChevronLeft className="size-[18px]" strokeWidth={2.2} />
+            <CaretLeft weight="bold" className="size-[18px]" />
             자료
           </button>
           <span className="ml-auto mr-2.5 hidden text-[12.5px] text-muted-foreground sm:inline">Drive에 .md로 저장</span>
@@ -170,14 +158,14 @@ export function FilesTab({
             disabled={saving}
             className="flex h-[30px] items-center gap-1.5 rounded-[7px] bg-primary px-4 text-[13px] font-semibold text-primary-foreground disabled:opacity-50 max-sm:ml-auto"
           >
-            <Check className="size-3.5" strokeWidth={2.4} />
+            <Check weight="bold" className="size-3.5" />
             {saving ? "저장 중…" : "저장"}
           </button>
         </div>
 
         {promotedBanner ? (
           <div className="mb-3.5 flex items-center gap-2 rounded-lg bg-accent px-3 py-2.5 text-[12.5px] font-semibold text-accent-foreground">
-            <FileText className="size-3.5 shrink-0" />
+            <FileText weight="bold" className="size-3.5 shrink-0" />
             선택한 스크랩으로 새 노트를 만들었어요 — 원본 스크랩은 정리(삭제)됐습니다.
           </div>
         ) : null}
@@ -196,7 +184,7 @@ export function FilesTab({
           {editingProperties.map((prop, i) => (
             <div key={`${prop.key}-${i}`} className="flex min-h-[34px] items-center gap-2">
               <span className="flex w-[110px] shrink-0 items-center gap-1.5 text-[13.5px] text-muted-foreground">
-                {prop.type === "tag" ? <TagIcon className="size-3.5" /> : <ExternalLink className="size-3.5" />}
+                {prop.type === "tag" ? <TagIcon weight="bold" className="size-3.5" /> : <ArrowSquareOut weight="bold" className="size-3.5" />}
                 {prop.key}
               </span>
               {prop.type === "link" ? (
@@ -227,7 +215,7 @@ export function FilesTab({
             onClick={onAddTagProperty}
             className="-ml-1.5 flex h-[30px] items-center gap-1.5 self-start rounded-md px-1.5 text-[13px] text-muted-foreground hover:bg-black/5 hover:text-foreground"
           >
-            <Plus className="size-3" />
+            <Plus weight="bold" className="size-3" />
             속성 추가
           </button>
         </div>
@@ -247,7 +235,7 @@ export function FilesTab({
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
         <span className="flex min-w-0 items-center gap-1.5 text-[12.5px] text-muted-foreground">
-          <Cloud className="size-3.5 shrink-0 text-category-area" strokeWidth={1.8} />
+          <Cloud className="size-3.5 shrink-0 text-category-area" />
           <span className="truncate">{folderLabel}</span>
         </span>
         <div className="flex-1" />
@@ -257,7 +245,7 @@ export function FilesTab({
           disabled={importing}
           className="flex h-[30px] shrink-0 items-center gap-1.5 rounded-[7px] border border-black/10 bg-card px-3 text-[13px] font-medium hover:bg-black/5 disabled:opacity-50"
         >
-          <FolderOpen className="size-3.5" strokeWidth={1.8} />
+          <FolderOpen className="size-3.5" />
           {importing ? "가져오는 중…" : "Drive에서 가져오기"}
         </button>
         <button
@@ -269,7 +257,7 @@ export function FilesTab({
             showUpload && "bg-secondary"
           )}
         >
-          <Upload className="size-3.5" strokeWidth={1.8} />
+          <UploadSimple className="size-3.5" />
           업로드
         </button>
         <button
@@ -277,7 +265,7 @@ export function FilesTab({
           onClick={onNewNote}
           className="flex h-[30px] shrink-0 items-center gap-1.5 rounded-[7px] bg-primary px-3 text-[13px] font-semibold text-primary-foreground"
         >
-          <Plus className="size-3.5" strokeWidth={2.2} />새 노트
+          <Plus weight="bold" className="size-3.5" />새 노트
         </button>
       </div>
 
@@ -341,12 +329,12 @@ export function FilesTab({
                 )}
               >
                 <span className={cn("flex size-[30px] shrink-0 items-center justify-center rounded-[7px]", KIND_TILE[kind])}>
-                  <Icon className="size-4" strokeWidth={1.8} />
+                  <Icon className="size-4" />
                 </span>
                 <span className="min-w-0 flex-1 truncate text-[14px]">{file.name}</span>
                 <span className="shrink-0 text-[12.5px] tabular-nums text-muted-foreground">{formatModified(file.modifiedTime)}</span>
                 <span className="flex w-11 shrink-0 justify-end text-[12.5px] font-medium text-primary">
-                  {kind === "md" ? "편집" : <ExternalLink className="size-[15px] text-muted-foreground" strokeWidth={1.8} />}
+                  {kind === "md" ? "편집" : <ArrowSquareOut className="size-[15px] text-muted-foreground" />}
                 </span>
               </button>
             );

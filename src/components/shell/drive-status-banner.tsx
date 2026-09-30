@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, CheckCircle2, X } from "lucide-react";
+import { CheckCircle, WarningCircle, X } from "@/components/icons";
 
 import { cn } from "@/lib/utils";
 
@@ -36,9 +36,9 @@ export function DriveStatusBanner() {
         )}
       >
         {status === "connected" ? (
-          <CheckCircle2 className="size-4 shrink-0" />
+          <CheckCircle className="size-4 shrink-0" />
         ) : (
-          <AlertCircle className="size-4 shrink-0" />
+          <WarningCircle className="size-4 shrink-0" />
         )}
         <span className="flex-1">
           {status === "connected"

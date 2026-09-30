@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { format, parseISO } from "date-fns";
 import { ko } from "date-fns/locale";
-import { Search } from "lucide-react";
+import { MagnifyingGlass } from "@/components/icons";
 
 import { InlineText } from "@/components/inline-text";
 import { CATEGORY_COLOR_VAR, getParaCategory } from "@/lib/category";
@@ -90,7 +90,7 @@ function LinkPanel({ goal, weekDays, onClose }: { goal: WeeklyGoal; weekDays: st
     >
       <div className="px-2 pb-1.5 pt-2 text-[13px] font-bold">이번 주 할 일에서 고르기</div>
       <label className="mx-1.5 mb-1.5 flex items-center gap-1.5 rounded-lg bg-black/[0.05] px-2">
-        <Search className="size-3.5 text-muted-foreground" strokeWidth={2} aria-hidden="true" />
+        <MagnifyingGlass weight="bold" className="size-3.5 text-muted-foreground" aria-hidden="true" />
         <input
           autoFocus
           value={query}

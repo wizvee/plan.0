@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Calendar, Check, Flag, Inbox, LayoutGrid } from "lucide-react";
+import { CalendarBlank, Check, Flag, SquaresFour, Tray } from "@/components/icons";
 
 import { cn } from "@/lib/utils";
 import { mondayOf, toDateKey } from "@/lib/week";
@@ -61,20 +61,20 @@ export function AppRail({ accountOpen, onToggleAccount }: { accountOpen: boolean
       <RailButton label="목표" ariaLabel={goalLabel} active={onGoals} onClick={() => router.push("/goals")}>
         <GoalRing ratio={goalRatio} size={28} strokeWidth={2.5} color="var(--primary)">
           {goalRatio !== null && goalRatio >= 1 ? (
-            <Check className="size-[14px]" strokeWidth={2.6} />
+            <Check weight="bold" className="size-[14px]" />
           ) : (
-            <Flag className="size-[13px]" strokeWidth={2} />
+            <Flag weight="bold" className="size-[13px]" />
           )}
         </GoalRing>
       </RailButton>
       <RailButton label="캘린더" active={!onPara && !onGoals} onClick={goCalendar}>
-        <Calendar className="size-[22px]" strokeWidth={1.8} />
+        <CalendarBlank className="size-[22px]" />
       </RailButton>
       <RailButton label="PARA" active={onPara} onClick={() => router.push("/para")}>
-        <LayoutGrid className="size-[22px]" strokeWidth={1.8} />
+        <SquaresFour className="size-[22px]" />
       </RailButton>
       <RailButton label="Inbox" active={inboxOpen} onClick={toggleInbox} pressed={inboxOpen}>
-        <Inbox className="size-[22px]" strokeWidth={1.8} />
+        <Tray className="size-[22px]" />
         {backlogItems.length > 0 ? (
           <span className="absolute right-[calc(50%-22px)] top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-today px-1 text-[10px] font-bold text-white">
             {backlogItems.length > 99 ? "99+" : backlogItems.length}

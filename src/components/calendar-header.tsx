@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { addDays, format } from "date-fns";
-import { Check, ChevronDown, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { CaretDown, CaretLeft, CaretRight, Check, Plus } from "@/components/icons";
 
 import { MiniCalendar } from "@/components/mini-calendar";
 import { cn } from "@/lib/utils";
@@ -67,7 +67,7 @@ export function CalendarHeader({
           className={cn("flex h-9 items-center gap-1 rounded-lg px-2 hover:bg-black/5", miniOpen && "bg-black/5")}
         >
           <span className="text-[20px] font-bold tracking-[-0.4px] sm:text-[22px]">{format(titleMonth, "yyyy년 M월")}</span>
-          <ChevronDown className="size-4 text-muted-foreground" strokeWidth={2.2} />
+          <CaretDown weight="bold" className="size-4 text-muted-foreground" />
         </button>
         {miniOpen ? (
           <div
@@ -105,7 +105,7 @@ export function CalendarHeader({
         aria-label="새 할 일 (Inbox에 추가)"
         className="hidden size-[30px] items-center justify-center rounded-[7px] border border-black/10 bg-card hover:bg-black/5 sm:flex"
       >
-        <Plus className="size-4" strokeWidth={1.8} />
+        <Plus className="size-4" />
       </button>
 
       <div ref={viewRef} className="relative">
@@ -121,7 +121,7 @@ export function CalendarHeader({
           )}
         >
           {viewMode === "week" ? "주" : "월"}
-          <ChevronDown className="size-3.5 text-muted-foreground" strokeWidth={1.8} />
+          <CaretDown className="size-3.5 text-muted-foreground" />
         </button>
         {viewMenuOpen ? (
           <div
@@ -142,7 +142,7 @@ export function CalendarHeader({
                 className="group flex h-[30px] w-full items-center rounded-md pl-2 pr-2.5 text-left text-[13.5px] hover:bg-primary hover:text-primary-foreground"
               >
                 <span className="flex w-5 text-primary group-hover:text-primary-foreground">
-                  {viewMode === mode ? <Check className="size-3.5" strokeWidth={2.6} /> : null}
+                  {viewMode === mode ? <Check weight="bold" className="size-3.5" /> : null}
                 </span>
                 {mode === "week" ? "주" : "월"}
               </button>
@@ -158,7 +158,7 @@ export function CalendarHeader({
           aria-label={`이전 ${unit}`}
           className="flex h-full w-8 items-center justify-center hover:bg-black/5"
         >
-          <ChevronLeft className="size-4" strokeWidth={1.8} />
+          <CaretLeft className="size-4" />
         </button>
         <button
           type="button"
@@ -173,7 +173,7 @@ export function CalendarHeader({
           aria-label={`다음 ${unit}`}
           className="flex h-full w-8 items-center justify-center hover:bg-black/5"
         >
-          <ChevronRight className="size-4" strokeWidth={1.8} />
+          <CaretRight className="size-4" />
         </button>
       </div>
     </header>

@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { PanelLeftClose } from "lucide-react";
+import { SidebarSimple } from "@/components/icons";
 
 import { TodoCard } from "@/components/todo-card";
 import { AddTodoForm } from "@/components/add-todo-form";
@@ -61,7 +61,7 @@ export function InboxPanel() {
             aria-label="Inbox 닫기"
             className="ml-auto flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-black/5"
           >
-            <PanelLeftClose className="size-[18px]" strokeWidth={1.8} />
+            <SidebarSimple className="size-[18px]" />
           </button>
         </div>
         <p className="px-5 pb-3.5 text-[12.5px] text-muted-foreground">날짜 없는 할 일 · 분류 안 된 노트</p>

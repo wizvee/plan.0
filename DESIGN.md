@@ -144,7 +144,7 @@ AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBann
   월 보기 = 그날 가장 이른 할 일의 대표 사진이 **칸 전체 배경**(위쪽을 어둡게 덮고 흰 글씨, 점엔 흰 테두리). 주 보기 = 1시간 30분 이상 블록이면
   **사진 배경**(흰 글씨, 하위 목록 · 진행률 바는 숨김), 짧으면 오른쪽 위 작은 썸네일(모서리 4px), 한 줄 블록엔 없음. 상세 팝업 사진 탭 =
   3열 정사각 그리드(모서리 8px) + ★ 대표 칩 + 점선 추가 칸, 누르면 검은 배경 크게 보기(`PhotoViewer`). 사진을 못 불러오면 조용히 평소 모양.
-- **회고**(REFLECTIONS-PLAN.md): 종류는 `ReflectionKindIcon`(틴트 원 + lucide `ThumbsUp`/`ThumbsDown`/`Lightbulb`), 색은
+- **회고**(REFLECTIONS-PLAN.md): 종류는 `ReflectionKindIcon`(틴트 원 + `ThumbsUp`/`ThumbsDown`/`Lightbulb`), 색은
   `--retro-*` 토큰으로 **아이콘에만**(텍스트는 기본 전경색). 종류 선택은 `ReflectionKindSelect` 드롭다운(macOS 메뉴) 하나만 쓴다.
 - **주간 목표**(GOALS-PLAN.md): 진행률 링은 `GoalRing` 하나를 레일 · 목표 카드가 같이 쓴다(없음 = 점선, 목표 카드는 PARA 색, 레일은 primary).
   목표 카드 = 흰 카드 + 링 · 제목 · PARA 칩 · `···` + 헤어라인 할 일 목록 + 파란 텍스트 버튼 2개. 캘린더 본문에는 목표를 그리지 않는다(정보량).
@@ -156,7 +156,10 @@ AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBann
   "Apple SD Gothic Neo"`는 CDN을 못 불러왔을 때의 대체용(2026-09-29 사용자 결정 — 리디자인 때 애플 기기는 SF Pro가 먼저 오도록
   바뀌었던 걸 되돌림). 구글 폰트 새로 추가하지 마세요.
 - 제목 22–28px bold · 자간 약간 좁게(`tracking-[-0.4px]`), 본문 14px, 보조 12–13px.
-- 아이콘: `lucide-react`만, `strokeWidth={1.8}` 정도로 가늘게. 이모지를 아이콘 대용으로 쓰지 마세요.
+- 아이콘: **Phosphor**(`@phosphor-icons/react`, 2026-09-30 lucide에서 교체 — 모서리가 둥근 애플 느낌). 항상 `@/components/icons`에서
+  가져오고(ESLint가 `lucide-react` · Phosphor 패키지 직접 import를 막음), 없는 아이콘은 그 파일에 한 줄 추가한다(아이콘별 경로 import — 개발 서버 속도).
+  굵기는 `weight`로: 기본 `regular`, 14px 이하 작은 아이콘 · 체크 표시는 `bold`, 채운 상태(대표 사진 ★ 등)는 `fill`. 크기는 `className="size-…"`.
+  이모지를 아이콘 대용으로 쓰지 마세요.
 - **인라인 코드**: 사용자가 입력한 텍스트의 `` `VAR` `` 같은 백틱 구간은 인라인 코드(고정폭 · 옅은 회색 배경 `bg-black/[0.06]` ·
   `rounded-[4px]`)로 보인다. 사용자 텍스트를 그릴 때는 `{todo.content}` 대신 항상 `<InlineText text={…} />`(`components/inline-text.tsx`).
   편집 가능한 텍스트는 평소엔 렌더링된 텍스트, 누르면 원문 입력칸(백틱 포함)으로 바뀐다. 저장값은 원문 그대로.
@@ -173,4 +176,4 @@ AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBann
 3. 색은 2번 표의 시맨틱 토큰만. PARA 관련 색은 `lib/category.ts` 재사용.
 4. radius는 4번 기준(`rounded-2xl` 금지, 원형 요소는 예외).
 5. 드롭 영역이 필요하면 `data`로 선언하고 `handle-drop.ts`에 처리 추가.
-6. 아이콘은 `lucide-react`, 이모지 금지.
+6. 아이콘은 `@/components/icons`(Phosphor), 이모지 금지.

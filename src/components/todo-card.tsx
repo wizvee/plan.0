@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { format, isBefore, startOfDay } from "date-fns";
-import { ChevronRight, GripVertical, StickyNote } from "lucide-react";
+import { CaretRight, DotsSixVertical, Note } from "@/components/icons";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { UrlChip } from "@/components/url-chip";
@@ -102,7 +102,7 @@ export function TodoCard({
             )}
             {...(overlay ? {} : { ...attributes, ...listeners })}
           >
-            <GripVertical className="size-3.5" />
+            <DotsSixVertical weight="bold" className="size-3.5" />
           </button>
           {showExpander ? (
             progress.total > 0 ? (
@@ -113,9 +113,8 @@ export function TodoCard({
                 aria-expanded={isExpanded}
                 className="-mr-1 mt-3 flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-black/5"
               >
-                <ChevronRight
+                <CaretRight weight="bold"
                   className={cn("size-3.5 transition-transform", isExpanded && "rotate-90")}
-                  strokeWidth={2.2}
                 />
               </button>
             ) : (
@@ -123,7 +122,7 @@ export function TodoCard({
             )
           ) : null}
           {todo.kind === "note" ? (
-            <StickyNote className="mt-3 size-[18px] shrink-0 text-muted-foreground/60" strokeWidth={1.8} aria-label="노트" />
+            <Note className="mt-3 size-[18px] shrink-0 text-muted-foreground/60" aria-label="노트" />
           ) : (
             <span className="mt-3 shrink-0">
               <Checkbox

@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Cloud, ExternalLink, Folder, ImageOff, ImagePlus, Loader2, Plus, Star } from "lucide-react";
+import { ArrowSquareOut, CircleNotch, Cloud, Folder, ImageBroken, ImageSquare, Plus, Star } from "@/components/icons";
 
 import { PhotoViewer } from "@/components/photo/photo-viewer";
 import { useSession } from "@/lib/app-data/app-data-provider";
@@ -28,7 +28,7 @@ export function PhotoTab({ todoId }: { todoId: string }) {
   if (!googleConnected) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-2.5 rounded-xl bg-secondary px-6 text-center">
-        <Cloud className="size-[30px] text-muted-foreground/70" strokeWidth={1.6} />
+        <Cloud className="size-[30px] text-muted-foreground/70" />
         <span className="text-[15px] font-semibold">Google Drive가 연결되지 않았어요</span>
         <span className="max-w-[300px] text-[13px] leading-normal text-muted-foreground">
           연결하면 이 할 일의 사진을 내 Drive에 모아두고 캘린더에서 볼 수 있어요.
@@ -78,7 +78,7 @@ export function PhotoTab({ todoId }: { todoId: string }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
       <div className="flex h-[22px] shrink-0 items-center gap-2 px-0.5">
-        <Folder className="size-3.5 shrink-0 text-muted-foreground" strokeWidth={1.8} aria-hidden="true" />
+        <Folder className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
         {folderId ? (
           <a
             href={driveFolderUrl(folderId)}
@@ -87,7 +87,7 @@ export function PhotoTab({ todoId }: { todoId: string }) {
             className="flex min-w-0 flex-1 items-center gap-1 truncate text-[11.5px] text-muted-foreground hover:text-primary"
           >
             <span className="truncate">Google Drive › PLAN.0 › 사진</span>
-            <ExternalLink className="size-3 shrink-0" strokeWidth={1.8} />
+            <ArrowSquareOut className="size-3 shrink-0" />
           </a>
         ) : (
           <span className="min-w-0 flex-1 truncate text-[11.5px] text-muted-foreground">
@@ -99,7 +99,7 @@ export function PhotoTab({ todoId }: { todoId: string }) {
           onClick={() => inputRef.current?.click()}
           className="flex shrink-0 items-center gap-0.5 text-[13px] font-semibold text-primary hover:opacity-80"
         >
-          <Plus className="size-3.5" strokeWidth={2} />
+          <Plus weight="bold" className="size-3.5" />
           추가
         </button>
       </div>
@@ -125,7 +125,7 @@ export function PhotoTab({ todoId }: { todoId: string }) {
               className="relative aspect-square overflow-hidden rounded-lg bg-muted"
             >
               {failed.has(photo.id) ? (
-                <ImageOff className="absolute left-1/2 top-1/2 size-5 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" strokeWidth={1.6} />
+                <ImageBroken className="absolute left-1/2 top-1/2 size-5 -translate-x-1/2 -translate-y-1/2 text-muted-foreground" />
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element -- Drive에서 읽어오는 사용자 사진이라 next/image 최적화 대상이 아님
                 <img
@@ -138,7 +138,7 @@ export function PhotoTab({ todoId }: { todoId: string }) {
               )}
               {photo.id === cover?.id ? (
                 <span className="absolute left-1.5 top-1.5 flex h-5 items-center gap-[3px] rounded-full bg-black/55 pl-[5px] pr-[7px] text-[10.5px] font-semibold text-white">
-                  <Star className="size-[11px] fill-current" strokeWidth={1.5} />
+                  <Star weight="fill" className="size-[11px]" />
                   대표
                 </span>
               ) : null}
@@ -146,7 +146,7 @@ export function PhotoTab({ todoId }: { todoId: string }) {
           ))}
           {Array.from({ length: uploading }).map((_, i) => (
             <div key={`uploading-${i}`} className="flex aspect-square items-center justify-center rounded-lg bg-muted">
-              <Loader2 className="size-5 animate-spin text-muted-foreground" strokeWidth={1.8} aria-label="올리는 중" />
+              <CircleNotch className="size-5 animate-spin text-muted-foreground" aria-label="올리는 중" />
             </div>
           ))}
           <button
@@ -154,7 +154,7 @@ export function PhotoTab({ todoId }: { todoId: string }) {
             onClick={() => inputRef.current?.click()}
             className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border-[1.5px] border-dashed border-black/[0.18] text-[12px] text-muted-foreground hover:bg-black/[0.03]"
           >
-            <ImagePlus className="size-5" strokeWidth={1.8} />
+            <ImageSquare className="size-5" />
             사진 추가
           </button>
         </div>

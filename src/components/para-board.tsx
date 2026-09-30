@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Bookmark, Compass, Target } from "lucide-react";
+import { BookmarkSimple, Compass, Target } from "@/components/icons";
 
 import { useTodos } from "@/lib/app-data/use-todos";
 import { useContexts } from "@/lib/app-data/use-contexts";
@@ -15,7 +15,7 @@ import { AddContainerForm } from "@/components/para/add-container-form";
 const KIND_ICON: Record<ParaKind, typeof Target> = {
   project: Target,
   area: Compass,
-  resource: Bookmark,
+  resource: BookmarkSimple,
 };
 
 export function ParaBoard() {
@@ -117,7 +117,7 @@ export function ParaBoard() {
                   selected ? "bg-card shadow-[0_1px_3px_rgba(0,0,0,0.12)]" : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <Icon className="size-[14px]" strokeWidth={1.8} style={selected ? { color: `var(${CATEGORY_COLOR_VAR[kind]})` } : undefined} />
+                <Icon className="size-[14px]" style={selected ? { color: `var(${CATEGORY_COLOR_VAR[kind]})` } : undefined} />
                 {PARA_KIND_LABELS[kind]}
               </button>
             );

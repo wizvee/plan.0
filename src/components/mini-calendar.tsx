@@ -12,7 +12,7 @@ import {
   startOfWeek,
   subMonths,
 } from "date-fns";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CaretLeft, CaretRight } from "@/components/icons";
 
 import { cn } from "@/lib/utils";
 import { useTodayKey } from "@/lib/use-today";
@@ -62,7 +62,7 @@ export function MiniCalendar({ initialMonth, highlightWeekStart, onSelectDate, o
             onClick={() => setDisplayMonth((m) => subMonths(m, 1))}
             className="flex size-7 items-center justify-center rounded-md text-primary hover:bg-black/5"
           >
-            <ChevronLeft className="size-4" strokeWidth={2.2} />
+            <CaretLeft weight="bold" className="size-4" />
           </button>
           <button
             type="button"
@@ -70,7 +70,7 @@ export function MiniCalendar({ initialMonth, highlightWeekStart, onSelectDate, o
             onClick={() => setDisplayMonth((m) => addMonths(m, 1))}
             className="flex size-7 items-center justify-center rounded-md text-primary hover:bg-black/5"
           >
-            <ChevronRight className="size-4" strokeWidth={2.2} />
+            <CaretRight weight="bold" className="size-4" />
           </button>
         </div>
       </div>
