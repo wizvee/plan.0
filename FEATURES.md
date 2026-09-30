@@ -135,6 +135,7 @@
 | C19 | 이름 옆 **`···` 메뉴** — 이름 바꾸기 · 완료로 표시(보관하기) · 삭제 | `para/container-menu.tsx` |
 | C20 | **삭제** — 확인 창에서 기본 "함께 삭제"(매핑된 할 일 · 스크랩 · 하위 삭제 — 회고는 할 일 · 노트 메모 안이라 같이 — + Drive 폴더는 Drive 휴지통) 또는 "연결만 끊기". Drive 실패 시 다시 시도 / 폴더는 두고 삭제 | `para/delete-container-dialog.tsx`, `lib/app-data/container-actions.ts`, `api/drive/folder` `DELETE` |
 | C21 | 삭제됐거나 없는 컨테이너 주소 → "찾을 수 없어요" + 목록으로 | `container-detail-screen.tsx` |
+| C22 | **개요 탭 "남은 것"**(Project · Area · Resource) — 매핑된 할 일 · 노트 메모의 열린 `[ ]` · `[?]` 줄을 할 일별로. 칩 확인할 것 · 질문 + 끝난 것도 보기(`[x]` · `[i]`), 줄에서 바로 체크 · 해결, 누르면 그 할 일의 메모 탭. 10줄 + 더 보기, 없으면 카드 숨김 | `para/open-marks-card.tsx`, `search/mark-chips.tsx` |
 
 ## 9. 화면이 없는 기능
 
