@@ -8,6 +8,7 @@ import { InboxPanel } from "@/components/shell/inbox-panel";
 import { AccountMenu } from "@/components/shell/account-menu";
 import { DriveStatusBanner } from "@/components/shell/drive-status-banner";
 import { ContextManager } from "@/components/shell/context-manager";
+import { SearchPanel } from "@/components/shell/search-panel";
 
 /**
  * 로그인 후 모든 화면이 공유하는 앱 셸: 레일(모바일은 하단 탭) | Inbox 패널 | 본문.
@@ -33,6 +34,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
       <AccountMenu open={accountOpen} onClose={closeAccount} />
       <ContextManager />
+      <SearchPanel />
     </ShellUIProvider>
   );
 }

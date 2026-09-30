@@ -40,19 +40,29 @@ interface ShellUI {
   contextManager: { open: boolean; focusAdd: boolean };
   openContextManager: (options?: { focusAdd?: boolean }) => void;
   closeContextManager: () => void;
+  /** 검색 패널(⌘K · 레일 검색 버튼, SEARCH-PLAN.md). 셸이 한 번만 렌더링 */
+  searchOpen: boolean;
+  openSearch: () => void;
+  closeSearch: () => void;
+  toggleSearch: () => void;
 }
 
 const ShellUIContext = createContext<ShellUI | null>(null);
 
 /**
  * 셸 UI 상태. 셸(`AppShell`)이 레이아웃에서 한 번만 마운트하므로 화면을 옮겨도 유지된다.
- * 화면은 `useShellUI()`로 Inbox · 컨텍스트 관리를 열 수만 있고, 셸의 모양/구성은 바꿀 수 없다.
+ * 화면은 `useShellUI()`로 Inbox · 컨텍스트 관리 · 검색을 열 수만 있고, 셸의 모양/구성은 바꿀 수 없다.
  * Inbox 열림 여부는 이 브라우저에 기억한다(다음 방문 때도 같은 상태로).
  */
 export function ShellUIProvider({ children }: { children: ReactNode }) {
   const inboxOpen = useSyncExternalStore(subscribeInboxOpen, readInboxOpen, () => false);
   const [focusRequest, setFocusRequest] = useState(0);
   const [contextManager, setContextManager] = useState({ open: false, focusAdd: false });
+  const [searchOpen, setSearchOpen] = useState(false);
+  // ⌘K 단축키가 window 리스너에서 쓰므로 바뀌지 않는 함수로
+  const openSearch = useCallback(() => setSearchOpen(true), []);
+  const closeSearch = useCallback(() => setSearchOpen(false), []);
+  const toggleSearch = useCallback(() => setSearchOpen((open) => !open), []);
 
   const setInboxOpen = useCallback((open: boolean) => {
     memoryInboxOpen = open;
@@ -76,6 +86,10 @@ export function ShellUIProvider({ children }: { children: ReactNode }) {
     contextManager,
     openContextManager: (options) => setContextManager({ open: true, focusAdd: options?.focusAdd ?? false }),
     closeContextManager: () => setContextManager({ open: false, focusAdd: false }),
+    searchOpen,
+    openSearch,
+    closeSearch,
+    toggleSearch,
   };
 
   return <ShellUIContext.Provider value={value}>{children}</ShellUIContext.Provider>;
