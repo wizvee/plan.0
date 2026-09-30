@@ -1,6 +1,6 @@
 # 현재 기능 목록 (FEATURES)
 
-2026-09-28 기준(애플 스타일 리디자인 + 하위 할 일 + 회고 반영), 코드에 실제로 구현돼 있는 사용자 기능을 화면별로 정리한 문서입니다.
+2026-09-30 기준(애플 스타일 리디자인 + 하위 할 일 + 회고 + 메모 줄 표시 + 검색 반영), 코드에 실제로 구현돼 있는 사용자 기능을 화면별로 정리한 문서입니다.
 새 UI 시안을 그리거나 리디자인할 때 **빠뜨린 기능이 없는지 대조하는 체크리스트**로 씁니다.
 개념/기획은 [PLANNING.md](./PLANNING.md), 결정 이력은 [HANDOFF.md](./HANDOFF.md),
 시각 규칙은 [DESIGN.md](./DESIGN.md) 참고.
@@ -23,11 +23,11 @@
 
 | # | 기능 | 위치 |
 |---|---|---|
-| N1 | 목표 · 캘린더 · PARA 이동(레일, 모바일 하단 탭). "캘린더"는 항상 이번 주 주 보기로, "목표"는 이번 주 목표로 | `shell/app-rail.tsx` |
+| N1 | 목표 · 캘린더 · PARA 이동 + 검색 열기(레일, 모바일 하단 탭). "캘린더"는 항상 이번 주 주 보기로, "목표"는 이번 주 목표로 | `shell/app-rail.tsx` |
 | N2 | 브랜드 마크 (레일 맨 위 체크 아이콘) | `shell/app-rail.tsx` |
 | N3 | "+" 버튼 (캘린더 툴바) — Inbox를 열고 입력창에 포커스 | `calendar-header.tsx`, `lib/shell-ui.tsx` |
 | N4 | **미니 캘린더** — 캘린더 제목("2026년 9월 ⌄")을 누르면 팝오버. 이전/다음 달, 날짜 → 그 주, 월 라벨 → 월 보기, 보는 주 강조 | `mini-calendar.tsx`, `calendar-header.tsx` |
-| N5 | 모바일 하단 탭바 (목표 / 캘린더 / PARA / Inbox / 계정) + Inbox 탭 → 바텀시트. Inbox 열림 상태는 기억됨 | `shell/app-rail.tsx`, `shell/inbox-panel.tsx` |
+| N5 | 모바일 하단 탭바 6칸 (목표 / 캘린더 / PARA / 검색 / Inbox / 계정) + Inbox 탭 → 바텀시트. Inbox 열림 상태는 기억됨 | `shell/app-rail.tsx`, `shell/inbox-panel.tsx` |
 | N6 | 화면 상태가 URL에 저장됨 (`?week=` — 캘린더 · 목표, `?view=month&month=`, `?kind=`, `?tab=`) — 뒤로가기로 복원 | 각 화면 |
 
 ## 3. 할 일 보관함 (Inbox / Todo List)
@@ -159,6 +159,19 @@
 | G8 | "목표 추가" — 3개 이하 권장 안내(막지 않음). 목표가 없는 주는 목표 적기 + 좋은 목표 확인 질문 3개 + 지난주 요약 | `goals/goals-screen.tsx` |
 
 ---
+
+## 11. 검색 (SEARCH-PLAN.md)
+
+| # | 기능 | 위치 |
+|---|---|---|
+| S1 | **검색 패널 열기** — ⌘K / Ctrl+K(한글 입력 중에도) · 레일 "검색"(PARA와 Inbox 사이) · 모바일 탭바 "검색". 데스크톱은 가운데 팝업, 모바일은 전체 화면(취소). 검색어 · 칩은 닫았다 열어도 남음 | `shell/search-panel.tsx`, `lib/shell-ui.tsx` |
+| S2 | **키워드 검색** — 할 일 제목 · 메모(줄마다) · URL · 하위 할 일 · PARA 이름. 조사 떼기(`성능은` → `성능`), 하이픈 · 밑줄 무시(`cids` = `CI-DS`), 단어 절반 이상 일치, 점수(줄 ×3 · 제목 ×2 · PARA ×1) 같으면 최근 순. 서버 · DB 없이 브라우저에서 | `lib/search.ts`, `lib/app-data/use-search.ts` |
+| S3 | **결과 카드** — 할 일 하나 = 카드 하나(일치한 하위 할 일 · 메모 스니펫 · URL). 일치 단어 옅은 주황, 메모 `[i]`의 답 · 하위 할 일 📝 뒤는 진하게, 짧은 메모는 전체(가장 잘 맞는 줄 굵게) · 긴 메모는 앞뒤 1줄. 맥락 줄(날짜 · 부모 할 일 · PARA · URL 도메인) + 출처 칩. 처음 30개 + 더 보기 | `search/search-result.tsx` |
+| S4 | **PARA 칸** — 이름에 검색 단어가 있는 PARA를 결과 위에, 누르면 상세 화면 | `search/search-result.tsx`, `shell/search-panel.tsx` |
+| S5 | **이모지만 · 줄 표시 검색** — `📝`만 치면 그 이모지가 들어간 줄 전부, `[?]` · `[ ]` 등을 치면 그 표시가 붙은 메모 줄 전부(최근 순). 다른 단어를 같이 치면 그 안에서 좁힘 | `lib/search.ts` |
+| S6 | **칩 `확인할 것 N` · `질문 N`**(메모 줄 표시 모아보기) — 열린 `[ ]` · `[?]` 줄을 할 일별로 묶어서. 줄에서 바로 체크 · 질문 해결(답 입력) · `i` 되돌리기, "끝난 것도 보기" | `shell/search-panel.tsx`, `search/search-result.tsx` |
+| S7 | **결과 열기** — 검색 패널 위에 할 일 팝업(메모 · URL로 찾았으면 메모 탭, 하위 할 일이면 하위 할 일 탭), 닫으면 검색으로 돌아와 검색어 칸 포커스 | `todo-detail-by-id.tsx`, `todo-detail-modal.tsx`(`initialTab`) |
+| S8 | 키보드 — ↑↓ 고르기 · Enter 열기 · Esc 닫기(팝업이 열려 있으면 팝업만) | `shell/search-panel.tsx` |
 
 ## 부록: 2026-09-27 Apple 스타일 시안 대조표
 

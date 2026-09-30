@@ -545,10 +545,22 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     - 표시가 하나도 없는 메모는 전처럼 통째 텍스트로 보이고, 하나라도 있으면 줄 단위 보기(불릿 줄 = 회색 점, 불릿 없는 줄 = 빈 칸으로 줄 맞춤).
     - 툴바를 누르는 동안 입력칸 blur로 편집이 끝나지 않게 mousedown 기본 동작을 막고, 터치용으로 누르는 중 플래그도 본다.
     - `?`의 원 없는 `i`는 Phosphor에 없어서 `memo-view.tsx`의 `InfoGlyph`로 직접 그림. 색은 `--mark-*` 토큰(다크 포함).
-    - **모아보기(검색 패널 칩 `확인할 것 N` · `질문 N`)는 아직** — SEARCH-PLAN.md 검색 패널 시안 · 구현 때 같이(MEMO-MARKS-PLAN.md 5번).
+    - 모아보기(검색 패널 칩 `확인할 것 N` · `질문 N`, MEMO-MARKS-PLAN.md 5번)는 37번 검색과 같이 완료.
     - **확인**: tsc · eslint, 순수 함수 단위 확인(인식 규칙 · 툴바 붙이기/바꾸기/떼기 · 여러 줄 · 예전 표시 · Enter), 임시 페이지에서 Playwright로
       체크 · 질문 해결(Enter/Esc) · 되돌리기 · 줄 눌러 편집(커서 줄) · 툴바 · Enter 이어 쓰기 · ⌘Z · 여러 줄 선택 확인 + 스크린샷.
       로그인이 필요한 실제 할 일 팝업 안에서는 아직 못 봄.
+37. **(2026-09-30 추가) 검색**: [SEARCH-PLAN.md](./SEARCH-PLAN.md) 1~5단계. 시안 https://claude.ai/artifact/EXRxgXo2Cpn1oNFvj9DBCx 컨펌
+    (가운데 ⌘K 팝업, 모바일은 **탭바 6칸 A안** + 전체 화면). **키워드 검색만** — 벡터 · AI는 케이스가 쌓이면(SEARCH-PLAN.md 7번).
+    - 서버 · DB 변경 없음: 이미 다 불러와 있는 할 일 · 하위 할 일 · PARA로 브라우저에서 색인(`lib/search.ts` 순수 함수, `use-search`가 `useMemo`).
+      규칙은 SEARCH-PLAN.md 3번(조사 떼기 · 하이픈 무시 · 절반 이상 일치 · 줄 ×3 / 제목 ×2 / PARA ×1). `scripts/check-search.ts`(`npx tsx`)로 기준 케이스 확인.
+    - 이모지만 · 줄 표시(`[?]` 등) 검색과 칩(`확인할 것` · `질문`)은 점수 없는 "줄 모드" — 메모 줄 표시 모아보기(MEMO-MARKS-PLAN.md 5번)도 이걸로 완료.
+    - 결과를 누르면 검색 패널 위에 할 일 팝업(일치한 곳의 탭, `initialTab`) → 닫으면 검색으로. `todo-detail-by-id.tsx`를 프로젝트 회고 탭에서 꺼내 같이 씀.
+    - **회고 결과 종류는 없앰**: 사용자가 회고 데이터를 모두 메모 줄(`[p]` `[c]` `[I]`)로 옮겼다(회고 테이블 비어 있음).
+    - **사용 방식 변화(같은 날)**: "누군가에게 물어보고 답을 들은 것"을 하위 할 일 `📝 답` 대신 **메모 `[?]` → `[i] 질문 → 답`** 으로 적기로 함.
+      검색 결과에서 `[i]`의 답을 진하게, 메모가 가장 잘 맞으면 메모 스니펫을 위로. 기준 케이스 1도 메모 형태로 바꿈(📝 형태는 예전 기록용으로 계속 지원).
+    - **확인**: tsc · eslint · build · check-search 13개 + 가짜 Supabase(auth/rest 메모리 목 — 로그인 쿠키 `sb-127-auth-token`에 가짜 세션)에 붙인
+      실제 앱을 Playwright로(기준 케이스 · 📝 · 결과 없음 · ↑↓ · 칩 체크/해결 → 메모 저장 · 결과 열기 탭 · Esc 복귀 · PARA 이동 · 모바일 탭바 6칸).
+      목 서버는 저장소에 넣지 않았다 — 필요하면 `/auth/v1/user` + `/rest/v1/<table>`(GET은 `content-range` 헤더) 정도로 다시 만들면 된다.
 
 ## 지금 구현된 것 (기능 목록)
 
@@ -583,6 +595,8 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
   스타일의 링크형/태그형 속성을 지원 (PLANNING.md 9번, 20번 결정 참고)
 - 하위 할 일(체크리스트) + 진행률 — 상세 팝업에서 관리, Inbox/PARA 카드 · 캘린더 블록 · 월 보기에 `2/4` 표시,
   PARA 상세에서 펼쳐 체크, 드래그로 순서 변경 (27번 결정, SUBTASKS-PLAN.md)
+- 메모 줄 표시(`[ ]` · `[?]`/`[i]` · `[p]` `[c]` `[I]`) — 툴바 · Enter 이어 쓰기 · 보기 모드에서 체크/질문 해결 (36번, MEMO-MARKS-PLAN.md)
+- 검색(⌘K · 레일 · 탭바) — 키워드 검색 + 확인할 것 · 질문 모아보기, 결과를 누르면 할 일 팝업 (37번, SEARCH-PLAN.md) — 현재 전체 목록은 FEATURES.md
 
 ## 파일 맵
 
@@ -652,7 +666,7 @@ src/components/month-calendar.tsx 월 보기 그리드 (칸 클릭 → 그 주, 
 src/components/mini-calendar.tsx 애플식 미니 달력 (calendar-header 팝오버 안, 보는 주 띠 강조)
 src/components/todo-card.tsx    할 일/노트 한 줄(할 일=체크박스, 노트=아이콘만 + 텍스트 + 드래그 핸들 +
                                  삭제 + URL이 있으면 파비콘 임베드 카드 + 전환 버튼)
-src/components/todo-detail-modal.tsx  할 일/노트 상세 팝업 (제목/메모 수정, 할일↔노트 전환, 삭제, 완료 체크, 탭: 하위 할 일 · 회고 · 메모·URL) — body 포털
+src/components/todo-detail-modal.tsx  할 일/노트 상세 팝업 (제목/메모 수정, 할일↔노트 전환, 삭제, 완료 체크, 탭: 하위 할 일 · 회고 · 메모·URL · 사진, `initialTab`) — body 포털
 src/components/subtask/subtask-list.tsx      하위 할 일 체크리스트(수정 · 삭제 · 연속 추가 · 드래그 순서) + DragOverlay 미리보기 (27번)
 src/components/subtask/subtask-progress.tsx  하위 할 일 진행률 링 + done/total (27번)
 src/components/reflection/reflection-kind.tsx     회고 종류 아이콘 + 종류 드롭다운 (28번)
@@ -663,6 +677,12 @@ src/components/memo/memo-toolbar.tsx              줄 표시 버튼 5개 (36번)
 src/components/memo/memo-view.tsx                 메모 보기 모드 — 표시 아이콘 · 체크 · 질문 해결 입력칸 (36번)
 src/components/memo/mark-meta.ts                  표시 종류별 라벨 · 아이콘 · 색
 src/lib/memo-marks.ts                             메모 줄 표시 인식 · 고치기 순수 함수 (36번)
+src/lib/search.ts                                 키워드 검색 순수 함수 — 검색어 다듬기 · 색인 · 점수 · 줄 모드 · 메모 스니펫 · 강조 위치 (37번)
+src/lib/app-data/use-search.ts                    검색 색인(useMemo) + 검색어 · 칩 useDeferredValue (37번)
+src/components/shell/search-panel.tsx             검색 패널 — ⌘K · 칩 · 결과 목록 · 키보드 · 결과 열기 (37번)
+src/components/search/search-result.tsx           결과 카드(할 일 · PARA) · 이모지 줄 · 줄 표시 줄(체크 · 해결) · HighlightText (37번)
+src/components/todo-detail-by-id.tsx              id로 할 일 상세 팝업 열기(initialTab) — 검색 · 프로젝트 회고 탭이 같이 씀 (37번)
+scripts/check-search.ts                           검색 기준 케이스 확인 스크립트 (`npx tsx scripts/check-search.ts`)
 src/components/add-todo-form.tsx  할 일/노트 추가 입력 행 (토글로 종류 선택)
 src/components/para-board.tsx   PARA 목록 화면 본문 — 세그먼트 컨트롤 + 컨테이너 카드 그리드
 src/components/para/container-card.tsx        Project/Area/Resource 카드 (droppable, 클릭 시 상세로 이동)
@@ -721,6 +741,12 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
     (a) PLANNING.md 9.8에 남은 캐싱/업로드 제한/보관 폴더 열린 질문들; (b) 노트 편집기에
     마크다운 미리보기/문법 하이라이팅 추가할지; (c) 링크형 속성 값을 에디터에서 직접 수정/삭제하는
     UI(지금은 승격 시 자동으로만 채워지고 읽기 전용, 시안 그대로).
+11. **(2026-09-30) 검색 · 메모 줄 표시 다음 할 일** (37번 사용 방식 변화 검토 결과):
+    - **회고 탭 정리(MEMO-MARKS-PLAN.md 2단계)** — 회고 데이터가 메모로 옮겨져 비어 있다. 할 일 팝업의 회고 탭을 빼고 완료된 할 일은 메모 탭으로,
+      프로젝트 회고 탭은 프로젝트 할 일 메모의 `[p]` `[c]` `[I]` 모아보기로. 탭 구성이 바뀌니 시안 먼저. 데이터 옮기기 스크립트는 필요 없음.
+    - 실제 데이터에서 SEARCH-PLAN.md 기준 케이스 3개가 1등인지, 모바일에서 입력이 버벅이지 않는지 확인(SEARCH-PLAN.md 6번).
+    - (선택) 메모 탭 이름의 점 대신 열린 `[?]` · `[ ]` 개수(`메모 · URL ?2`), 주 보기 블록 표시는 시안 먼저.
+    - (선택) 검색 도움말의 📝 예시를 `[i]`(알게 된 것) 검색으로 바꾸기, `알게 된 것` 칩. 메모 탭 안 `[i]` 답 색(지금 회색, 시안대로).
 
 ## `.env` / 키 노출 관련 (사용자 질문에 대한 답)
 
