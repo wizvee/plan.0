@@ -565,7 +565,7 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     (https://claude.ai/artifact/JfkwtcvcU885kzNkdJGV7Q) 컨펌 + 추천안 두 가지 컨펌(프로젝트 전체 회고 = 노트, 회고 테이블 삭제).
     - 사용자가 하나뿐이던 회고를 직접 메모로 옮겨 `todo_reflections`는 0건 → 옮기기 스크립트 없이 **회고 코드 · 스토어 · 테이블을 없앰**
       (`components/reflection/*`, `lib/reflection.ts`, `lib/supabase/reflections.ts`, `use-reflections`, `reflection-actions`, `Reflection` 타입).
-      테이블은 `supabase/migrations/20260930_drop_todo_reflections.sql` — **새 코드 배포 뒤** 실행(먼저 지우면 옛 화면이 못 읽음).
+      테이블은 `supabase/migrations/20260930_drop_todo_reflections.sql`로 지움 — 새 코드 배포 뒤 실행 완료(2026-09-30).
     - 할 일 팝업 탭 3개(하위 할 일 · 메모·URL · 사진), 완료된 할 일은 메모 탭으로. 빈 메모면 회고 버튼 3개로 한 줄 유도,
       표시만 치고 안 적은 줄은 저장하지 않음(`commitMemo`).
     - 프로젝트 회고 탭은 `lib/retro.ts` 순수 함수로 메모 줄을 모음. 프로젝트 전체 회고는 "〈프로젝트〉 회고" 노트 메모에 줄로(DB 변경 없음),
@@ -743,7 +743,7 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
    - `20260929_subtask_carried_at.sql` — 하위 할 일 넘김 (CARRY-OVER-PLAN.md) 실행 완료
    - `20260929_weekly_goals.sql` — 주간 목표 테이블 + `todos.goal_id` (GOALS-PLAN.md) 실행 완료
    - `20260929_todo_photos.sql` — 할 일 사진 테이블 (PHOTOS-PLAN.md) 실행 완료
-   - `20260930_drop_todo_reflections.sql` — 회고 테이블 삭제 (38번) **실행 필요 — 새 코드 배포 뒤에**
+   - `20260930_drop_todo_reflections.sql` — 회고 테이블 삭제 (38번) 실행 완료
 7. `/api/clip` 기능을 실제로 쓰려면 `SUPABASE_SECRET_KEY`/`CLIP_API_SECRET`/`CLIP_USER_ID` 세
    환경변수를 로컬(`.env.local`)과 Vercel 양쪽에 아직 등록 안 함 — README의 해당 섹션 참고해서
    설정하고 애플 단축어까지 만들어야 실제로 동작함. 코드/스키마는 준비 완료 상태.
@@ -762,7 +762,7 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
     마크다운 미리보기/문법 하이라이팅 추가할지; (c) 링크형 속성 값을 에디터에서 직접 수정/삭제하는
     UI(지금은 승격 시 자동으로만 채워지고 읽기 전용, 시안 그대로).
 11. **(2026-09-30) 검색 · 메모 줄 표시 다음 할 일** (37번 사용 방식 변화 검토 결과):
-    - ~~회고 탭 정리(MEMO-MARKS-PLAN.md 2단계)~~ — **완료(38번)**. 남은 것: 배포 뒤 `20260930_drop_todo_reflections.sql` 실행.
+    - ~~회고 탭 정리(MEMO-MARKS-PLAN.md 2단계)~~ — **완료(38번)**, 회고 테이블 삭제 SQL도 실행 완료.
     - 실제 데이터에서 SEARCH-PLAN.md 기준 케이스 3개가 1등인지, 모바일에서 입력이 버벅이지 않는지 확인(SEARCH-PLAN.md 6번).
     - (선택) 메모 탭 이름의 점 대신 열린 `[?]` · `[ ]` 개수(`메모 · URL ?2`), 주 보기 블록 표시는 시안 먼저.
     - (선택) 검색 도움말의 📝 예시를 `[i]`(알게 된 것) 검색으로 바꾸기, `알게 된 것` 칩. 메모 탭 안 `[i]` 답 색(지금 회색, 시안대로).
