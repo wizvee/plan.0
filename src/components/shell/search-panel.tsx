@@ -9,10 +9,10 @@ import { cn } from "@/lib/utils";
 import { useShellUI } from "@/lib/shell-ui";
 import { useSearch, useSearchIndex } from "@/lib/app-data/use-search";
 import { useTodoActions } from "@/lib/app-data/todo-actions";
-import { search, type LineHit, type ParaHit, type TodoHit } from "@/lib/search";
+import type { LineHit, ParaHit, TodoHit } from "@/lib/search";
 import type { MarkState } from "@/lib/memo-marks";
 import type { Todo } from "@/lib/types";
-import { MARK_META } from "@/components/memo/mark-meta";
+import { chipMarks, countMarks, MARK_CHIPS, MarkChipButtons, ShowDoneSwitch, type MarkChip } from "@/components/search/mark-chips";
 import { INLINE_CODE_CLASS } from "@/components/inline-text";
 import { TodoDetailById } from "@/components/todo-detail-by-id";
 import type { DetailTab } from "@/components/todo-detail-modal";
@@ -27,12 +27,7 @@ import {
 /** 처음에 보이는 결과 수 — 나머지는 "더 보기" (SEARCH-PLAN.md 3-5) */
 const PAGE = 30;
 
-type Chip = "check" | "question";
-
-const CHIP_MARKS: Record<Chip, { open: MarkState; done: MarkState; label: string }> = {
-  check: { open: " ", done: "x", label: "확인할 것" },
-  question: { open: "?", done: "i", label: "질문" },
-};
+type Chip = MarkChip;
 
 /** 키보드로 고를 수 있는 결과 하나 */
 export type SearchItem = ParaHit | TodoHit | LineHit;
@@ -105,19 +100,10 @@ function SearchDialog({
   const router = useRouter();
   // 결과로 연 할 일 팝업 — 검색 패널 위에 뜨고, 닫으면 검색으로 돌아온다
   const [openTodo, setOpenTodo] = useState<{ id: string; tab: DetailTab | undefined } | null>(null);
-  const marks = useMemo<MarkState[]>(
-    () => (chip ? (showDone ? [CHIP_MARKS[chip].open, CHIP_MARKS[chip].done] : [CHIP_MARKS[chip].open]) : []),
-    [chip, showDone]
-  );
+  const marks = useMemo<MarkState[]>(() => chipMarks(chip, showDone), [chip, showDone]);
   const result = useSearch(index, query, marks);
   // 칩 개수 = 열린 줄 (확인할 것 = [ ], 질문 = [?])
-  const counts = useMemo(() => {
-    const count = (mark: MarkState) => {
-      const r = search(index, "", { marks: [mark] });
-      return r.mode === "lines" ? r.lines.length : 0;
-    };
-    return { check: count(" "), question: count("?") };
-  }, [index]);
+  const counts = useMemo(() => countMarks(index), [index]);
 
   const [limit, setLimit] = useState(PAGE);
   const [selected, setSelected] = useState(0);
@@ -366,45 +352,15 @@ function SearchDialog({
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5 px-4 pb-1 pt-2.5">
-          {(Object.keys(CHIP_MARKS) as Chip[]).map((key) => {
-            const pressed = chip === key;
-            const Icon = MARK_META[key].icon;
-            return (
-              <button
-                key={key}
-                type="button"
-                aria-pressed={pressed}
-                onClick={() => {
-                  onChipChange(pressed ? null : key);
-                  inputRef.current?.focus();
-                }}
-                className={cn(
-                  "flex h-7 items-center gap-[5px] rounded-[7px] pl-2 pr-2.5 text-[13px] font-semibold",
-                  pressed ? "bg-primary text-primary-foreground" : "bg-black/[0.06] text-foreground hover:bg-black/[0.09]"
-                )}
-              >
-                <Icon weight="bold" className="size-3.5" aria-hidden="true" />
-                {CHIP_MARKS[key].label}
-                <span className="font-medium tabular-nums opacity-75">{counts[key]}</span>
-              </button>
-            );
-          })}
-          {chip ? (
-            <label className="ml-auto flex cursor-pointer items-center gap-[7px] text-[12.5px] text-muted-foreground">
-              끝난 것도 보기
-              <input
-                type="checkbox"
-                role="switch"
-                checked={showDone}
-                onChange={(e) => onShowDoneChange(e.target.checked)}
-                className="peer sr-only"
-              />
-              <span
-                aria-hidden="true"
-                className="relative h-[18px] w-[30px] rounded-full bg-black/[0.12] transition-colors after:absolute after:left-0.5 after:top-0.5 after:size-3.5 after:rounded-full after:bg-white after:shadow-[0_1px_2px_rgba(0,0,0,0.25)] after:transition-transform peer-checked:bg-primary peer-checked:after:translate-x-3 peer-focus-visible:ring-2 peer-focus-visible:ring-ring/50"
-              />
-            </label>
-          ) : null}
+          <MarkChipButtons
+            chip={chip}
+            counts={counts}
+            onChange={(next) => {
+              onChipChange(next);
+              inputRef.current?.focus();
+            }}
+          />
+          {chip ? <ShowDoneSwitch checked={showDone} onChange={onShowDoneChange} className="ml-auto" /> : null}
         </div>
 
         <div id="search-results" role="listbox" aria-label="검색 결과" ref={listRef} className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
@@ -510,7 +466,7 @@ function NoResults({ chip, showDone }: { chip: Chip | null; showDone: boolean })
       </span>
       {chip ? (
         <span className="text-[16px] font-semibold">
-          {showDone ? `${CHIP_MARKS[chip].label} 줄이 없어요` : `남은 ${CHIP_MARKS[chip].label}이 없어요`}
+          {showDone ? `${MARK_CHIPS[chip].label} 줄이 없어요` : `남은 ${MARK_CHIPS[chip].label}이 없어요`}
         </span>
       ) : (
         <>

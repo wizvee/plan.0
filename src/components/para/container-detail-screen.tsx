@@ -25,6 +25,7 @@ import { InlineText } from "@/components/inline-text";
 import { ScrapSection } from "@/components/para/scrap-section";
 import { FilesTab } from "@/components/para/files-tab";
 import { ProjectRetroTab } from "@/components/retro/project-retro-tab";
+import { OpenMarksCard } from "@/components/para/open-marks-card";
 import { AddMappedTodoRow } from "@/components/para/add-mapped-todo-row";
 import { ContainerMenu } from "@/components/para/container-menu";
 import { DeleteContainerDialog } from "@/components/para/delete-container-dialog";
@@ -558,37 +559,41 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
       </div>
 
       {tab === "overview" ? (
-        // overflow-hidden을 쓰지 않는다 — 마지막 줄 컨텍스트 선택 팝오버가 잘리지 않게
-        <div className="rounded-xl border border-border bg-card">
-          <OverviewRow label={kind === "project" ? "시작일" : "만든 날"}>
+        <div className="flex flex-col gap-[22px]">
+          {/* 남은 확인 · 질문 (메모 줄 표시) — 없으면 그리지 않음 */}
+          <OpenMarksCard kind={kind} id={id} />
+          {/* overflow-hidden을 쓰지 않는다 — 마지막 줄 컨텍스트 선택 팝오버가 잘리지 않게 */}
+          <div className="rounded-xl border border-border bg-card">
+            <OverviewRow label={kind === "project" ? "시작일" : "만든 날"}>
+              {kind === "project" ? (
+                <DateInput value={project!.startDate} onChange={(v) => v && void updateProject(id, { startDate: v })} />
+              ) : (
+                <span className="tabular-nums">{formatDateLabel(container.createdAt.slice(0, 10))}</span>
+              )}
+            </OverviewRow>
             {kind === "project" ? (
-              <DateInput value={project!.startDate} onChange={(v) => v && void updateProject(id, { startDate: v })} />
-            ) : (
-              <span className="tabular-nums">{formatDateLabel(container.createdAt.slice(0, 10))}</span>
-            )}
-          </OverviewRow>
-          {kind === "project" ? (
-            <>
-              <OverviewRow label="마감일">
-                <DateInput value={project!.dueDate ?? ""} onChange={(v) => void updateProject(id, { dueDate: v || null })} />
-              </OverviewRow>
-              <OverviewRow label="완료일">
-                <DateInput
-                  value={project!.completedAt ? project!.completedAt.slice(0, 10) : ""}
-                  onChange={(v) => void updateProject(id, { completedAt: v ? new Date(v).toISOString() : null })}
-                />
-              </OverviewRow>
-              <OverviewRow label="남은 기간">
-                <span className="tabular-nums">{project!.dueDate ? daysLeftLabel(project!.dueDate) : "—"}</span>
-              </OverviewRow>
-            </>
-          ) : null}
-          <OverviewRow label="컨텍스트" last>
-            <span className="hidden min-w-0 flex-1 pr-3 text-[12.5px] text-muted-foreground sm:block">
-              이 {PARA_KIND_LABELS_KO[kind]}의 할 일이 어느 집중 모드에서 배지 · 알림에 뜰지
-            </span>
-            <ContextPicker contextId={container.contextId} onChange={handleContextChange} />
-          </OverviewRow>
+              <>
+                <OverviewRow label="마감일">
+                  <DateInput value={project!.dueDate ?? ""} onChange={(v) => void updateProject(id, { dueDate: v || null })} />
+                </OverviewRow>
+                <OverviewRow label="완료일">
+                  <DateInput
+                    value={project!.completedAt ? project!.completedAt.slice(0, 10) : ""}
+                    onChange={(v) => void updateProject(id, { completedAt: v ? new Date(v).toISOString() : null })}
+                  />
+                </OverviewRow>
+                <OverviewRow label="남은 기간">
+                  <span className="tabular-nums">{project!.dueDate ? daysLeftLabel(project!.dueDate) : "—"}</span>
+                </OverviewRow>
+              </>
+            ) : null}
+            <OverviewRow label="컨텍스트" last>
+              <span className="hidden min-w-0 flex-1 pr-3 text-[12.5px] text-muted-foreground sm:block">
+                이 {PARA_KIND_LABELS_KO[kind]}의 할 일이 어느 집중 모드에서 배지 · 알림에 뜰지
+              </span>
+              <ContextPicker contextId={container.contextId} onChange={handleContextChange} />
+            </OverviewRow>
+          </div>
         </div>
       ) : null}
 

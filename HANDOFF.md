@@ -573,6 +573,11 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     - **확인**: tsc · eslint · build · check-search + `lib/retro.ts` 단위 확인(모으기 · 순서 · 할 일로 표시 · 노트 찾기 · 마크다운) +
       가짜 Supabase 앱에서 Playwright(완료 → 메모 탭 · 빈 메모 유도 · 표시만 치면 저장 안 함 · 회고 줄 + 안내 문구 · 프로젝트 회고 3열 ·
       프로젝트 전체 회고 → 노트 생성 후 이어 붙이기 · 할 일로 · 줄 → 메모 탭) + 스크린샷.
+39. **(2026-09-30 추가) PARA 개요 "남은 것"**: 사용자 질문 — 프로젝트 회고 탭에서 확인 · 질문도 모아보고 싶다.
+    회고 탭(Project만 · 지나간 일)이 아니라 **개요 탭**(Project · Area · Resource)에 두기로 제안 → 시안 ⑩⑪⑫ 컨펌 → 구현(MEMO-MARKS-PLAN.md 8번).
+    - 검색 패널 칩 · 스위치를 `components/search/mark-chips.tsx`로 꺼내 같이 쓰고, 줄은 `MarkLineRow` 그대로. 목록 = 그 PARA 할 일만으로 만든 검색 색인의 줄 모드.
+    - **확인**: tsc · eslint · build · check-search + 가짜 Supabase 앱에서 Playwright 9개(칩 개수 · 기본 칩 · 질문 · 끝난 것도 보기 · 해결 → 메모 저장 ·
+      체크 → 줄 사라짐 · 줄 → 메모 탭 · 줄 없는 Area는 카드 숨김 · 모바일 · 검색 패널 칩 그대로) + 스크린샷.
 
 ## 지금 구현된 것 (기능 목록)
 
@@ -681,6 +686,8 @@ src/components/todo-card.tsx    할 일/노트 한 줄(할 일=체크박스, 노
 src/components/todo-detail-modal.tsx  할 일/노트 상세 팝업 (제목/메모 수정, 할일↔노트 전환, 삭제, 완료 체크, 탭: 하위 할 일 · 메모·URL · 사진, `initialTab`, 빈 메모 회고 유도) — body 포털
 src/components/subtask/subtask-list.tsx      하위 할 일 체크리스트(수정 · 삭제 · 연속 추가 · 드래그 순서) + DragOverlay 미리보기 (27번)
 src/components/subtask/subtask-progress.tsx  하위 할 일 진행률 링 + done/total (27번)
+src/components/para/open-marks-card.tsx            PARA 개요 "남은 것" — 열린 확인 · 질문 모아보기 (39번)
+src/components/search/mark-chips.tsx              확인할 것 · 질문 칩 + 끝난 것도 보기 스위치 — 검색 패널 · 남은 것 카드 (39번)
 src/components/retro/retro-kind.tsx               회고 종류 아이콘(메모 줄 표시 칸) + 종류 드롭다운 (38번)
 src/components/retro/project-retro-tab.tsx        PARA 상세(Project) 회고 탭 — 메모 `[p] [c] [I]` 줄 3열, 프로젝트 전체 회고(노트), 할 일로, 회고 노트로 저장 (38번)
 src/lib/retro.ts                                  회고 = 메모 줄 — 모으기 · 회고 노트 찾기 · 줄 붙이기 · 할 일로 표시 · 마크다운 (38번)
