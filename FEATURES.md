@@ -98,6 +98,7 @@
 | D12 | **다음 날로 넘기기** — 캘린더에 배치된 할 일의 안 끝난 하위 할 일을 다음 평일(이름 + PARA가 같은 할 일, 없으면 새로 만듦) 맨 위로 옮겨 적고, 원래 항목은 "넘김"(회색 화살표, 3/4 그대로)으로 남기며 이 할 일은 완료. 끝나는 시각 전엔 푸터 작은 "넘기기", 지나면(지난 날짜 포함) 큰 카드 | `todo-detail-modal.tsx`, `lib/carry-over.ts`, `lib/app-data/todo-actions.ts` |
 | D13 | **사진** 탭 — 여러 장 올리기(브라우저에서 2048px · 640px JPEG로 줄여 Drive `PLAN.0/사진/<날짜> <이름>`에 저장), 3열 그리드, ★ 대표(없으면 첫 장), 누르면 크게 보기(대표로 · Drive에서 열기 · 삭제 = Drive 휴지통, ← → · Esc). Drive 미연결이면 연결 안내 | `photo/photo-tab.tsx`, `photo/photo-viewer.tsx`, `lib/supabase/photos.ts`, `app/api/photos/` |
 | D14 | **하위 할 일 "나중에"** — 안 끝난 하위 할 일을 부모와 같은 PARA의 날짜 없는 할 일로 옮김(메모에 "L사 업무(9/30)에서 옮김", 넘김 기록 안 남김), 화면 아래 되돌리기 알림 5초 | `subtask/subtask-list.tsx`, `lib/app-data/todo-actions.ts` |
+| D15 | **메모 줄 표시** — `- [ ]` 확인 · `- [?]` 질문 · `- [p]` 잘한 점 · `- [c]` 아쉬운 점 · `- [I]` 다음엔(예전 `☐` · `☑`도 읽음). 편집 칸 위 툴바 5개(커서 줄 · 선택한 줄들에 붙이기 · 바꾸기 · 같은 버튼으로 떼기), 표시 줄 끝 Enter로 같은 표시 이어 쓰기(빈 표시 줄에서 Enter면 떼기), ⌘Z 됨. 보기 모드에선 18px 아이콘 — 체크박스 누르면 `[x]`, `?` 누르면 답 입력칸(Enter → `[i]` + `→ 답`), `i` 누르면 질문으로 되돌리기. 줄을 누르면 그 줄 끝에서 원문 편집. 표시가 없는 메모는 전처럼 보임 | `memo/memo-editor.tsx`, `memo/memo-toolbar.tsx`, `memo/memo-view.tsx`, `lib/memo-marks.ts` |
 
 ## 7. PARA 목록
 

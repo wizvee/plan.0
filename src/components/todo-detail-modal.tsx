@@ -13,6 +13,9 @@ import { ParaMenu } from "@/components/para/para-menu";
 import { TodoReflectionList } from "@/components/reflection/reflection-list";
 import { PhotoTab } from "@/components/photo/photo-tab";
 import { InlineText } from "@/components/inline-text";
+import { MemoEditor } from "@/components/memo/memo-editor";
+import { MemoView } from "@/components/memo/memo-view";
+import { hasMemoMarks } from "@/lib/memo-marks";
 import { cn } from "@/lib/utils";
 import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR, getParaCategory } from "@/lib/category";
 import { formatClock, MINUTES_PER_DAY } from "@/lib/time";
@@ -86,6 +89,8 @@ export function TodoDetailModal({
   // 제목 · 메모는 평소엔 `코드`가 렌더링된 텍스트로 보여주고, 누르면 원문 입력칸으로 바뀐다
   const [editingTitle, setEditingTitle] = useState(false);
   const [editingMemo, setEditingMemo] = useState(false);
+  // 보기 모드에서 누른 메모 줄 — 편집으로 바뀔 때 그 줄 끝에 커서를 둔다
+  const [memoCaretLine, setMemoCaretLine] = useState<number | null>(null);
   const [url, setUrl] = useState(todo.url ?? "");
   const [paraOpen, setParaOpen] = useState(false);
   const paraRef = useRef<HTMLDivElement>(null);
@@ -133,6 +138,18 @@ export function TodoDetailModal({
     if (trimmed !== (todo.memo ?? "")) {
       onMemoEdit(todo.id, trimmed);
     }
+  }
+
+  /** 보기 모드에서 체크 · 질문 해결처럼 바로 저장되는 메모 변경 */
+  function saveMemo(next: string) {
+    setMemo(next);
+    const trimmed = next.trim();
+    if (trimmed !== (todo.memo ?? "")) onMemoEdit(todo.id, trimmed);
+  }
+
+  function editMemo(line: number | null) {
+    setMemoCaretLine(line);
+    setEditingMemo(true);
   }
 
   function commitUrl() {
@@ -204,23 +221,25 @@ export function TodoDetailModal({
   const memoAndUrl = (
     <>
       {editingMemo ? (
-        <textarea
-          autoFocus
+        <MemoEditor
           value={memo}
-          onChange={(e) => setMemo(e.target.value)}
-          onBlur={commitMemo}
-          placeholder="메모"
-          aria-label="메모"
-          rows={3}
-          className={cn(
-            "border-0 bg-transparent p-0 text-[15px] leading-snug text-foreground outline-none placeholder:text-muted-foreground",
-            isTask ? "min-h-0 flex-1 resize-none" : "mt-2.5 resize-y"
-          )}
+          onChange={setMemo}
+          onCommit={commitMemo}
+          caretLine={memoCaretLine}
+          className={isTask ? "min-h-0 flex-1" : "mt-2.5"}
+          textareaClassName={isTask ? "min-h-0 flex-1 resize-none" : "resize-y"}
+        />
+      ) : hasMemoMarks(memo) ? (
+        <MemoView
+          text={memo}
+          onChange={saveMemo}
+          onEdit={editMemo}
+          className={isTask ? "min-h-0 flex-1 overflow-y-auto" : "mt-2.5"}
         />
       ) : (
         <button
           type="button"
-          onClick={() => setEditingMemo(true)}
+          onClick={() => editMemo(null)}
           aria-label="메모 수정"
           className={cn(
             "cursor-text whitespace-pre-wrap break-words text-left text-[15px] leading-snug",
