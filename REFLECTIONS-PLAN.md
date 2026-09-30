@@ -3,7 +3,8 @@
 작성 2026-09-28. 기존 문서(PLANNING / HANDOFF / DESIGN / FEATURES / SUBTASKS-PLAN)는 건드리지 않고 이 파일에만 적습니다.
 연결 시안: https://claude.ai/artifact/6vXMvW1raTc9Dhx9j25yNq (보드 ① 할 일 상세 — 회고 남기기 · ② PARA 상세 회고 탭)
 
-> **상태: 시안 컨펌 → 구현 완료 → 마이그레이션 실행 · `main` 머지 (2026-09-28).** 남은 것: 실제 화면에서 확인(7번).
+> **상태: 대체됨(2026-09-30).** 회고는 이제 메모 줄 표시 `[p]` `[c]` `[I]`로 적는다 — MEMO-MARKS-PLAN.md 7번 · HANDOFF.md 38번.
+> 회고 테이블 · 회고 탭 · 회고 코드는 없앴고, 이 문서는 기록으로만 남긴다.
 
 ## 1. 무엇을 왜
 

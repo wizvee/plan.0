@@ -93,8 +93,8 @@
 | D7 | 완료 체크박스(제목 왼쪽) + 일정 줄(날짜 · 시간, 캘린더에 배치된 경우) | `todo-detail-modal.tsx` |
 | D8 | **하위 할 일 체크리스트** — 체크 · 그 자리 수정(비우면 삭제) · × 삭제 · Enter로 연속 추가(한글 조합 안전) · 그립으로 순서 변경, `2/4 · 50%` + 진행률 바. 노트엔 없음 | `subtask/subtask-list.tsx`, `lib/app-data/subtask-actions.ts` |
 | D9 | 팝업은 `document.body` 포털 — 어디서 열어도 캘린더 · Inbox 위에 뜸 | `todo-detail-modal.tsx` |
-| D10 | **탭 구조** — 체크 · 제목 · 일정 · PARA는 고정, 아래는 하위 할 일(`2/4`) · 회고(개수) · 메모·URL(내용 있으면 점) · 사진(개수) 탭. 완료된 할 일은 회고 탭, 미완료는 하위 할 일 탭으로 열림. 노트는 탭 없이 메모 · URL | `todo-detail-modal.tsx` |
-| D11 | **회고** — 잘한 점 · 아쉬운 점 · 다음엔 여러 개. 종류 드롭다운 + Enter로 연속 추가(고른 종류 유지), 누르면 수정(비우면 삭제), × 삭제. 프로젝트에 매핑돼 있으면 "프로젝트 회고에도 모여요" | `reflection/reflection-list.tsx`, `reflection/reflection-kind.tsx`, `lib/app-data/reflection-actions.ts` |
+| D10 | **탭 구조** — 체크 · 제목 · 일정 · PARA는 고정, 아래는 하위 할 일(`2/4`) · 메모·URL(내용 있으면 점) · 사진(개수) 탭. 완료된 할 일은 메모 탭, 미완료는 하위 할 일 탭으로 열림(검색 결과는 일치한 곳의 탭). 노트는 탭 없이 메모 · URL | `todo-detail-modal.tsx` |
+| D11 | **회고 = 메모 줄** `[p]` 잘한 점 · `[c]` 아쉬운 점 · `[I]` 다음엔(툴바로 붙임). 완료했는데 메모가 비었으면 "끝낸 일, 돌아볼까요?" + 종류 버튼 3개 → 그 표시가 붙은 줄로 편집. 프로젝트에 매핑돼 있고 회고 줄이 있으면 "프로젝트 회고에도 모여요" | `todo-detail-modal.tsx`, `lib/retro.ts` |
 | D12 | **다음 날로 넘기기** — 캘린더에 배치된 할 일의 안 끝난 하위 할 일을 다음 평일(이름 + PARA가 같은 할 일, 없으면 새로 만듦) 맨 위로 옮겨 적고, 원래 항목은 "넘김"(회색 화살표, 3/4 그대로)으로 남기며 이 할 일은 완료. 끝나는 시각 전엔 푸터 작은 "넘기기", 지나면(지난 날짜 포함) 큰 카드 | `todo-detail-modal.tsx`, `lib/carry-over.ts`, `lib/app-data/todo-actions.ts` |
 | D13 | **사진** 탭 — 여러 장 올리기(브라우저에서 2048px · 640px JPEG로 줄여 Drive `PLAN.0/사진/<날짜> <이름>`에 저장), 3열 그리드, ★ 대표(없으면 첫 장), 누르면 크게 보기(대표로 · Drive에서 열기 · 삭제 = Drive 휴지통, ← → · Esc). Drive 미연결이면 연결 안내 | `photo/photo-tab.tsx`, `photo/photo-viewer.tsx`, `lib/supabase/photos.ts`, `app/api/photos/` |
 | D14 | **하위 할 일 "나중에"** — 안 끝난 하위 할 일을 부모와 같은 PARA의 날짜 없는 할 일로 옮김(메모에 "L사 업무(9/30)에서 옮김", 넘김 기록 안 남김), 화면 아래 되돌리기 알림 5초 | `subtask/subtask-list.tsx`, `lib/app-data/todo-actions.ts` |
@@ -128,12 +128,12 @@
 | C13 | 자료 탭 — **Drive에서 가져오기**: Google Picker로 기존 Drive 파일을 골라 이 컨테이너 폴더로 가져옴 (`NEXT_PUBLIC_GOOGLE_API_KEY` 필요) | `files-tab.tsx`, `lib/google-picker.ts`, `api/drive/access-token`, `api/drive/import` |
 | C12 | 상세 화면 전체가 드롭 영역 — 보관함에서 끌어오면 이 컨테이너로 매핑 | `container-detail-screen.tsx` |
 | C14 | Tasks — 하위 할 일이 있으면 › 로 펼쳐 바로 체크 · 수정 · 추가 · 순서 변경 (펼침 상태는 저장 안 함) | `todo-card.tsx` `expandable` |
-| C15 | **회고 탭(Project만, `?tab=retro`)** — 프로젝트에 직접 쓰기 + 매핑된 할 일들의 회고를 잘한 점 / 아쉬운 점 / 다음엔 3열로. 출처 할 일을 누르면 그 할 일 상세 | `reflection/project-retro-tab.tsx`, `lib/app-data/use-reflections.ts` |
-| C16 | 회고 탭 — "다음엔" 항목 **할 일로**: Inbox에 이 프로젝트로 매핑된 할 일 생성, "Inbox에 추가됨" 표시(그 할 일을 지우면 다시 가능) | `project-retro-tab.tsx` |
-| C17 | 회고 탭 — **회고 노트로 저장**: 종류별 마크다운을 채운 새 노트를 자료 탭 편집기로 열기(Drive 연결 시) | `project-retro-tab.tsx`, `lib/reflection.ts` `buildRetroMarkdown` |
+| C15 | **회고 탭(Project만, `?tab=retro`)** — 매핑된 할 일 · 노트 메모의 `[p]` `[c]` `[I]` 줄을 잘한 점 / 아쉬운 점 / 다음엔 3열로(최근 순). 줄을 누르면 그 할 일 상세의 메모 탭. 맨 위 입력 줄 = 프로젝트 전체 회고 → "〈프로젝트〉 회고" 노트(처음 쓸 때 만듦) 메모에 줄 추가 | `retro/project-retro-tab.tsx`, `lib/retro.ts` |
+| C16 | 회고 탭 — "다음엔" 줄 **할 일로**: Inbox에 이 프로젝트로 매핑된 할 일 생성 + 메모 줄 끝에 ` → 할 일로 만듦`(회색 "할 일로 만듦" 표시) | `retro/project-retro-tab.tsx` |
+| C17 | 회고 탭 — **회고 노트로 저장**: 종류별 마크다운을 채운 새 노트를 자료 탭 편집기로 열기(Drive 연결 시) | `retro/project-retro-tab.tsx`, `lib/retro.ts` `buildRetroMarkdown` |
 | C18 | 할 일 탭 맨 위 **새 할 일** 줄 — 이 컨테이너에 매핑된 할 일 생성(날짜 없음 → Inbox에도 보임), Enter 연속 입력 · Esc 취소. 미완료는 최근 것이 위 | `para/add-mapped-todo-row.tsx`, `todo-actions.ts` `addToContainer` |
 | C19 | 이름 옆 **`···` 메뉴** — 이름 바꾸기 · 완료로 표시(보관하기) · 삭제 | `para/container-menu.tsx` |
-| C20 | **삭제** — 확인 창에서 기본 "함께 삭제"(매핑된 할 일 · 스크랩 · 하위 · 회고 삭제 + Drive 폴더는 Drive 휴지통) 또는 "연결만 끊기". Drive 실패 시 다시 시도 / 폴더는 두고 삭제 | `para/delete-container-dialog.tsx`, `lib/app-data/container-actions.ts`, `api/drive/folder` `DELETE` |
+| C20 | **삭제** — 확인 창에서 기본 "함께 삭제"(매핑된 할 일 · 스크랩 · 하위 삭제 — 회고는 할 일 · 노트 메모 안이라 같이 — + Drive 폴더는 Drive 휴지통) 또는 "연결만 끊기". Drive 실패 시 다시 시도 / 폴더는 두고 삭제 | `para/delete-container-dialog.tsx`, `lib/app-data/container-actions.ts`, `api/drive/folder` `DELETE` |
 | C21 | 삭제됐거나 없는 컨테이너 주소 → "찾을 수 없어요" + 목록으로 | `container-detail-screen.tsx` |
 
 ## 9. 화면이 없는 기능

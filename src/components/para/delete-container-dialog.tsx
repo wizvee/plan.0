@@ -24,7 +24,6 @@ export function DeleteContainerDialog({
   name,
   taskCount,
   noteCount,
-  projectRetroCount,
   hasDriveFolder,
   markDoneLabel,
   onMarkDone,
@@ -38,7 +37,6 @@ export function DeleteContainerDialog({
   taskCount: number;
   noteCount: number;
   /** 프로젝트에 직접 붙은 회고 수 (Area/Resource는 0) */
-  projectRetroCount: number;
   hasDriveFolder: boolean;
   /** "대신 완료로 표시" · "대신 보관하기" — 이미 완료/보관이면 null(안내를 숨김) */
   markDoneLabel: string | null;
@@ -147,14 +145,8 @@ export function DeleteContainerDialog({
           </fieldset>
         ) : null}
 
-        {projectRetroCount > 0 || driveLine ? (
+        {driveLine ? (
           <ul className="mt-3.5 flex flex-col gap-1.5 text-[12.5px] text-muted-foreground">
-            {projectRetroCount > 0 ? (
-              <li className="flex items-center gap-[7px]">
-                <Trash className="size-3.5 shrink-0" aria-hidden="true" />
-                프로젝트 회고 {projectRetroCount}개는 함께 삭제돼요
-              </li>
-            ) : null}
             {driveLine ? (
               <li className="flex items-center gap-[7px]">
                 <Cloud className="size-3.5 shrink-0" aria-hidden="true" />

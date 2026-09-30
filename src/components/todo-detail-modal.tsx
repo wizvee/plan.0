@@ -10,12 +10,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { SubtaskList } from "@/components/subtask/subtask-list";
 import { ParaMenu } from "@/components/para/para-menu";
-import { TodoReflectionList } from "@/components/reflection/reflection-list";
 import { PhotoTab } from "@/components/photo/photo-tab";
 import { InlineText } from "@/components/inline-text";
 import { MemoEditor } from "@/components/memo/memo-editor";
 import { MemoView } from "@/components/memo/memo-view";
-import { hasMemoMarks } from "@/lib/memo-marks";
+import { MARK_META } from "@/components/memo/mark-meta";
+import { hasMemoMarks, parseMemoLines } from "@/lib/memo-marks";
+import { hasRetroLines, RETRO_KINDS, RETRO_STATE, type RetroKind } from "@/lib/retro";
 import { cn } from "@/lib/utils";
 import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR, getParaCategory } from "@/lib/category";
 import { formatClock, MINUTES_PER_DAY } from "@/lib/time";
@@ -25,7 +26,6 @@ import { useNow } from "@/lib/use-today";
 import { useTodoActions } from "@/lib/app-data/todo-actions";
 import { useTodos } from "@/lib/app-data/use-todos";
 import { useSubtasks } from "@/lib/app-data/use-subtasks";
-import { useReflections } from "@/lib/app-data/use-reflections";
 import { usePhotos } from "@/lib/app-data/use-photos";
 
 const KIND_ICON: Record<ParaKind, typeof Target> = {
@@ -49,7 +49,7 @@ function scheduleLabel(todo: Todo): string | null {
   return `${day} · ${formatClock(todo.startMinutes)} – ${formatClock(end)}`;
 }
 
-export type DetailTab = "subtasks" | "retro" | "memo" | "photos";
+export type DetailTab = "subtasks" | "memo" | "photos";
 
 interface ParaAssignPatch {
   projectId: string | null;
@@ -101,11 +101,10 @@ export function TodoDetailModal({
   const { todos } = useTodos();
   const { subtasksOf, progressOf } = useSubtasks();
   const [carrying, setCarrying] = useState(false);
-  const { reflectionsOf } = useReflections();
   const { photosOf } = usePhotos();
-  // 완료된 할 일은 회고 탭으로 연다 — 끝낸 직후가 회고하기 가장 좋은 때라서 (REFLECTIONS-PLAN.md 4번 ①).
+  // 완료된 할 일은 메모 탭으로 연다 — 끝낸 직후가 회고([p] [c] [I] 줄)하기 가장 좋은 때라서 (MEMO-MARKS-PLAN.md 7번).
   // 모달 안에서만 기억한다(URL · localStorage에 저장하지 않음).
-  const [tab, setTab] = useState<DetailTab>(initialTab ?? (todo.completed ? "retro" : "subtasks"));
+  const [tab, setTab] = useState<DetailTab>(initialTab ?? (todo.completed ? "memo" : "subtasks"));
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -137,7 +136,9 @@ export function TodoDetailModal({
 
   function commitMemo() {
     setEditingMemo(false);
-    const trimmed = memo.trim();
+    // 표시만 있고 글자가 없는 줄뿐이면(회고 버튼을 누르고 안 적음) 빈 메모로
+    const trimmed = parseMemoLines(memo).some((line) => line.text.trim() !== "") ? memo.trim() : "";
+    if (trimmed !== memo) setMemo(trimmed);
     if (trimmed !== (todo.memo ?? "")) {
       onMemoEdit(todo.id, trimmed);
     }
@@ -153,6 +154,12 @@ export function TodoDetailModal({
   function editMemo(line: number | null) {
     setMemoCaretLine(line);
     setEditingMemo(true);
+  }
+
+  /** 빈 메모의 회고 버튼 — 그 표시가 붙은 줄로 편집을 연다(커서는 줄 끝) */
+  function startRetro(kind: RetroKind) {
+    setMemo(`- [${RETRO_STATE[kind]}] `);
+    editMemo(null);
   }
 
   function commitUrl() {
@@ -191,7 +198,6 @@ export function TodoDetailModal({
   const schedule = scheduleLabel(todo);
   const progress = progressOf(todo.id);
   const percent = progress.total ? Math.round((progress.done / progress.total) * 100) : 0;
-  const reflections = reflectionsOf(todo.id);
   const photoCount = photosOf(todo.id).length;
   // 다음 날로 넘기기 — 캘린더에 배치된 할 일에 안 끝난 하위 할 일이 있을 때만 (CARRY-OVER-PLAN.md)
   const pendingCount = isTask ? subtasksOf(todo.id).filter(isSubtaskPending).length : 0;
@@ -215,7 +221,6 @@ export function TodoDetailModal({
   const hasMemoOrUrl = Boolean(todo.memo?.trim() || todo.url?.trim());
   const tabs: { id: DetailTab; label: string; badge: string | null; dot: boolean }[] = [
     { id: "subtasks", label: "하위 할 일", badge: progress.total > 0 ? `${progress.done}/${progress.total}` : null, dot: false },
-    { id: "retro", label: "회고", badge: reflections.length > 0 ? String(reflections.length) : null, dot: false },
     { id: "memo", label: "메모 · URL", badge: null, dot: hasMemoOrUrl },
     { id: "photos", label: "사진", badge: photoCount > 0 ? String(photoCount) : null, dot: false },
   ];
@@ -232,6 +237,8 @@ export function TodoDetailModal({
           className={isTask ? "min-h-0 flex-1" : "mt-2.5"}
           textareaClassName={isTask ? "min-h-0 flex-1 resize-none" : "resize-y"}
         />
+      ) : isTask && todo.completed && !memo.trim() ? (
+        <RetroPrompt onPick={startRetro} onPlain={() => editMemo(null)} />
       ) : hasMemoMarks(memo) ? (
         <MemoView
           text={memo}
@@ -254,6 +261,28 @@ export function TodoDetailModal({
           <span className="min-w-0">{memo ? <InlineText text={memo} /> : "메모"}</span>
         </button>
       )}
+
+      {!editingMemo && todo.projectId && mappedName && hasRetroLines(memo) ? (
+        <p className="mt-2 flex shrink-0 items-center gap-1.5 text-[12px] text-muted-foreground">
+          <span className="flex gap-[3px]" aria-hidden="true">
+            {RETRO_KINDS.map((kind) => {
+              const Icon = MARK_META[kind].icon;
+              return (
+                <span
+                  key={kind}
+                  className="flex size-3.5 items-center justify-center rounded-[4px]"
+                  style={{ backgroundColor: MARK_META[kind].tint, color: MARK_META[kind].color }}
+                >
+                  <Icon weight="bold" className="size-2.5" />
+                </span>
+              );
+            })}
+          </span>
+          <span className="min-w-0 truncate">
+            <InlineText text={mappedName} /> 프로젝트 회고에도 모여요
+          </span>
+        </p>
+      ) : null}
 
       <div className="mt-3 flex shrink-0 items-center gap-1.5 rounded-md bg-muted pl-2.5 pr-1">
         <LinkSimple className="size-4 shrink-0 text-muted-foreground" />
@@ -394,7 +423,7 @@ export function TodoDetailModal({
 
         {isTask ? (
           <>
-            <div role="tablist" aria-label="할 일 상세" className="mt-3 grid grid-cols-4 rounded-lg bg-black/[0.06] p-0.5">
+            <div role="tablist" aria-label="할 일 상세" className="mt-3 grid grid-cols-3 rounded-lg bg-black/[0.06] p-0.5">
               {tabs.map((t) => (
                 <button
                   key={t.id}
@@ -487,17 +516,6 @@ export function TodoDetailModal({
                 </div>
               ) : null}
 
-              {tab === "retro" ? (
-                <div className="flex min-h-0 flex-1 flex-col gap-2">
-                  {todo.projectId && mappedName ? (
-                    <span className="px-0.5 text-[12px] text-muted-foreground">
-                      <InlineText text={mappedName} /> 프로젝트 회고에도 모여요
-                    </span>
-                  ) : null}
-                  <TodoReflectionList todoId={todo.id} reflections={reflections} />
-                </div>
-              ) : null}
-
               {tab === "memo" ? <div className="flex min-h-0 flex-1 flex-col">{memoAndUrl}</div> : null}
 
               {tab === "photos" ? <PhotoTab todoId={todo.id} /> : null}
@@ -549,5 +567,35 @@ export function TodoDetailModal({
       </div>
     </div>,
     document.body
+  );
+}
+
+/** 완료했는데 메모가 비어 있을 때 — 회고 한 줄 유도 (시안 ⑧). 누르면 그 표시가 붙은 줄로 편집을 연다. */
+function RetroPrompt({ onPick, onPlain }: { onPick: (kind: RetroKind) => void; onPlain: () => void }) {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 pb-6 text-center">
+      <span className="text-[16px] font-bold">끝낸 일, 돌아볼까요?</span>
+      <span className="text-[13px] text-muted-foreground">한 줄씩 적으면 메모에 표시와 함께 남아요</span>
+      <div className="flex flex-wrap justify-center gap-2">
+        {RETRO_KINDS.map((kind) => {
+          const Icon = MARK_META[kind].icon;
+          return (
+            <button
+              key={kind}
+              type="button"
+              onClick={() => onPick(kind)}
+              className="flex h-10 items-center gap-2 rounded-[10px] pl-2.5 pr-3.5 text-[14px] font-semibold hover:brightness-[0.97]"
+              style={{ backgroundColor: MARK_META[kind].tint }}
+            >
+              <Icon weight="bold" className="size-4" style={{ color: MARK_META[kind].color }} aria-hidden="true" />
+              {MARK_META[kind].label}
+            </button>
+          );
+        })}
+      </div>
+      <button type="button" onClick={onPlain} className="px-1 py-1 text-[13px] text-primary">
+        그냥 메모 쓰기
+      </button>
+    </div>
   );
 }

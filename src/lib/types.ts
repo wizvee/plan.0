@@ -82,26 +82,6 @@ export interface SubtaskProgress {
   carried: number;
 }
 
-/** 회고 종류 — 잘한 점(keep) · 아쉬운 점(problem) · 다음엔(try). KPT. */
-export type ReflectionKind = "keep" | "problem" | "try";
-
-export const REFLECTION_KINDS: ReflectionKind[] = ["keep", "problem", "try"];
-
-/**
- * 회고 한 줄. 할 일(`todoId`)에 붙거나 프로젝트에 직접(`projectId`) 붙는다 — 둘 중 정확히 하나.
- * 할 일에 붙은 회고의 프로젝트는 할 일의 현재 매핑에서 계산한다(저장하지 않음). (REFLECTIONS-PLAN.md)
- */
-export interface Reflection {
-  id: string;
-  todoId: string | null;
-  projectId: string | null;
-  kind: ReflectionKind;
-  content: string;
-  /** "다음엔" 항목을 할 일로 만들었으면 그 할 일 id. 그 할 일을 지우면 null로 돌아간다. */
-  convertedTodoId: string | null;
-  createdAt: string;
-}
-
 /** 할 일에 붙은 사진 한 장. 파일은 사용자 Google Drive에 있고 `/api/photos/<id>`로 불러온다. (PHOTOS-PLAN.md) */
 export interface TodoPhoto {
   id: string;

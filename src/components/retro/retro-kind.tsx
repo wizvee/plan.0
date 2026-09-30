@@ -5,40 +5,26 @@ import { CaretDown, Check } from "@/components/icons";
 
 import { cn } from "@/lib/utils";
 import { useDismiss } from "@/lib/use-dismiss";
-import { REFLECTION_COLOR_VAR, REFLECTION_META, REFLECTION_TINT_VAR } from "@/lib/reflection";
-import { REFLECTION_KINDS, type ReflectionKind } from "@/lib/types";
+import { MARK_META } from "@/components/memo/mark-meta";
+import { MarkIcon } from "@/components/memo/memo-view";
+import { RETRO_KINDS, RETRO_STATE, type RetroKind } from "@/lib/retro";
 
-/** 회고 종류 아이콘 — 종류 색 틴트 원 안에 아이콘. `size`는 원 지름(px). */
-export function ReflectionKindIcon({ kind, size = 22, className }: { kind: ReflectionKind; size?: number; className?: string }) {
-  const Icon = REFLECTION_META[kind].icon;
-  return (
-    <span
-      role="img"
-      aria-label={REFLECTION_META[kind].label}
-      className={cn("flex shrink-0 items-center justify-center rounded-full", className)}
-      style={{
-        width: size,
-        height: size,
-        backgroundColor: `var(${REFLECTION_TINT_VAR[kind]})`,
-        color: `var(${REFLECTION_COLOR_VAR[kind]})`,
-      }}
-    >
-      <Icon weight="bold" style={{ width: size * 0.58, height: size * 0.58 }} aria-hidden="true" />
-    </span>
-  );
+/** 회고 종류 아이콘 — 메모 줄 표시와 같은 둥근 사각형 칸. 크기는 `className`(기본 18px). */
+export function RetroKindIcon({ kind, className }: { kind: RetroKind; className?: string }) {
+  return <MarkIcon state={RETRO_STATE[kind]} className={className} />;
 }
 
 /**
  * 회고 종류 드롭다운 — 버튼(아이콘 + 라벨 + ⌄)을 누르면 macOS 메뉴 스타일 목록.
- * `placement="up"`은 목록이 위로 열린다(할 일 상세 모달의 맨 아래 입력 줄처럼 아래 공간이 없을 때).
+ * `placement="up"`은 목록이 위로 열린다(아래 공간이 없을 때).
  */
-export function ReflectionKindSelect({
+export function RetroKindSelect({
   value,
   onChange,
   placement = "down",
 }: {
-  value: ReflectionKind;
-  onChange: (kind: ReflectionKind) => void;
+  value: RetroKind;
+  onChange: (kind: RetroKind) => void;
   placement?: "up" | "down";
 }) {
   const [open, setOpen] = useState(false);
@@ -52,11 +38,11 @@ export function ReflectionKindSelect({
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={`회고 종류: ${REFLECTION_META[value].label}`}
+        aria-label={`회고 종류: ${MARK_META[value].label}`}
         className="flex h-[30px] items-center gap-1.5 rounded-[7px] bg-black/[0.05] pl-[5px] pr-1.5 text-[13px] font-semibold hover:bg-black/[0.09]"
       >
-        <ReflectionKindIcon kind={value} size={20} />
-        {REFLECTION_META[value].label}
+        <RetroKindIcon kind={value} className="mt-0 size-5" />
+        {MARK_META[value].label}
         <CaretDown weight="bold" className="size-3 text-muted-foreground" aria-hidden="true" />
       </button>
       {open ? (
@@ -68,8 +54,8 @@ export function ReflectionKindSelect({
             placement === "up" ? "bottom-[calc(100%+6px)]" : "top-[calc(100%+6px)]"
           )}
         >
-          {REFLECTION_KINDS.map((kind) => {
-            const Icon = REFLECTION_META[kind].icon;
+          {RETRO_KINDS.map((kind) => {
+            const Icon = MARK_META[kind].icon;
             const checked = kind === value;
             return (
               <button
@@ -87,11 +73,12 @@ export function ReflectionKindSelect({
                   {checked ? <Check weight="bold" className="size-[13px]" /> : null}
                 </span>
                 <Icon
+                  weight="bold"
                   className="size-[15px] group-hover:text-primary-foreground!"
-                  style={{ color: `var(${REFLECTION_COLOR_VAR[kind]})` }}
+                  style={{ color: MARK_META[kind].color }}
                   aria-hidden="true"
                 />
-                {REFLECTION_META[kind].label}
+                {MARK_META[kind].label}
               </button>
             );
           })}

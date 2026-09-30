@@ -561,6 +561,18 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     - **확인**: tsc · eslint · build · check-search 13개 + 가짜 Supabase(auth/rest 메모리 목 — 로그인 쿠키 `sb-127-auth-token`에 가짜 세션)에 붙인
       실제 앱을 Playwright로(기준 케이스 · 📝 · 결과 없음 · ↑↓ · 칩 체크/해결 → 메모 저장 · 결과 열기 탭 · Esc 복귀 · PARA 이동 · 모바일 탭바 6칸).
       목 서버는 저장소에 넣지 않았다 — 필요하면 `/auth/v1/user` + `/rest/v1/<table>`(GET은 `content-range` 헤더) 정도로 다시 만들면 된다.
+38. **(2026-09-30 추가) 회고 → 메모 줄(회고 탭 정리)**: [MEMO-MARKS-PLAN.md](./MEMO-MARKS-PLAN.md) 7번(2단계). 시안 ⑦⑧⑨
+    (https://claude.ai/artifact/JfkwtcvcU885kzNkdJGV7Q) 컨펌 + 추천안 두 가지 컨펌(프로젝트 전체 회고 = 노트, 회고 테이블 삭제).
+    - 사용자가 하나뿐이던 회고를 직접 메모로 옮겨 `todo_reflections`는 0건 → 옮기기 스크립트 없이 **회고 코드 · 스토어 · 테이블을 없앰**
+      (`components/reflection/*`, `lib/reflection.ts`, `lib/supabase/reflections.ts`, `use-reflections`, `reflection-actions`, `Reflection` 타입).
+      테이블은 `supabase/migrations/20260930_drop_todo_reflections.sql` — **새 코드 배포 뒤** 실행(먼저 지우면 옛 화면이 못 읽음).
+    - 할 일 팝업 탭 3개(하위 할 일 · 메모·URL · 사진), 완료된 할 일은 메모 탭으로. 빈 메모면 회고 버튼 3개로 한 줄 유도,
+      표시만 치고 안 적은 줄은 저장하지 않음(`commitMemo`).
+    - 프로젝트 회고 탭은 `lib/retro.ts` 순수 함수로 메모 줄을 모음. 프로젝트 전체 회고는 "〈프로젝트〉 회고" 노트 메모에 줄로(DB 변경 없음),
+      "다음엔 → 할 일로"는 메모 줄 끝 ` → 할 일로 만듦`. `--retro-*` 색은 `--mark-*`로 합침. REFLECTIONS-PLAN.md는 "대체됨" 기록으로만 남김.
+    - **확인**: tsc · eslint · build · check-search + `lib/retro.ts` 단위 확인(모으기 · 순서 · 할 일로 표시 · 노트 찾기 · 마크다운) +
+      가짜 Supabase 앱에서 Playwright(완료 → 메모 탭 · 빈 메모 유도 · 표시만 치면 저장 안 함 · 회고 줄 + 안내 문구 · 프로젝트 회고 3열 ·
+      프로젝트 전체 회고 → 노트 생성 후 이어 붙이기 · 할 일로 · 줄 → 메모 탭) + 스크린샷.
 
 ## 지금 구현된 것 (기능 목록)
 
@@ -666,12 +678,12 @@ src/components/month-calendar.tsx 월 보기 그리드 (칸 클릭 → 그 주, 
 src/components/mini-calendar.tsx 애플식 미니 달력 (calendar-header 팝오버 안, 보는 주 띠 강조)
 src/components/todo-card.tsx    할 일/노트 한 줄(할 일=체크박스, 노트=아이콘만 + 텍스트 + 드래그 핸들 +
                                  삭제 + URL이 있으면 파비콘 임베드 카드 + 전환 버튼)
-src/components/todo-detail-modal.tsx  할 일/노트 상세 팝업 (제목/메모 수정, 할일↔노트 전환, 삭제, 완료 체크, 탭: 하위 할 일 · 회고 · 메모·URL · 사진, `initialTab`) — body 포털
+src/components/todo-detail-modal.tsx  할 일/노트 상세 팝업 (제목/메모 수정, 할일↔노트 전환, 삭제, 완료 체크, 탭: 하위 할 일 · 메모·URL · 사진, `initialTab`, 빈 메모 회고 유도) — body 포털
 src/components/subtask/subtask-list.tsx      하위 할 일 체크리스트(수정 · 삭제 · 연속 추가 · 드래그 순서) + DragOverlay 미리보기 (27번)
 src/components/subtask/subtask-progress.tsx  하위 할 일 진행률 링 + done/total (27번)
-src/components/reflection/reflection-kind.tsx     회고 종류 아이콘 + 종류 드롭다운 (28번)
-src/components/reflection/reflection-list.tsx     할 일 회고 목록 · 추가 줄 · 그 자리 수정 (28번)
-src/components/reflection/project-retro-tab.tsx   PARA 상세(Project) 회고 탭 — 3열 보드, 할 일로, 회고 노트로 저장 (28번)
+src/components/retro/retro-kind.tsx               회고 종류 아이콘(메모 줄 표시 칸) + 종류 드롭다운 (38번)
+src/components/retro/project-retro-tab.tsx        PARA 상세(Project) 회고 탭 — 메모 `[p] [c] [I]` 줄 3열, 프로젝트 전체 회고(노트), 할 일로, 회고 노트로 저장 (38번)
+src/lib/retro.ts                                  회고 = 메모 줄 — 모으기 · 회고 노트 찾기 · 줄 붙이기 · 할 일로 표시 · 마크다운 (38번)
 src/components/memo/memo-editor.tsx               메모 원문 편집 — 줄 표시 툴바 + 입력칸, Enter 이어 쓰기 (36번)
 src/components/memo/memo-toolbar.tsx              줄 표시 버튼 5개 (36번)
 src/components/memo/memo-view.tsx                 메모 보기 모드 — 표시 아이콘 · 체크 · 질문 해결 입력칸 (36번)
@@ -724,6 +736,7 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
    - `20260929_subtask_carried_at.sql` — 하위 할 일 넘김 (CARRY-OVER-PLAN.md) 실행 완료
    - `20260929_weekly_goals.sql` — 주간 목표 테이블 + `todos.goal_id` (GOALS-PLAN.md) 실행 완료
    - `20260929_todo_photos.sql` — 할 일 사진 테이블 (PHOTOS-PLAN.md) 실행 완료
+   - `20260930_drop_todo_reflections.sql` — 회고 테이블 삭제 (38번) **실행 필요 — 새 코드 배포 뒤에**
 7. `/api/clip` 기능을 실제로 쓰려면 `SUPABASE_SECRET_KEY`/`CLIP_API_SECRET`/`CLIP_USER_ID` 세
    환경변수를 로컬(`.env.local`)과 Vercel 양쪽에 아직 등록 안 함 — README의 해당 섹션 참고해서
    설정하고 애플 단축어까지 만들어야 실제로 동작함. 코드/스키마는 준비 완료 상태.
@@ -742,8 +755,7 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
     마크다운 미리보기/문법 하이라이팅 추가할지; (c) 링크형 속성 값을 에디터에서 직접 수정/삭제하는
     UI(지금은 승격 시 자동으로만 채워지고 읽기 전용, 시안 그대로).
 11. **(2026-09-30) 검색 · 메모 줄 표시 다음 할 일** (37번 사용 방식 변화 검토 결과):
-    - **회고 탭 정리(MEMO-MARKS-PLAN.md 2단계)** — 회고 데이터가 메모로 옮겨져 비어 있다. 할 일 팝업의 회고 탭을 빼고 완료된 할 일은 메모 탭으로,
-      프로젝트 회고 탭은 프로젝트 할 일 메모의 `[p]` `[c]` `[I]` 모아보기로. 탭 구성이 바뀌니 시안 먼저. 데이터 옮기기 스크립트는 필요 없음.
+    - ~~회고 탭 정리(MEMO-MARKS-PLAN.md 2단계)~~ — **완료(38번)**. 남은 것: 배포 뒤 `20260930_drop_todo_reflections.sql` 실행.
     - 실제 데이터에서 SEARCH-PLAN.md 기준 케이스 3개가 1등인지, 모바일에서 입력이 버벅이지 않는지 확인(SEARCH-PLAN.md 6번).
     - (선택) 메모 탭 이름의 점 대신 열린 `[?]` · `[ ]` 개수(`메모 · URL ?2`), 주 보기 블록 표시는 시안 먼저.
     - (선택) 검색 도움말의 📝 예시를 `[i]`(알게 된 것) 검색으로 바꾸기, `알게 된 것` 칩. 메모 탭 안 `[i]` 답 색(지금 회색, 시안대로).
