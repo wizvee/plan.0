@@ -5,7 +5,6 @@ import { format, parseISO } from "date-fns";
 
 import { nextPosition, useTodos } from "@/lib/app-data/use-todos";
 import { useSubtasks } from "@/lib/app-data/use-subtasks";
-import { useReflections } from "@/lib/app-data/use-reflections";
 import { findCarryTarget, nextWeekday } from "@/lib/carry-over";
 import { isSubtaskPending, type ParaKind, type TodoKind } from "@/lib/types";
 
@@ -18,7 +17,6 @@ export type ParaMappingPatch = { projectId: string | null; areaId: string | null
 export function useTodoActions() {
   const { todos, backlogItems, addTodo, addNote, updateTodo, removeTodo } = useTodos();
   const { subtasks, subtasksOf, addSubtask, removeSubtask, markSubtasksCarried, dropSubtasksOf } = useSubtasks();
-  const { dropReflectionsOfTodo } = useReflections();
 
   return useMemo(
     () => ({
@@ -49,10 +47,9 @@ export function useTodoActions() {
       resize(id: string, durationMinutes: number) {
         void updateTodo(id, { durationMinutes });
       },
-      /** 하위 할 일 · 회고는 DB에서 cascade로 지워지고, 로컬 상태에서도 바로 뺀다. */
+      /** 하위 할 일은 DB에서 cascade로 지워지고, 로컬 상태에서도 바로 뺀다. */
       remove(id: string) {
         dropSubtasksOf(id);
-        dropReflectionsOfTodo(id);
         void removeTodo(id);
       },
       /**
@@ -149,7 +146,6 @@ export function useTodoActions() {
       removeSubtask,
       markSubtasksCarried,
       dropSubtasksOf,
-      dropReflectionsOfTodo,
     ]
   );
 }

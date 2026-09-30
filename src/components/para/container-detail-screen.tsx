@@ -13,7 +13,6 @@ import type { DropTargetData } from "@/lib/dnd/drop-targets";
 import { cn } from "@/lib/utils";
 import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR } from "@/lib/category";
 import { useSession } from "@/lib/app-data/app-data-provider";
-import { useReflections } from "@/lib/app-data/use-reflections";
 import {
   PARA_KIND_LABELS,
   PARA_KIND_LABELS_KO,
@@ -25,7 +24,7 @@ import { ContextPicker } from "@/components/para/context-picker";
 import { InlineText } from "@/components/inline-text";
 import { ScrapSection } from "@/components/para/scrap-section";
 import { FilesTab } from "@/components/para/files-tab";
-import { ProjectRetroTab } from "@/components/reflection/project-retro-tab";
+import { ProjectRetroTab } from "@/components/retro/project-retro-tab";
 import { AddMappedTodoRow } from "@/components/para/add-mapped-todo-row";
 import { ContainerMenu } from "@/components/para/container-menu";
 import { DeleteContainerDialog } from "@/components/para/delete-container-dialog";
@@ -57,7 +56,6 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
   const searchParams = useSearchParams();
   const { todos, setTodos } = useTodos();
   const { projects, updateProject, areas, updateArea, resources, updateResource, containersLoading } = useContainers();
-  const { reflections } = useReflections();
   const actions = useTodoActions();
   const { googleConnected } = useSession();
 
@@ -719,7 +717,6 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
           name={container.name}
           taskCount={mappedTasks.length}
           noteCount={mappedNotes.length}
-          projectRetroCount={kind === "project" ? reflections.filter((r) => r.projectId === id).length : 0}
           hasDriveFolder={Boolean(container.driveFolderId)}
           markDoneLabel={statusDone ? null : kind === "project" ? "대신 완료로 표시" : "대신 보관하기"}
           onMarkDone={toggleStatus}

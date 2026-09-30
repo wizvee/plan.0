@@ -37,7 +37,7 @@ type UpdatablePatch = Partial<Pick<WeeklyGoal, "content" | "position"> & GoalPar
 
 /**
  * 주간 목표(`weekly_goals`) 조회 + Realtime 구독 + 낙관적 추가/수정/삭제.
- * `reflections.ts`와 같은 모양 — `AppDataProvider`에서 한 번만 호출된다. (GOALS-PLAN.md)
+ * `subtasks.ts`와 같은 모양 — `AppDataProvider`에서 한 번만 호출된다. (GOALS-PLAN.md)
  */
 export function useSupabaseGoals(userId: string) {
   const [supabase] = useState(() => createClient());

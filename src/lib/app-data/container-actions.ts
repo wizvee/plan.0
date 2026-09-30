@@ -6,7 +6,6 @@ import { useAppData } from "@/lib/app-data/app-data-provider";
 import { useContainers } from "@/lib/app-data/use-containers";
 import { useTodos } from "@/lib/app-data/use-todos";
 import { useSubtasks } from "@/lib/app-data/use-subtasks";
-import { useReflections } from "@/lib/app-data/use-reflections";
 import type { ParaKind } from "@/lib/types";
 
 export interface RemoveContainerOptions {
@@ -32,7 +31,6 @@ export function useContainerActions() {
   const { projects, areas, resources, removeProject, removeArea, removeResource } = useContainers();
   const { removeTodosMappedTo, clearMappingTo } = useTodos();
   const { dropSubtasksOfMany } = useSubtasks();
-  const { dropReflectionsOf } = useReflections();
 
   return useMemo(
     () => ({
@@ -70,7 +68,6 @@ export function useContainerActions() {
 
         if (!options.withItems) clearMappingTo(kind, id);
         dropSubtasksOfMany(removedTodoIds);
-        dropReflectionsOf(removedTodoIds, kind === "project" ? id : null);
         return { ok: true };
       },
     }),
@@ -85,7 +82,6 @@ export function useContainerActions() {
       removeTodosMappedTo,
       clearMappingTo,
       dropSubtasksOfMany,
-      dropReflectionsOf,
     ]
   );
 }

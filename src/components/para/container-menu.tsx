@@ -9,7 +9,7 @@ import { PARA_KIND_LABELS_KO, type ParaKind } from "@/lib/types";
 
 /**
  * PARA 상세 이름 옆 `···` 메뉴 — 이름 바꾸기 · 상태 전환 · 삭제 (PARA-MANAGE-PLAN.md 2-2).
- * 삭제는 여기에만 있다(목록 카드에는 넣지 않음). macOS 메뉴 스타일은 `ReflectionKindSelect`와 같다.
+ * 삭제는 여기에만 있다(목록 카드에는 넣지 않음). macOS 메뉴 스타일은 `RetroKindSelect`와 같다.
  */
 export function ContainerMenu({
   kind,
