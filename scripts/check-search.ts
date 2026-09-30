@@ -5,6 +5,7 @@
  */
 import assert from "node:assert/strict";
 
+import { parseMemoLine, splitAnswer } from "../src/lib/memo-marks";
 import { buildSearchIndex, highlightRanges, normalizeQuery, search, splitMemoMark } from "../src/lib/search";
 import type { Area, Project, Subtask, Todo } from "../src/lib/types";
 
@@ -43,7 +44,12 @@ const areas: Area[] = [
   { id: "ops", name: "운영", archived: false, createdAt: "2026-01-01T00:00:00Z", driveFolderId: null, contextId: null },
 ];
 
-const lsa929 = todo("L사 업무", { scheduledDate: "2026-09-29", projectId: "lsa" });
+// 9/29 L사 업무 — 2026-09-30부터 결과는 메모 `[i] … → 답`으로 적는다. 예전 📝 하위 할 일도 그대로 남아 있다(실제 데이터와 같음).
+const lsa929 = todo("L사 업무", {
+  scheduledDate: "2026-09-29",
+  projectId: "lsa",
+  memo: "- [i] IBP CI-DS 성능 확인 → 740건/분\n- [ ] 통테 일정 공유",
+});
 const lsa930 = todo("L사 업무", { scheduledDate: "2026-09-30", projectId: "lsa" });
 const lsa922 = todo("L사 업무", { scheduledDate: "2026-09-22", projectId: "lsa" });
 const persist = todo("Persist View 관련 내용 정리", {
@@ -107,15 +113,22 @@ check("조사 떼기 · 한 글자 버리기 · 문장부호", () => {
 });
 
 console.log("기준 케이스 (SEARCH-PLAN.md 2번 — 모두 1등)");
-check("1. IBP Ci-DS 성능은? → 하위 할 일, 📝 뒤 740건/분", () => {
+check("1. IBP Ci-DS 성능은? → 메모 [i] 줄이 가장 잘 맞는 줄, 답 740건/분", () => {
   const r = ranked("IBP Ci-DS 성능은?");
   const top = r.todos[0];
   assert.equal(top.todo.id, lsa929.id);
-  assert.equal(top.bestSource, "subtask");
+  // 메모 줄과 예전 📝 하위 할 일이 같은 점수면 메모가 앞 — 결과를 열면 메모 탭(4단계)
+  assert.equal(top.bestSource, "memo");
+  const best = top.memo!.find((l) => l?.best)!;
+  assert.equal(best.raw, "- [i] IBP CI-DS 성능 확인 → 740건/분");
+  assert.deepEqual(splitAnswer(parseMemoLine(best.raw).text), { question: "IBP CI-DS 성능 확인", answer: "740건/분" });
+  const text = parseMemoLine(best.raw).text;
+  assert.deepEqual(highlightRanges(text, r.words).map(([a, b]) => text.slice(a, b)), ["IBP", "CI-DS", "성능"]);
+});
+check("1-예전. 📝 하위 할 일도 같은 카드에 — 📝 뒤 740건/분", () => {
+  const top = ranked("IBP Ci-DS 성능은?").todos[0];
   assert.equal(top.subtasks[0].line.text, "IBP CI-DS 성능 확인 📝 740건/분");
   assert.deepEqual(splitMemoMark(top.subtasks[0].line.text), { done: "IBP CI-DS 성능 확인", memo: "740건/분" });
-  const text = top.subtasks[0].line.text;
-  assert.deepEqual(highlightRanges(text, r.words).map(([a, b]) => text.slice(a, b)), ["IBP", "CI-DS", "성능"]);
 });
 check("2. DSP 가용 메모리 계산 방법 → 그 메모, 공식 줄이 보임", () => {
   const r = ranked("DSP 가용 메모리 계산 방법");
@@ -172,11 +185,11 @@ check("줄 표시 — [?]는 질문 줄만, 옵션 marks = 칩, 검색어로 좁
   if (q.mode !== "lines") return;
   assert.deepEqual(q.lines.map((l) => l.text), ["`M_LOAD_HISTORY` 보관 기간 90일로 충분한가?", "병렬 처리 개수를 늘려도 되나?"]);
   const chip = search(index, "", { marks: ["?", "i"] });
-  assert.equal(chip.mode === "lines" && chip.lines.length, 3);
+  assert.equal(chip.mode === "lines" && chip.lines.length, 4);
   const narrowed = search(index, "IBP", { marks: ["?"] });
   assert.equal(narrowed.mode === "lines" && narrowed.lines.map((l) => l.todo.id).join(), ibpPlan.id);
   const check = search(index, "[ ]");
-  assert.equal(check.mode === "lines" && check.lines[0].text, "안 쓰는 스페이스 삭제 요청");
+  assert.deepEqual(check.mode === "lines" && check.lines.map((l) => l.text), ["통테 일정 공유", "안 쓰는 스페이스 삭제 요청"]);
 });
 check("빈 검색어 → empty", () => {
   assert.equal(search(index, "  ? ").mode, "empty");

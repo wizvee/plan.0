@@ -164,6 +164,21 @@ function SubtaskLine({ match, color, words }: { match: MatchedLine; color: strin
   );
 }
 
+/**
+ * 질문 줄의 `→ 답`. 알게 된 것(`[i]`)의 답은 찾던 내용이라 진하게(하위 할 일 📝 뒤와 같은 역할),
+ * 다시 질문으로 되돌린 줄(`[?]`)에 남은 답은 흐리게.
+ */
+function AnswerPart({ answer, known, words }: { answer: string; known: boolean; words: string[] }) {
+  return (
+    <>
+      <span className="font-normal text-muted-foreground">{"  → "}</span>
+      <span className={known ? "font-semibold text-foreground" : "font-normal text-muted-foreground"}>
+        <HighlightText text={answer} words={words} />
+      </span>
+    </>
+  );
+}
+
 function MemoSnippetBlock({ hit, words }: { hit: TodoHit; words: string[] }) {
   return (
     <div className="mt-2 flex flex-col gap-[3px] rounded-lg bg-muted px-2.5 py-2">
@@ -195,12 +210,7 @@ function MemoSnippetBlock({ hit, words }: { hit: TodoHit; words: string[] }) {
             )}
             <span className={cn("min-w-0 flex-1 break-words", checked && "text-muted-foreground line-through")}>
               <HighlightText text={question} words={words} />
-              {answer !== null ? (
-                <span className="font-normal text-muted-foreground">
-                  {"  → "}
-                  <HighlightText text={answer} words={words} />
-                </span>
-              ) : null}
+              {answer !== null ? <AnswerPart answer={answer} known={parsed.state === "i"} words={words} /> : null}
             </span>
           </div>
         );
@@ -272,14 +282,16 @@ export function TodoResultCard({
       className={cn(CARD, selected && CARD_SELECTED)}
     >
       {header}
+      {/* 가장 잘 맞은 쪽을 먼저 — 메모로 찾았으면 메모 스니펫이 하위 할 일보다 위 */}
+      {hit.bestSource === "memo" && hit.memo ? <MemoSnippetBlock hit={hit} words={words} /> : null}
       {hit.subtasks.length > 0 ? (
-        <div className={cn("flex flex-col gap-2", header && "mt-2")}>
+        <div className={cn("flex flex-col gap-2", (header || hit.bestSource === "memo") && "mt-2")}>
           {hit.subtasks.map((m) => (
             <SubtaskLine key={m.line.subtask!.id} match={m} color={color} words={words} />
           ))}
         </div>
       ) : null}
-      {hit.memo ? <MemoSnippetBlock hit={hit} words={words} /> : null}
+      {hit.bestSource !== "memo" && hit.memo ? <MemoSnippetBlock hit={hit} words={words} /> : null}
       {hit.urlMatched && todo.url ? (
         <div className="mt-2 flex items-center gap-1.5 text-[13px] text-muted-foreground">
           <LinkSimple weight="bold" className="size-3.5 shrink-0" aria-hidden="true" />
@@ -512,12 +524,7 @@ export function MarkLineRow({
           )}
         >
           <HighlightText text={question} words={words} />
-          {saved !== null ? (
-            <span className="text-muted-foreground">
-              {"  → "}
-              <HighlightText text={saved} words={words} />
-            </span>
-          ) : null}
+          {saved !== null ? <AnswerPart answer={saved} known={state === "i"} words={words} /> : null}
         </span>
         <CaretRight weight="bold" className="mt-[3px] size-3.5 shrink-0 text-black/25" aria-hidden="true" />
       </div>
