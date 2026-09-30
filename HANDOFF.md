@@ -27,6 +27,12 @@
   npm install
   ```
 
+- **Claude 세션 작업 흐름(2026-09 이후 매번 같음)**: 작업 브랜치 `claude/happy-dirac-t6k60i`(세션마다 이름이 다를 수 있음 — 세션 지시를 따름)를
+  **새 작업 전에 `git checkout -B <브랜치> origin/main`으로 main에 맞추고** 커밋 · 푸시(`git push -u origin <브랜치>`, 필요하면 force).
+  사용자가 "main에 머지해줘"라고 하면 main으로 `git merge --no-ff <브랜치> -m "Merge <브랜치>: <영어 요약>"` → `npx eslint src` → `git push origin main`
+  → 브랜치로 돌아옴. PR은 만들지 않는다(요청 없으면). 커밋 메시지는 영어, 문서는 한국어.
+- **UI 시안은 Claude Design 캔버스(claude.ai artifact)** 에 그리고 컨펌받은 뒤 코드로(아래 "작업 방식"). 캔버스 링크는 각 `*-PLAN.md` 머리에 있다.
+
 ## 프로젝트가 무엇인지 (한 줄 요약)
 
 개인용 주간 할 일 관리 웹앱. Todo 목록에 할 일을 적어두고, 드래그 앤 드롭으로 Mon~Sun 요일에 배치.
@@ -538,6 +544,12 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     - 이름은 Phosphor 이름 그대로(ChevronLeft → `CaretLeft`, Trash2 → `Trash`, Inbox → `Tray`, Search → `MagnifyingGlass` 등).
       굵기: lucide `strokeWidth` ≥ 2.2이거나 14px 이하 아이콘은 `weight="bold"`, `fill-current`였던 ★는 `weight="fill"`, 나머지 기본 regular.
     - **확인**: tsc · eslint, 가짜 Supabase 앱에서 캘린더 · Inbox · 할 일 팝업(하위 할 일 · 회고 · 사진) · PARA 화면 스크린샷.
+36. **(2026-09-30 추가) 메모 줄 표시(옵시디언 체크박스 문법) + 모아보기 — 계획 · 시안 컨펌, 구현 전**: 사용자가 업무 중 "공식 할 일은
+    아닌 확인할 것"을 메모에 `☐`로 적고 있어 모아 보고 체크하고 싶다 → 메모 줄 앞 표시로 종류를 나누기로. 옵시디언 커스텀 체크박스 문법
+    `- [ ]`/`[x]` 확인 · `[?]`/`[i]` 질문→알게 된 것 · `[p]` `[c]` `[I]` 잘한 점 · 아쉬운 점 · 다음엔. 오타 방지는 툴바 + Enter 이어 쓰기,
+    보기 모드는 체크박스와 같은 18px 둥근 사각형(틴트는 기존 회고보다 한 단계 진하게), 모아보기는 검색 패널의 칩(확인할 것 · 질문).
+    회고 탭은 2단계에서 메모로 흡수(1단계를 써본 뒤). 전 과정 · 구현 순서 · 함정은 [MEMO-MARKS-PLAN.md](./MEMO-MARKS-PLAN.md),
+    시안 https://claude.ai/artifact/JfkwtcvcU885kzNkdJGV7Q. 화면 확인용 가짜 Supabase를 `scripts/mock-supabase/`에 커밋(`SCENARIO=memo`).
 
 ## 지금 구현된 것 (기능 목록)
 
@@ -580,6 +592,9 @@ PLANNING.md                    기획서 (컨셉/데이터 모델/스택 결정 
 README.md                      실행 방법 + Supabase 설정 단계별 가이드
 HANDOFF.md                     이 문서
 DESIGN.md                      디자인 가이드 — 컬러 토큰/radius/레이아웃 규칙/새 화면 체크리스트 (14번 결정)
+FEATURES.md                    지금 있는 기능 목록(화면별)
+*-PLAN.md                      기능별 계획 — 상태 · 시안 링크 · 파일 · 단계. 진행 중: MEMO-MARKS-PLAN.md(다음 작업) · SEARCH-PLAN.md(시안 전)
+scripts/mock-supabase/         화면 확인용 가짜 Supabase(server.mjs) + 쓰는 법(README.md) — 키 없는 클라우드 세션에서 앱 띄우기 (36번)
 
 supabase/schema.sql            todos + projects/areas/resources 테이블 + RLS 정책 + realtime publication (Supabase SQL Editor에서 1회 실행,
                                 재실행해도 안전)
@@ -641,6 +656,7 @@ src/components/month-calendar.tsx 월 보기 그리드 (칸 클릭 → 그 주, 
 src/components/mini-calendar.tsx 애플식 미니 달력 (calendar-header 팝오버 안, 보는 주 띠 강조)
 src/components/todo-card.tsx    할 일/노트 한 줄(할 일=체크박스, 노트=아이콘만 + 텍스트 + 드래그 핸들 +
                                  삭제 + URL이 있으면 파비콘 임베드 카드 + 전환 버튼)
+src/components/icons.ts         앱의 모든 아이콘(Phosphor 아이콘별 경로 re-export) — 여기서만 import (35번, ESLint 강제)
 src/components/todo-detail-modal.tsx  할 일/노트 상세 팝업 (제목/메모 수정, 할일↔노트 전환, 삭제, 완료 체크, 탭: 하위 할 일 · 회고 · 메모·URL) — body 포털
 src/components/subtask/subtask-list.tsx      하위 할 일 체크리스트(수정 · 삭제 · 연속 추가 · 드래그 순서) + DragOverlay 미리보기 (27번)
 src/components/subtask/subtask-progress.tsx  하위 할 일 진행률 링 + done/total (27번)
@@ -663,6 +679,11 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
 
 ## 아직 안 끝난 것 / 다음 할 일
 
+0. **▶ 다음 작업 (2026-09-30 기준): 메모 줄 표시 1단계 구현** — [MEMO-MARKS-PLAN.md](./MEMO-MARKS-PLAN.md) **8번 1-A부터**.
+   시안 · 규칙은 컨펌 끝(36번). 순서: 1-A 규칙 함수(`lib/memo-marks.ts`) → 1-B 팝업 안 줄 표시(툴바 · 보기 · 질문 해결) → 사용자 확인 · 머지
+   → 1-C 모아보기 패널(**시작 전에 레일 버튼 자리 · 모바일 패널 모양을 사용자에게 확인**) → 1-D 문서.
+   함정(툴바 blur, 한글 IME Enter, 버튼 안 버튼, Esc 순서)은 9번에 정리. 확인은 `scripts/mock-supabase/`(`SCENARIO=memo`).
+   그다음 후보: SEARCH-PLAN.md(전체 검색 — 모아보기 패널을 그대로 씀, 결과 카드 시안부터), 메모 줄 표시 2단계(회고 흡수 — 사용자가 1단계를 써본 뒤 결정).
 1. ~~Supabase 프로젝트 실제 연결~~ — **완료 (2026-09-11)**. 실제 프로젝트(`jzrpciwkhwanopqydzqw`, Seoul 리전)에
    `schema.sql` 실행 완료, 가입 → 할 일 추가 → 새로고침 동기화까지 실제로 확인됨.
    API 키는 legacy `anon` 대신 **publishable 키**(`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`)로 전환해서 사용 중
@@ -726,4 +747,8 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
    `CLAUDE.md`에서 자동으로 불러오도록 걸어뒀습니다.
 2. `git log --oneline`으로 커밋 히스토리 훑어보면 각 변경의 이유가 커밋 메시지에 꽤 자세히 적혀 있음.
 3. Supabase 설정부터 진행(README 참고)한 뒤, `npm run dev`로 실제 로그인부터 테스트.
-4. 이후 요청은 위 "아직 안 끝난 것" 목록 중 하나부터 진행하면 자연스럽게 이어집니다.
+4. 이후 요청은 위 "아직 안 끝난 것" 목록 중 하나부터 진행하면 자연스럽게 이어집니다. **지금은 0번(메모 줄 표시 1단계)** —
+   MEMO-MARKS-PLAN.md 전체(특히 6번 "지금 코드" · 8번 순서 · 9번 함정)를 읽고 시작.
+5. 키 없는 환경(클라우드 세션)에서 화면을 확인할 때는 [scripts/mock-supabase/README.md](./scripts/mock-supabase/README.md) — 가짜 Supabase +
+   가짜 로그인 쿠키 + Playwright(Chromium `/opt/pw-browsers/chromium`). tsc는 `.next/types`가 아직 없으면 `LayoutProps` 오류가 나는데 `next dev`나 `next build`를 한 번 돌리면 사라지고,
+   eslint는 `login/page.tsx`의 `setMode` 경고 1개가 원래 있다(둘 다 무시).
