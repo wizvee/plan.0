@@ -1,7 +1,8 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import { MagnifyingGlass, X } from "@/components/icons";
 
 import { cn } from "@/lib/utils";
@@ -13,6 +14,8 @@ import type { MarkState } from "@/lib/memo-marks";
 import type { Todo } from "@/lib/types";
 import { MARK_META } from "@/components/memo/mark-meta";
 import { INLINE_CODE_CLASS } from "@/components/inline-text";
+import { TodoDetailById } from "@/components/todo-detail-by-id";
+import type { DetailTab } from "@/components/todo-detail-modal";
 import {
   EmojiLineRow,
   LineGroupHeader,
@@ -33,6 +36,14 @@ const CHIP_MARKS: Record<Chip, { open: MarkState; done: MarkState; label: string
 
 /** 키보드로 고를 수 있는 결과 하나 */
 export type SearchItem = ParaHit | TodoHit | LineHit;
+
+/** 결과를 열 때 할 일 팝업의 탭 — 일치한 곳(메모 · URL → 메모 탭, 하위 할 일 → 하위 할 일 탭). 제목이면 평소대로 */
+function tabFor(item: TodoHit | LineHit): DetailTab | undefined {
+  const source = item.type === "todo" ? item.bestSource : item.source;
+  if (source === "memo" || source === "url") return "memo";
+  if (source === "subtask") return "subtasks";
+  return undefined;
+}
 
 /**
  * 검색 패널 (SEARCH-PLAN.md, 시안 https://claude.ai/artifact/EXRxgXo2Cpn1oNFvj9DBCx).
@@ -91,6 +102,9 @@ function SearchDialog({
 }) {
   const index = useSearchIndex();
   const { editMemo } = useTodoActions();
+  const router = useRouter();
+  // 결과로 연 할 일 팝업 — 검색 패널 위에 뜨고, 닫으면 검색으로 돌아온다
+  const [openTodo, setOpenTodo] = useState<{ id: string; tab: DetailTab | undefined } | null>(null);
   const marks = useMemo<MarkState[]>(
     () => (chip ? (showDone ? [CHIP_MARKS[chip].open, CHIP_MARKS[chip].done] : [CHIP_MARKS[chip].open]) : []),
     [chip, showDone]
@@ -126,12 +140,12 @@ function SearchDialog({
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      // 안쪽(답 입력칸 등)이 Esc를 처리했으면 패널은 그대로
-      if (e.key === "Escape" && !e.defaultPrevented) onClose();
+      // 안쪽(답 입력칸 등)이 Esc를 처리했거나 할 일 팝업이 열려 있으면(팝업만 닫힘) 패널은 그대로
+      if (e.key === "Escape" && !e.defaultPrevented && !openTodo) onClose();
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
+  }, [onClose, openTodo]);
 
   const items: SearchItem[] = useMemo(() => {
     if (result.mode === "ranked") return [...result.paras, ...result.todos.slice(0, limit)];
@@ -148,9 +162,19 @@ function SearchDialog({
   }, [current]);
 
   function openItem(item: SearchItem) {
-    // 결과 열기(할 일 팝업 · PARA 상세)는 4단계 — SEARCH-PLAN.md 5번
-    void item;
+    if (item.type === "para") {
+      router.push(`/para/${item.kind}/${item.id}`);
+      onClose();
+      return;
+    }
+    setOpenTodo({ id: item.todo.id, tab: tabFor(item) });
   }
+
+  const closeTodo = useCallback(() => {
+    setOpenTodo(null);
+    // 팝업이 닫힌 뒤 검색어 칸으로 — 바로 ↑↓ · 다시 검색
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }, []);
 
   function handleInputKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.nativeEvent.isComposing) return;
@@ -404,6 +428,7 @@ function SearchDialog({
           </span>
         </div>
       </div>
+      {openTodo ? <TodoDetailById todoId={openTodo.id} initialTab={openTodo.tab} onClose={closeTodo} /> : null}
     </>
   );
 }

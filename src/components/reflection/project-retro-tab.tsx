@@ -1,18 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Check, CheckCircle, FileText, Plus, X } from "@/components/icons";
 
 import { InlineText } from "@/components/inline-text";
-import { TodoDetailModal } from "@/components/todo-detail-modal";
+import { TodoDetailById } from "@/components/todo-detail-by-id";
 import { ReflectionKindIcon } from "@/components/reflection/reflection-kind";
 import { ReflectionAddRow, ReflectionText } from "@/components/reflection/reflection-list";
 import { buildRetroMarkdown, REFLECTION_META, reflectionDateLabel } from "@/lib/reflection";
 import { REFLECTION_KINDS } from "@/lib/types";
 import { useReflections, type ProjectReflection } from "@/lib/app-data/use-reflections";
 import { useReflectionActions } from "@/lib/app-data/reflection-actions";
-import { useContainers } from "@/lib/app-data/use-containers";
-import { useTodoActions } from "@/lib/app-data/todo-actions";
 import { useTodos } from "@/lib/app-data/use-todos";
 
 /**
@@ -35,6 +33,7 @@ export function ProjectRetroTab({
   const { reflectionsOfProject } = useReflections();
   const items = reflectionsOfProject(projectId);
   const [openTodoId, setOpenTodoId] = useState<string | null>(null);
+  const closeTodo = useCallback(() => setOpenTodoId(null), []);
 
   function saveNote() {
     const today = new Date();
@@ -103,7 +102,8 @@ export function ProjectRetroTab({
         })}
       </div>
 
-      {openTodoId ? <SourceTodoModal todoId={openTodoId} onClose={() => setOpenTodoId(null)} /> : null}
+      {/* 출처 할 일의 상세 팝업 — 회고는 거기서 고친다 */}
+      {openTodoId ? <TodoDetailById todoId={openTodoId} initialTab="retro" onClose={closeTodo} /> : null}
     </div>
   );
 }
@@ -187,30 +187,5 @@ function RetroRow({
         ) : null}
       </div>
     </div>
-  );
-}
-
-/** 출처 할 일의 상세 팝업 — 회고는 거기서 고친다. */
-function SourceTodoModal({ todoId, onClose }: { todoId: string; onClose: () => void }) {
-  const { todos } = useTodos();
-  const { projects, areas, resources } = useContainers();
-  const actions = useTodoActions();
-  const todo = todos.find((t) => t.id === todoId);
-  if (!todo) return null;
-
-  return (
-    <TodoDetailModal
-      todo={todo}
-      projects={projects}
-      areas={areas}
-      resources={resources}
-      onEdit={actions.edit}
-      onMemoEdit={actions.editMemo}
-      onUrlEdit={actions.editUrl}
-      onAssignPara={actions.assignPara}
-      onRemove={actions.remove}
-      onConvert={actions.convert}
-      onClose={onClose}
-    />
   );
 }
