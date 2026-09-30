@@ -40,6 +40,18 @@
   --retro-problem-tint: #FFF1DC;
   --retro-try: #0071E3;
   --retro-try-tint: #E8F1FE;
+  /* 메모 줄 표시 (MEMO-MARKS-PLAN.md 4번) — 18px 체크박스 무게에 맞춰 회고 틴트보다 한 단계 진하게.
+     아이콘에만 쓴다. 2단계(회고 흡수)에서 --retro-*는 이 값으로 합친다. */
+  --mark-question: #9437C9;
+  --mark-question-tint: #EBD9F8;
+  --mark-info: #58585D;
+  --mark-info-tint: rgba(0, 0, 0, 0.09);
+  --mark-keep: #22884B;
+  --mark-keep-tint: #D3EEDD;
+  --mark-problem: #B35F00;
+  --mark-problem-tint: #FFE6C2;
+  --mark-try: #0068D6;
+  --mark-try-tint: #D6E7FD;
 }
 
 .dark {
@@ -74,6 +86,16 @@
   --retro-problem-tint: #3D2A0F;
   --retro-try: #0A84FF;
   --retro-try-tint: #10304F;
+  --mark-question: #BF5AF2;
+  --mark-question-tint: #43265A;
+  --mark-info: #AEAEB2;
+  --mark-info-tint: rgba(255, 255, 255, 0.14);
+  --mark-keep: #30D158;
+  --mark-keep-tint: #1C4A2D;
+  --mark-problem: #FF9F0A;
+  --mark-problem-tint: #4D3410;
+  --mark-try: #0A84FF;
+  --mark-try-tint: #143C66;
 }
 
 @theme inline {

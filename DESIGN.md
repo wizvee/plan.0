@@ -50,6 +50,9 @@
 | `--retro-keep` / `-tint` | `#2E9E5B` / `#E5F5EB` | `#30D158` / `#173A24` | 회고 · 잘한 점 (Area 초록과 같은 값) |
 | `--retro-problem` / `-tint` | `#C26A00` / `#FFF1DC` | `#FF9F0A` / `#3D2A0F` | 회고 · 아쉬운 점 (`--warning`은 작은 아이콘에 대비 부족이라 어둡게) |
 | `--retro-try` / `-tint` | `#0071E3` / `#E8F1FE` | `#0A84FF` / `#10304F` | 회고 · 다음엔 (primary/accent와 같은 값) |
+| `--mark-question` / `-tint` | `#9437C9` / `#EBD9F8` | `#BF5AF2` / `#43265A` | 메모 줄 표시 · 질문 (회고 틴트보다 한 단계 진함 — 18px 칸) |
+| `--mark-info` / `-tint` | `#58585D` / `rgba(0,0,0,.09)` | `#AEAEB2` / `rgba(255,255,255,.14)` | 메모 줄 표시 · 알게 된 것 |
+| `--mark-keep` · `--mark-problem` · `--mark-try` / `-tint` | `#22884B` · `#B35F00` · `#0068D6` / `#D3EEDD` · `#FFE6C2` · `#D6E7FD` | `#30D158` · `#FF9F0A` · `#0A84FF` / `#1C4A2D` · `#4D3410` · `#143C66` | 메모 줄 표시 · 잘한 점 / 아쉬운 점 / 다음엔 (2단계에서 `--retro-*`를 이 값으로 합침) |
 
 **Project 카테고리는 별도 토큰이 없습니다** — `--primary`/`--accent`를 그대로 재사용합니다.
 새 카테고리 색이 필요하면 애플 시스템 컬러 계열에서 고르고, 틴트는 라이트 `L≈94%`, 다크 `L≈25%` 정도로 파생하세요.
@@ -146,6 +149,9 @@ AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBann
   3열 정사각 그리드(모서리 8px) + ★ 대표 칩 + 점선 추가 칸, 누르면 검은 배경 크게 보기(`PhotoViewer`). 사진을 못 불러오면 조용히 평소 모양.
 - **회고**(REFLECTIONS-PLAN.md): 종류는 `ReflectionKindIcon`(틴트 원 + `ThumbsUp`/`ThumbsDown`/`Lightbulb`), 색은
   `--retro-*` 토큰으로 **아이콘에만**(텍스트는 기본 전경색). 종류 선택은 `ReflectionKindSelect` 드롭다운(macOS 메뉴) 하나만 쓴다.
+- **메모 줄 표시**(MEMO-MARKS-PLAN.md): 보기 모드 표시는 모두 체크박스와 같은 **18px 둥근 사각형(모서리 5px)** — 확인은 빈 칸 / 파란 체크 + 취소선,
+  나머지는 `--mark-*` 틴트 칸 + bold 12px 아이콘(`?` · `i`는 원 없이 글자만). 줄 글자는 기본 전경색(답 `→ …`만 보조 텍스트 색), 불릿 줄은 회색 4px 점.
+  편집 칸 위 툴바 5개(`MemoToolbar`, 눌린 버튼 = 틴트 배경 + 종류 색 테두리). 메모를 다른 곳에 그릴 때도 `MemoView` · `MemoEditor`를 재사용한다.
 - **주간 목표**(GOALS-PLAN.md): 진행률 링은 `GoalRing` 하나를 레일 · 목표 카드가 같이 쓴다(없음 = 점선, 목표 카드는 PARA 색, 레일은 primary).
   목표 카드 = 흰 카드 + 링 · 제목 · PARA 칩 · `···` + 헤어라인 할 일 목록 + 파란 텍스트 버튼 2개. 캘린더 본문에는 목표를 그리지 않는다(정보량).
   PARA 고르기 드롭다운은 `ParaMenu`(`components/para/para-menu.tsx`) 하나만 쓴다.

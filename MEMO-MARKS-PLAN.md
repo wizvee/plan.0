@@ -2,7 +2,8 @@
 
 작성 2026-09-30. 시안: https://claude.ai/artifact/JfkwtcvcU885kzNkdJGV7Q (① 보기 모드 · ② 툴바 · ③ 질문 해결 · ④⑤ 검색 패널 모아보기)
 
-> **상태: 규칙 합의(2026-09-30) → 시안.** 1단계 = 메모 줄 표시 + 확인할 것 · 질문 모아보기. 2단계 = 회고를 메모로 흡수(1단계를 써본 뒤).
+> **상태: 1단계 중 표시 · 툴바 · 보기 모드 구현(2026-09-30, HANDOFF.md 36번).** 남은 1단계 = 확인할 것 · 질문 모아보기(5번, 검색 패널과 함께).
+> 2단계 = 회고를 메모로 흡수(1단계를 써본 뒤).
 
 ## 1. 왜
 
@@ -75,10 +76,11 @@
 
 | 파일 | 내용 |
 |---|---|
-| `lib/memo-marks.ts` | 순수 함수: `parseMemoLines`(2번 인식) · `setMark(text, lineIndexes, kind)`(툴바) · `toggleDone(text, lineIndex)` · `resolveQuestion(text, lineIndex, answer)` · `continueOnEnter` |
-| `components/memo/memo-toolbar.tsx` | 툴바 버튼 5개 — textarea의 선택 영역을 읽어 `setMark` 적용 |
-| `components/memo/memo-view.tsx` | 보기 모드 렌더링(아이콘 · 체크 · 질문 해결 입력) |
-| `components/todo-detail-modal.tsx` | 메모 탭에 툴바 · 보기 모드 연결 |
+| `lib/memo-marks.ts` ✅ | 순수 함수: `parseMemoLines`(2번 인식) · `applyMark(lines, kind)`(툴바) · `toggleDone(text, lineIndex)` · `resolveQuestion(text, lineIndex, answer)` · `reopenQuestion` · `continueOnEnter` |
+| `components/memo/memo-toolbar.tsx` ✅ | 툴바 버튼 5개 — textarea의 선택 영역을 읽어 `setMark` 적용 |
+| `components/memo/memo-view.tsx` ✅ | 보기 모드 렌더링(아이콘 · 체크 · 질문 해결 입력) |
+| `components/memo/memo-editor.tsx` ✅ | 툴바 + 입력칸 묶음 — 선택 영역 · Enter 이어 쓰기 · blur 처리 |
+| `components/todo-detail-modal.tsx` ✅ | 메모 탭에 편집기 · 보기 모드 연결 |
 | 검색 패널(SEARCH-PLAN.md 4번) | 칩 · 모아보기 목록 — 검색과 함께 구현 |
 
 ## 7. 2단계 — 회고 흡수 (1단계를 써본 뒤 결정)

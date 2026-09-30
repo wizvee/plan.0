@@ -538,6 +538,17 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     - 이름은 Phosphor 이름 그대로(ChevronLeft → `CaretLeft`, Trash2 → `Trash`, Inbox → `Tray`, Search → `MagnifyingGlass` 등).
       굵기: lucide `strokeWidth` ≥ 2.2이거나 14px 이하 아이콘은 `weight="bold"`, `fill-current`였던 ★는 `weight="fill"`, 나머지 기본 regular.
     - **확인**: tsc · eslint, 가짜 Supabase 앱에서 캘린더 · Inbox · 할 일 팝업(하위 할 일 · 회고 · 사진) · PARA 화면 스크린샷.
+36. **(2026-09-30 추가) 메모 줄 표시 1단계(표시 · 툴바 · 보기 모드)**: [MEMO-MARKS-PLAN.md](./MEMO-MARKS-PLAN.md) 2~4번을 구현.
+    시안 https://claude.ai/artifact/JfkwtcvcU885kzNkdJGV7Q ①②③ 그대로. 저장은 메모 원문(DB 변경 없음).
+    - 글자 고치기는 전부 `lib/memo-marks.ts` 순수 함수(`parseMemoLines` · `applyMark` · `toggleDone` · `resolveQuestion` · `reopenQuestion` ·
+      `continueOnEnter`). 편집 칸 글자는 `execCommand("insertText")`로 넣어 브라우저 되돌리기가 그대로 된다(안 되면 `setRangeText`로 대체).
+    - 표시가 하나도 없는 메모는 전처럼 통째 텍스트로 보이고, 하나라도 있으면 줄 단위 보기(불릿 줄 = 회색 점, 불릿 없는 줄 = 빈 칸으로 줄 맞춤).
+    - 툴바를 누르는 동안 입력칸 blur로 편집이 끝나지 않게 mousedown 기본 동작을 막고, 터치용으로 누르는 중 플래그도 본다.
+    - `?`의 원 없는 `i`는 Phosphor에 없어서 `memo-view.tsx`의 `InfoGlyph`로 직접 그림. 색은 `--mark-*` 토큰(다크 포함).
+    - **모아보기(검색 패널 칩 `확인할 것 N` · `질문 N`)는 아직** — SEARCH-PLAN.md 검색 패널 시안 · 구현 때 같이(MEMO-MARKS-PLAN.md 5번).
+    - **확인**: tsc · eslint, 순수 함수 단위 확인(인식 규칙 · 툴바 붙이기/바꾸기/떼기 · 여러 줄 · 예전 표시 · Enter), 임시 페이지에서 Playwright로
+      체크 · 질문 해결(Enter/Esc) · 되돌리기 · 줄 눌러 편집(커서 줄) · 툴바 · Enter 이어 쓰기 · ⌘Z · 여러 줄 선택 확인 + 스크린샷.
+      로그인이 필요한 실제 할 일 팝업 안에서는 아직 못 봄.
 
 ## 지금 구현된 것 (기능 목록)
 
@@ -647,6 +658,11 @@ src/components/subtask/subtask-progress.tsx  하위 할 일 진행률 링 + done
 src/components/reflection/reflection-kind.tsx     회고 종류 아이콘 + 종류 드롭다운 (28번)
 src/components/reflection/reflection-list.tsx     할 일 회고 목록 · 추가 줄 · 그 자리 수정 (28번)
 src/components/reflection/project-retro-tab.tsx   PARA 상세(Project) 회고 탭 — 3열 보드, 할 일로, 회고 노트로 저장 (28번)
+src/components/memo/memo-editor.tsx               메모 원문 편집 — 줄 표시 툴바 + 입력칸, Enter 이어 쓰기 (36번)
+src/components/memo/memo-toolbar.tsx              줄 표시 버튼 5개 (36번)
+src/components/memo/memo-view.tsx                 메모 보기 모드 — 표시 아이콘 · 체크 · 질문 해결 입력칸 (36번)
+src/components/memo/mark-meta.ts                  표시 종류별 라벨 · 아이콘 · 색
+src/lib/memo-marks.ts                             메모 줄 표시 인식 · 고치기 순수 함수 (36번)
 src/components/add-todo-form.tsx  할 일/노트 추가 입력 행 (토글로 종류 선택)
 src/components/para-board.tsx   PARA 목록 화면 본문 — 세그먼트 컨트롤 + 컨테이너 카드 그리드
 src/components/para/container-card.tsx        Project/Area/Resource 카드 (droppable, 클릭 시 상세로 이동)
