@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { CalendarBlank, Check, Flag, SquaresFour, Tray } from "@/components/icons";
+import { CalendarBlank, Check, Flag, MagnifyingGlass, SquaresFour, Tray } from "@/components/icons";
 
 import { cn } from "@/lib/utils";
 import { mondayOf, toDateKey } from "@/lib/week";
@@ -16,14 +16,15 @@ import { GoalRing } from "@/components/goals/goal-ring";
 
 /**
  * 앱 내비게이션 — 데스크톱은 왼쪽 세로 레일(76px), 모바일은 하단 탭바. 한 컴포넌트가 반응형으로
- * 모양만 바꾼다. 항목: 목표(이번 주 진행률 링) · 캘린더 · PARA · Inbox(열기/닫기) · 계정(메뉴).
+ * 모양만 바꾼다. 항목: 목표(이번 주 진행률 링) · 캘린더 · PARA · 검색(⌘K) · Inbox(열기/닫기) · 계정(메뉴).
+ * 모바일 탭바는 6칸(SEARCH-PLAN.md 시안 ⑦A).
  */
 export function AppRail({ accountOpen, onToggleAccount }: { accountOpen: boolean; onToggleAccount: () => void }) {
   const router = useRouter();
   const pathname = usePathname();
   const { userEmail, googleConnected } = useSession();
   const { backlogItems } = useTodos();
-  const { inboxOpen, toggleInbox } = useShellUI();
+  const { inboxOpen, toggleInbox, searchOpen, toggleSearch } = useShellUI();
   const { currentContext } = useContexts();
   const { weekRatioOf } = useGoals();
   const todayKey = useTodayKey();
@@ -72,6 +73,9 @@ export function AppRail({ accountOpen, onToggleAccount }: { accountOpen: boolean
       </RailButton>
       <RailButton label="PARA" active={onPara} onClick={() => router.push("/para")}>
         <SquaresFour className="size-[22px]" />
+      </RailButton>
+      <RailButton label="검색" active={searchOpen} onClick={toggleSearch} pressed={searchOpen}>
+        <MagnifyingGlass className="size-[22px]" />
       </RailButton>
       <RailButton label="Inbox" active={inboxOpen} onClick={toggleInbox} pressed={inboxOpen}>
         <Tray className="size-[22px]" />

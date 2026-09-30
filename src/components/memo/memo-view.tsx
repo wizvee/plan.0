@@ -12,21 +12,68 @@ import {
   resolveQuestion,
   splitAnswer,
   toggleDone,
+  type MarkState,
   type MemoLine,
 } from "@/lib/memo-marks";
 
 /** 표시 칸 — 체크박스와 같은 18px 둥근 사각형(모서리 5px) */
-const MARK_BOX = "mt-px flex size-[18px] shrink-0 items-center justify-center rounded-[5px]";
+export const MARK_BOX = "mt-px flex size-[18px] shrink-0 items-center justify-center rounded-[5px]";
 
 /**
  * 알게 된 것(`[i]`)의 원 없는 `i` — Phosphor에는 원 안 Info만 있어서(칸 안에 원이 겹치면 지저분함, MEMO-MARKS-PLAN.md 4번)
  * 같은 256 그리드 · bold 굵기로 여기서만 그린다.
  */
-function InfoGlyph({ className }: { className?: string }) {
+export function InfoGlyph({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 256 256" fill="currentColor" className={className} aria-hidden="true">
       <path d="M128 100a16 16 0 0 1 16 16v80a16 16 0 0 1-32 0v-80a16 16 0 0 1 16-16Zm0-60a20 20 0 1 1 0 40a20 20 0 0 1 0-40Z" />
     </svg>
+  );
+}
+
+/**
+ * 누를 수 없는 표시 칸 — 검색 결과 스니펫 등 메모 밖에서 줄 표시를 보여줄 때. 모양은 보기 모드와 같다.
+ * 크기는 `className`으로 줄인다(예: `size-4`).
+ */
+export function MarkIcon({ state, className }: { state: MarkState; className?: string }) {
+  if (state === " " || state === "x") {
+    return (
+      <span
+        role="img"
+        aria-label={state === "x" ? "확인함" : "확인 필요"}
+        className={cn(
+          MARK_BOX,
+          state === "x" ? "bg-primary text-primary-foreground" : "border-[1.6px] border-muted-foreground/60 bg-card",
+          className
+        )}
+      >
+        {state === "x" ? <Check weight="bold" className="size-[65%]" aria-hidden="true" /> : null}
+      </span>
+    );
+  }
+  if (state === "?" || state === "i") {
+    const info = state === "i";
+    return (
+      <span
+        role="img"
+        aria-label={info ? "알게 된 것" : "질문"}
+        className={cn(MARK_BOX, className)}
+        style={
+          info
+            ? { backgroundColor: "var(--mark-info-tint)", color: "var(--mark-info)" }
+            : { backgroundColor: "var(--mark-question-tint)", color: "var(--mark-question)" }
+        }
+      >
+        {info ? <InfoGlyph className="size-[65%]" /> : <QuestionMark weight="bold" className="size-[65%]" aria-hidden="true" />}
+      </span>
+    );
+  }
+  const meta = MARK_META[state === "p" ? "keep" : state === "c" ? "problem" : "try"];
+  const Icon = meta.icon;
+  return (
+    <span role="img" aria-label={meta.label} className={cn(MARK_BOX, className)} style={{ backgroundColor: meta.tint, color: meta.color }}>
+      <Icon weight="bold" className="size-[65%]" aria-hidden="true" />
+    </span>
   );
 }
 

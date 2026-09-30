@@ -49,7 +49,7 @@ function scheduleLabel(todo: Todo): string | null {
   return `${day} · ${formatClock(todo.startMinutes)} – ${formatClock(end)}`;
 }
 
-type DetailTab = "subtasks" | "retro" | "memo" | "photos";
+export type DetailTab = "subtasks" | "retro" | "memo" | "photos";
 
 interface ParaAssignPatch {
   projectId: string | null;
@@ -69,6 +69,8 @@ interface TodoDetailModalProps {
   onRemove: (id: string) => void;
   onConvert?: (id: string, kind: TodoKind) => void;
   onClose: () => void;
+  /** 처음 열 탭(검색 결과 등). 없으면 완료 = 회고, 미완료 = 하위 할 일 */
+  initialTab?: DetailTab;
 }
 
 export function TodoDetailModal({
@@ -83,6 +85,7 @@ export function TodoDetailModal({
   onRemove,
   onConvert,
   onClose,
+  initialTab,
 }: TodoDetailModalProps) {
   const [title, setTitle] = useState(todo.content);
   const [memo, setMemo] = useState(todo.memo ?? "");
@@ -102,7 +105,7 @@ export function TodoDetailModal({
   const { photosOf } = usePhotos();
   // 완료된 할 일은 회고 탭으로 연다 — 끝낸 직후가 회고하기 가장 좋은 때라서 (REFLECTIONS-PLAN.md 4번 ①).
   // 모달 안에서만 기억한다(URL · localStorage에 저장하지 않음).
-  const [tab, setTab] = useState<DetailTab>(todo.completed ? "retro" : "subtasks");
+  const [tab, setTab] = useState<DetailTab>(initialTab ?? (todo.completed ? "retro" : "subtasks"));
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {

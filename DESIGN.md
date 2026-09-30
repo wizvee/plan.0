@@ -89,16 +89,18 @@
 
 ```
 (app)/layout.tsx  → AppDataProvider → DndProvider → AppShell
-AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBanner + 화면 본문] + AccountMenu
+AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBanner + 화면 본문] + AccountMenu + ContextManager + SearchPanel
 ```
 
 - **`AppRail`**(`components/shell/app-rail.tsx`) — 데스크톱은 왼쪽 76px 세로 레일, 모바일(`sm:` 미만)은 하단 탭바.
-  한 컴포넌트가 반응형으로 모양만 바꿈. 항목: 목표(이번 주 진행률 링) · 캘린더 · PARA · Inbox(열기/닫기, 개수 배지) · 계정(아바타, Drive 미연결이면 주황 점).
+  한 컴포넌트가 반응형으로 모양만 바꿈. 항목: 목표(이번 주 진행률 링) · 캘린더 · PARA · 검색(⌘K) · Inbox(열기/닫기, 개수 배지) · 계정(아바타, Drive 미연결이면 주황 점).
+  모바일 탭바는 6칸(2026-09-30 검색 시안 ⑦A).
 - **`InboxPanel`** — 데스크톱은 레일 옆 320px 패널이 **본문을 밀어냄**(sticky, 팝업 아님), 모바일은 하단 탭 위 바텀시트.
   보관함 드롭 영역 · `SortableContext`는 앱에 하나만 있어야 하므로 이 컴포넌트가 유일한 보관함입니다.
   열림 여부는 `localStorage`에 기억(`src/lib/shell-ui.tsx`).
 - **`AccountMenu`** — 이메일 · Google Drive 연결됨/재연결 또는 연결 · 로그아웃. Drive 링크는 지금 화면으로 돌아오도록 `next`를 붙임.
 - **`DriveStatusBanner`** — OAuth 콜백의 `?google=` 결과를 어느 화면에서든 표시.
+- **`SearchPanel`** — ⌘K / 레일 검색으로 여는 검색(아래 6번 "검색 패널"). 셸에 한 번만 마운트되고 body 포털로 뜬다.
 
 **규칙 (ESLint로 강제됨):**
 1. 화면(page · 화면 컴포넌트)은 `@/components/shell/*`을 import할 수 없습니다(`eslint.config.mjs`의 `no-restricted-imports`,
@@ -106,7 +108,7 @@ AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBann
    사이드바/레일/Inbox를 직접 렌더링하거나 props로 조립하지 않습니다.
 2. 셸 컴포넌트는 화면에서 props를 받지 않습니다. 데이터는 `useTodos()` · `useContainers()` · `useTodoActions()` ·
    `useSession()`(`src/lib/app-data/`), 현재 화면은 `usePathname()`으로 스스로 읽습니다.
-3. 화면이 Inbox를 열어야 하면(예: 캘린더 툴바 "+") `useShellUI().openInboxForAdd()`(`src/lib/shell-ui.tsx`)만 씁니다.
+3. 화면이 Inbox를 열어야 하면(예: 캘린더 툴바 "+") `useShellUI().openInboxForAdd()`(`src/lib/shell-ui.tsx`)만 씁니다. 검색은 `useShellUI().openSearch()`.
 4. 드래그 앤 드롭은 `DndProvider` 하나. 새 드롭 영역은 `useDroppable({ id, data })`의 `data`(`src/lib/dnd/drop-targets.ts`)로
    "나는 무엇인지"만 선언하고, 처리는 `src/lib/dnd/handle-drop.ts` 한 곳에 추가하세요.
 5. 캘린더 화면 상태(주/월, 보고 있는 주/달)는 URL 쿼리(`?week=` / `?view=month&month=`)가 유일한 출처입니다.
@@ -152,6 +154,12 @@ AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBann
 - **메모 줄 표시**(MEMO-MARKS-PLAN.md): 보기 모드 표시는 모두 체크박스와 같은 **18px 둥근 사각형(모서리 5px)** — 확인은 빈 칸 / 파란 체크 + 취소선,
   나머지는 `--mark-*` 틴트 칸 + bold 12px 아이콘(`?` · `i`는 원 없이 글자만). 줄 글자는 기본 전경색(답 `→ …`만 보조 텍스트 색), 불릿 줄은 회색 4px 점.
   편집 칸 위 툴바 5개(`MemoToolbar`, 눌린 버튼 = 틴트 배경 + 종류 색 테두리). 메모를 다른 곳에 그릴 때도 `MemoView` · `MemoEditor`를 재사용한다.
+- **검색 패널**(SEARCH-PLAN.md, 시안 https://claude.ai/artifact/EXRxgXo2Cpn1oNFvj9DBCx): 데스크톱 = **가운데 팝업**(위에서 72px · 폭 640px ·
+  모서리 14px · 흰 반투명 + blur + 큰 그림자, 뒤는 `bg-black/30`), 모바일 = 전체 화면(위 회색 입력칸 + 파란 "취소"). z-index 55 —
+  결과로 연 할 일 팝업(z 60)이 그 위에 뜨고, 닫으면 검색으로 돌아온다. 입력칸 아래 칩(`확인할 것` · `질문`, 켜면 primary 배경).
+  결과 카드 = 흰 카드(모서리 10px, 헤어라인 링) — 내용 → 맥락 줄(날짜 · 부모 할 일 · PARA 점 · URL 도메인, 12px 보조 텍스트) + 오른쪽 회색 출처 칩.
+  선택(↑↓) = 파란 2px 링. **일치 단어 = `bg-warning/25`**(새 색 아님, 애플 메모 검색처럼 옅은 주황). 찾던 답(메모 `[i]`의 `→` 뒤 · 하위 할 일 📝 뒤)은 진하게.
+  메모 스니펫은 회색(`bg-muted`) 칸 안에 줄 표시 아이콘(`MarkIcon`) 그대로. 사용자 텍스트는 `InlineText` 대신 `HighlightText`(인라인 코드 + 강조).
 - **주간 목표**(GOALS-PLAN.md): 진행률 링은 `GoalRing` 하나를 레일 · 목표 카드가 같이 쓴다(없음 = 점선, 목표 카드는 PARA 색, 레일은 primary).
   목표 카드 = 흰 카드 + 링 · 제목 · PARA 칩 · `···` + 헤어라인 할 일 목록 + 파란 텍스트 버튼 2개. 캘린더 본문에는 목표를 그리지 않는다(정보량).
   PARA 고르기 드롭다운은 `ParaMenu`(`components/para/para-menu.tsx`) 하나만 쓴다.
