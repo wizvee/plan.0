@@ -3,7 +3,7 @@
 작성 2026-10-01. 기존 문서(PLANNING / HANDOFF / DESIGN / FEATURES / WEBAPP-PLAN)는 구현이 끝날 때 갱신하고, 그 전까지는 이 파일에만 적습니다.
 시안: https://claude.ai/artifact/DfzCfv9eci2fj5k5F6mXXc (① 목표 화면 데스크톱 · ② 모바일 · ③ 자정 넘는 블록 · ④ 팝업 시간 편집 · ⑤ 컨텍스트 관리 · ⑥ 색 팔레트)
 
-> **상태: 시안 컨펌(2026-10-01) → 1단계(자정을 넘는 블록 + 팝업 시간 편집) 구현 완료.** 다음: 2단계(마이그레이션 + 컨텍스트 색 · 수면 표시).
+> **상태: 시안 컨펌(2026-10-01) → 1 · 2단계 구현 완료.** ⚠️ `20261001_context_balance.sql` 실행 필요. 다음: 3단계(계산).
 
 ## 1. 무엇을 왜
 
@@ -148,6 +148,12 @@ blue = `--primary`, green = `--category-area`, purple = `--category-resource`. �
    > `dnd`(`todoId` · `offsetMinutes`), `todo-time-editor.tsx` + 상세 팝업 일정 줄, `todo-actions.ts` `setTime`, `carry-over.ts` `isCarryDue`(끝이 다음 날).
    > `scripts/check-overnight.ts`(조각 · 배치 · 놓기 · 시간 편집 · 넘기기 시점) 통과, tsc · eslint · build 통과. 로그인이 필요해 브라우저 확인은 못 함.
 2. **마이그레이션 + 컨텍스트 색 · 수면 표시** — 관리 팝업 · 고르기 메뉴. `all` API. → 사용자 실행 + 7번 1–3.
+   > ✅ 완료 (2026-10-01) — `supabase/migrations/20261001_context_balance.sql`(`color` check 8색 · `is_sleep` + 사용자당 하나 인덱스 ·
+   > 처음부터 있던 `work`는 파랑). 로컬 PostgreSQL 16에서 schema.sql → 모든 마이그레이션 → 이 파일 2번 실행 · 고른 색 안 덮음 · 잘못된 색 거부 ·
+   > 수면 둘 거부(다른 사용자는 따로) · RLS 확인. 코드: `types.ts` `ContextColor` · `Context.color/isSleep`, `lib/context-color.ts`,
+   > `globals.css` `--ctx-*`, `contexts.ts` `setContextColor` · `setSleepContext` · 새 컨텍스트는 안 쓰는 첫 색 · 예약 키(`all` · `default`),
+   > 관리 팝업(색 점 · 색 8개 · 수면으로 세기 · 꺼질 때 `all`), 고르기 메뉴 · PARA 카드 칩 색 점, `/api/context` `all`(가짜 Supabase로 요청 본문
+   > `context_id: null` 확인), README. tsc · eslint · build 통과. 로그인이 필요해 화면 확인은 못 함.
 3. **계산** — `lib/balance.ts` + 스크립트 검증.
 4. **목표 화면 시간 균형** — 시안대로.
 5. **문서** — FEATURES · DESIGN(시간 균형 패턴 · 컨텍스트 색) · HANDOFF(마이그레이션) · WEBAPP-PLAN(`all`) · 이 문서 상태.
@@ -158,6 +164,14 @@ blue = `--primary`, green = `--category-area`, purple = `--category-resource`. �
 - 팝업에서 **시작을 바꾸면 길이 유지**(끝이 따라 움직임, 애플 캘린더 방식), 끝을 바꾸면 길이가 바뀐다. 끝 = 시작이면 24시간.
 - 일정 줄 편집은 할 일(task)만 — 노트는 날짜가 없다.
 - 드래그 미리보기는 끈 조각부터 블록 끝까지의 길이로 그린다.
+
+### 2단계 구현하며 정한 것
+
+- 새 컨텍스트는 **아직 아무도 안 쓰는 첫 색**(파랑 → 초록 → 보라 → 주황 → 남색 → 청록 → 분홍, 회색은 마지막) — 건강 · 지적 · 관계 · 수면을
+  순서대로 추가하면 초록 · 보라 · 주황 · 남색이 된다(시안과 같음).
+- **기본(기타)은 수면이 될 수 없고, 수면은 기본이 될 수 없다** — 매핑 없는 할 일이 전부 수면으로 세지게 되므로 메뉴에서 숨긴다.
+- `all` · `default`는 예약 키 — 같은 키의 컨텍스트를 만들 수 없게 막는다.
+- 마이그레이션 전에 새 코드가 배포돼도 화면은 깨지지 않는다(색 = 회색, 수면 아님). 다만 색 바꾸기 · 새 컨텍스트 추가는 실행 후에 된다.
 
 ## 10. 나중에 (이번 범위 밖)
 

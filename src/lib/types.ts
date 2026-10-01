@@ -158,7 +158,14 @@ export interface Context {
   key: string;
   position: number;
   isDefault: boolean;
+  /** 시간 균형 · 고르기 메뉴의 색 (`lib/context-color.ts`) */
+  color: ContextColor;
+  /** 수면으로 세기 — 시간 균형에서 깨어 있는 시간에서 뺀다. 사용자당 하나 (BALANCE-PLAN.md) */
+  isSleep: boolean;
 }
+
+/** 컨텍스트 색 이름 — DB check와 같다. 빨강(오늘 · 삭제) · 노랑(흰 배경 대비)은 없다. */
+export type ContextColor = "blue" | "green" | "purple" | "orange" | "gray" | "indigo" | "teal" | "pink";
 
 export type Area = ParaContainer;
 export type Resource = ParaContainer;

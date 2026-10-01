@@ -18,6 +18,8 @@
 | A4 | **Google Drive 연결** — 미연결이면 아바타에 주황 점, 계정 메뉴의 "연결" · PARA 자료 탭 안내의 "Google Drive 연결". 연결 후 누른 화면으로 복귀 | `shell/account-menu.tsx`, `para/container-detail-screen.tsx`, `api/auth/google` |
 | A5 | **Google Drive 연결 상태 + 재연결** — 계정 메뉴에 "연결됨" + 재연결 버튼 | `shell/account-menu.tsx` |
 | A6 | Drive 연결 결과 배너 — 연결됨 / refresh token 없음 / 실패, 닫기 가능 (어느 화면이든 본문 상단) | `shell/drive-status-banner.tsx` |
+| A7 | **컨텍스트 관리** — 계정 메뉴 → 컨텍스트: 이름 · 단축어 키(복사) · PARA 개수, 이름 바꾸기 · 기본으로 지정 · 삭제 · 추가. 행 앞 **색 점**(누르면 `···` 메뉴) — 메뉴 위에 색 8개, **수면으로 세기**(사용자당 하나, 기본 · 수면은 서로 될 수 없음). 새 컨텍스트는 안 쓰는 첫 색. 단축어 안내: 꺼질 때 `all` | `shell/context-manager.tsx`, `lib/supabase/contexts.ts`, `lib/context-color.ts` |
+| A8 | 컨텍스트 고르기 — PARA 개요 탭 드롭다운 · PARA 목록 카드 칩에 색 점 | `para/context-picker.tsx`, `para/container-card.tsx` |
 
 ## 2. 내비게이션 · 레이아웃
 

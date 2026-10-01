@@ -21,11 +21,25 @@ interface ContainerCardProps {
   onClick: () => void;
   /** 기본이 아닌 컨텍스트 이름(회사 · 공부 …) — 있으면 이름 옆에 작은 칩 */
   contextName?: string;
+  /** 컨텍스트 칩의 색 점 (`contextColor`) */
+  contextColor?: string;
   /** Project 전용 — 시작일 ~ 종료일(yyyy-MM-dd). 종료일이 없으면 null(공란) */
   period?: { start: string; end: string | null };
 }
 
-export function ContainerCard({ kind, id, name, statusLabel, statusDone, count, progress, onClick, contextName, period }: ContainerCardProps) {
+export function ContainerCard({
+  kind,
+  id,
+  name,
+  statusLabel,
+  statusDone,
+  count,
+  progress,
+  onClick,
+  contextName,
+  contextColor,
+  period,
+}: ContainerCardProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: `para:${kind}:${id}`,
     data: { type: "para-container", kind, id } satisfies DropTargetData,
@@ -63,7 +77,8 @@ export function ContainerCard({ kind, id, name, statusLabel, statusDone, count, 
             <InlineText text={name} />
           </span>
           {contextName ? (
-            <span className="shrink-0 rounded-[5px] bg-black/[0.06] px-[7px] py-0.5 text-[11.5px] font-semibold text-foreground/80">
+            <span className="flex shrink-0 items-center gap-[5px] rounded-[5px] bg-black/[0.06] px-[7px] py-0.5 text-[11.5px] font-semibold text-foreground/80">
+              {contextColor ? <span className="size-1.5 rounded-full" style={{ backgroundColor: contextColor }} /> : null}
               {contextName}
             </span>
           ) : null}

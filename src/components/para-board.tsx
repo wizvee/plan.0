@@ -5,6 +5,7 @@ import { BookmarkSimple, Compass, Target } from "@/components/icons";
 
 import { useTodos } from "@/lib/app-data/use-todos";
 import { useContexts } from "@/lib/app-data/use-contexts";
+import { contextColor } from "@/lib/context-color";
 import { useContainers } from "@/lib/app-data/use-containers";
 import { cn } from "@/lib/utils";
 import { CATEGORY_COLOR_VAR } from "@/lib/category";
@@ -24,6 +25,10 @@ export function ParaBoard() {
   const { todos } = useTodos();
   const { projects, addProject, areas, addArea, resources, addResource } = useContainers();
   const { contextOfContainer } = useContexts();
+  const chipContextOf = (contextId: string | null) => {
+    const context = contextOfContainer(contextId);
+    return context && !context.isDefault ? context : null;
+  };
 
   // 탭(Project/Area/Resource) 선택도 URL(`?kind=`)이 유일한 출처다 — 별도 state 없이 매 렌더마다
   // 계산한다. 그래야 상세 화면에 들어갔다 브라우저 뒤로가기를 눌러도 보고 있던 탭 그대로 돌아온다.
@@ -137,10 +142,11 @@ export function ParaBoard() {
             count={row.count}
             progress={row.progress}
             period={row.period}
-            contextName={(() => {
-              // 기본 컨텍스트는 칩을 달지 않는다(대부분이 기본이라) — 회사 · 공부처럼 기본이 아닌 것만
-              const context = contextOfContainer(row.contextId);
-              return context && !context.isDefault ? context.name : undefined;
+            // 기본 컨텍스트는 칩을 달지 않는다(대부분이 기본이라) — 업무 · 건강처럼 기본이 아닌 것만
+            contextName={chipContextOf(row.contextId)?.name}
+            contextColor={(() => {
+              const context = chipContextOf(row.contextId);
+              return context ? contextColor(context.color) : undefined;
             })()}
             onClick={() => router.push(`/para/${activeKind}/${row.id}`)}
           />

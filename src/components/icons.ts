@@ -41,6 +41,7 @@ export { Info } from "@phosphor-icons/react/dist/csr/Info";
 export { Lightbulb } from "@phosphor-icons/react/dist/csr/Lightbulb";
 export { LinkSimple } from "@phosphor-icons/react/dist/csr/LinkSimple";
 export { MagnifyingGlass } from "@phosphor-icons/react/dist/csr/MagnifyingGlass";
+export { Moon } from "@phosphor-icons/react/dist/csr/Moon";
 export { Note } from "@phosphor-icons/react/dist/csr/Note";
 export { PencilSimple } from "@phosphor-icons/react/dist/csr/PencilSimple";
 export { Plus } from "@phosphor-icons/react/dist/csr/Plus";
