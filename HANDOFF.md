@@ -589,6 +589,16 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     - 링크로 연 할 일은 같은 `TodoDetailModal`을 안에 한 번 더 렌더링(body 포털이라 위에 뜸) — Esc는 위 팝업만.
     - **확인**: tsc · eslint · build · `scripts/check-links.ts`(찾기 · 같은 M/d 다른 해 · 예전 줄 · 역링크 · 이름 · 날짜 · 별칭 고치기) · check-search +
       임시 페이지에서 링크 · 예전 줄 · 끊긴 링크 · 옮긴 할 일 목록 스크린샷. 실제 앱(로그인) 확인은 못 함 — 이 세션에 Supabase 키가 없었음.
+42. **(2026-10-01 추가) Inbox PARA 그룹**: "Inbox가 구분 없이 만든 순으로 쌓여 난잡하다, TickTick 인박스처럼 PARA별 아코디언 + 개수".
+    시안 https://claude.ai/artifact/NagRGwGtAevetvXLLSrr2p 에서 A안(섹션 머리) · B안(흰 카드) · C안(종류로만 묶기)을 비교 → **A안 + ④ 다른 그룹으로 끌어 놓기** 컨펌.
+    계획 · 규칙은 [INBOX-GROUPS-PLAN.md](./INBOX-GROUPS-PLAN.md). 완료 · 보관 그룹 위치는 답이 없어 제안대로 맨 아래.
+    - `lib/inbox-groups.ts`(묶기 · 순서 · 접힘 localStorage), 드롭 대상 `inbox-group`, 그룹별 `SortableContext`(다른 그룹 카드는 비키지 않는 전략),
+      `handle-drop.ts`에 그룹 매핑. Inbox 카드에 PARA 이름(`badge`)은 더 안 붙인다.
+    - 할 일 상세 팝업은 Inbox 패널이 연다(`TodoCard` `onOpenDetail` → `TodoDetailById`) — 팝업에서 PARA를 바꾸면 카드가 다른 그룹으로 옮겨
+      다시 마운트되면서 팝업이 닫히던 문제 방지.
+    - **확인**: tsc · eslint · build + 가짜 Supabase 앱에서 Playwright(그룹 순서 · 개수 · 접기 새로고침 후 유지 · 머리 위 / 다른 그룹 카드 위 /
+      접힌 그룹 / 미분류로 끌기 · 같은 그룹 순서 변경 · 미분류 접고 새로 적기 → 펼침 · 캘린더 블록은 PARA 유지 · PARA 상세 카드 → 그룹 ·
+      팝업에서 PARA 바꿔도 팝업 유지 · 모바일 바텀시트) + 스크린샷.
 
 ## 지금 구현된 것 (기능 목록)
 
@@ -671,6 +681,7 @@ src/lib/reflection.ts           회고 종류별 라벨 · 아이콘 · 색 변�
 src/lib/dnd/                    DndProvider(앱에 1개), handle-drop.ts(드롭 처리 단일 구현), drop-targets.ts(드롭 data 타입),
                                 collision.ts(preferSpecificTargetCollision — 보관함과 다른 드롭 영역이 겹칠 때 우선순위)
 src/lib/shell-ui.tsx            셸 UI 상태(Inbox 열림 · localStorage 기억, "+"로 열고 입력창 포커스)
+src/lib/inbox-groups.ts         Inbox PARA 그룹 — 묶기 · 그룹 순서 · 접힘 상태(localStorage) (42번, INBOX-GROUPS-PLAN.md)
 src/lib/use-dismiss.ts          팝오버 바깥 클릭 / Esc로 닫기
 src/lib/week.ts                 주차 계산(월요일 시작, ISO 주차, 오늘 여부 등)
 src/lib/time.ts                 시간 캘린더 계산(시간→px 변환, 스냅, 시간 라벨 포맷, BLOCK_GAP 등)
@@ -685,7 +696,7 @@ src/lib/drive-file.ts          Drive 파일 종류 판별(md/pdf/pptx/image) + �
 src/lib/google-picker.ts       클라이언트 전용 Google Picker 헬퍼 — 기존 Drive 파일을 골라 접근 권한을 부여받음 (24번 결정)
 
 src/components/shell/           앱 셸 — 레이아웃에서만 렌더링, 화면에서 import 금지(ESLint). app-shell / app-rail(레일 · 모바일 탭) /
-                                inbox-panel(밀어내는 패널 · 바텀시트) / account-menu / drive-status-banner (25번, DESIGN.md 5번)
+                                inbox-panel(밀어내는 패널 · 바텀시트 · PARA 그룹) / account-menu / drive-status-banner (25번, DESIGN.md 5번)
 src/components/week-board.tsx    캘린더 화면 본문 — URL에서 주/월 계산, 툴바 + 주/월 그리드 조립
 src/components/calendar-header.tsx 캘린더 툴바 — 제목 → 미니 캘린더 팝오버, 보기 드롭다운(주/월), +, 이전/오늘/다음
 src/components/week-calendar.tsx Mon~Sun 시간 단위 캘린더 그리드(요일 헤더 + 0~24시 스크롤 영역 + 현재 시각 라인)

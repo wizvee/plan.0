@@ -10,6 +10,8 @@ import type { ActiveData, OverData } from "@/lib/dnd/drop-targets";
  *
  * 하위 할 일은 따로 논다: 하위 할 일을 끌 때는 **같은 할 일의 하위 행만** 대상으로(closestCenter —
  * 목록 정렬용), 할 일을 끌 때는 하위 행을 대상에서 뺀다(펼친 PARA 목록 위에 놓아도 카드로 판정되게).
+ *
+ * Inbox의 PARA 그룹은 자기 카드들을 감싸므로, 카드 위에서는 카드를 우선한다(그룹 머리 위에서만 그룹).
  */
 export const preferSpecificTargetCollision: CollisionDetection = (args) => {
   const active = args.active.data.current as ActiveData | undefined;
@@ -26,5 +28,7 @@ export const preferSpecificTargetCollision: CollisionDetection = (args) => {
 
   const collisions = pointerWithin(args).filter((c) => overDataOf(c.id)?.type !== "subtask");
   const specific = collisions.filter((c) => c.id !== BACKLOG);
+  const narrowest = specific.filter((c) => overDataOf(c.id)?.type !== "inbox-group");
+  if (narrowest.length > 0) return narrowest;
   return specific.length > 0 ? specific : collisions;
 };

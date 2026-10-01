@@ -41,6 +41,11 @@ interface TodoCardProps {
   dragSource?: Extract<DragSource, "inbox" | "container">;
   /** 왼쪽 셰브런으로 하위 할 일을 펼쳐 바로 체크할 수 있게 (PARA 상세 할 일 목록만. Inbox는 개수만) */
   expandable?: boolean;
+  /**
+   * 상세 팝업을 목록 쪽에서 연다(이 카드 안에서 열지 않음). Inbox처럼 PARA를 바꾸면 카드가 다른 그룹으로
+   * 옮겨 다시 마운트되는 목록에서 팝업이 같이 닫히지 않게.
+   */
+  onOpenDetail?: (id: string) => void;
 }
 
 export function TodoCard({
@@ -59,6 +64,7 @@ export function TodoCard({
   badge,
   dragSource = "container",
   expandable = false,
+  onOpenDetail,
 }: TodoCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -140,7 +146,7 @@ export function TodoCard({
             )}
           >
             <span
-              onClick={() => onEdit && setDetailOpen(true)}
+              onClick={() => (onOpenDetail ? onOpenDetail(todo.id) : onEdit && setDetailOpen(true))}
               className={cn(
                 "min-w-0 cursor-pointer break-words text-[14px] leading-[1.35]",
                 todo.completed && "text-muted-foreground line-through"

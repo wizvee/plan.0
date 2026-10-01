@@ -35,6 +35,8 @@ export type ActiveData = DraggedTodoData | DraggedSubtaskData;
 export type DropTargetData =
   /** Inbox 패널 전체 */
   | { type: "inbox" }
+  /** Inbox 안의 PARA 그룹(머리 + 카드들) — kind/id가 null이면 미분류 (INBOX-GROUPS-PLAN.md) */
+  | { type: "inbox-group"; kind: ParaKind | null; id: string | null }
   /** 주간 캘린더의 하루 칸 — 실제 날짜(yyyy-MM-dd) */
   | { type: "calendar-day"; date: string }
   /** PARA 카드 또는 PARA 상세 화면 */

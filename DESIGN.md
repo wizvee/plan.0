@@ -63,7 +63,7 @@
 적용된 곳:
 - `calendar-block.tsx` — 틴트 배경(모서리 4px) + 왼쪽 카테고리 선(위 · 아래 · 왼쪽 3px 띄운 3px 막대, 끝 살짝 둥글게 — 애플 캘린더 방식, `CategoryBar`) + 카테고리 색 작은 원형 체크. 완료되면 색은 유지하고 블록 전체를 50%로 흐리게. 매핑 없으면 회색.
 - `month-calendar.tsx` — 일정 한 줄 = 카테고리 색 점 + 제목 + 시작 시각.
-- `todo-card.tsx` — 소속 이름(`badge`) 앞에 카테고리 점. Inbox는 모든 화면에서 이름을 보여준다.
+- `todo-card.tsx` — 소속 이름(`badge`) 앞에 카테고리 점. Inbox는 PARA별 그룹 머리(카테고리 점 + 이름)가 이름을 대신해 줄마다 붙이지 않는다.
 - `container-card.tsx` — 모서리 4px 흰 카드 + 왼쪽 카테고리 막대(위 · 아래 · 왼쪽 3px 띄운 3px 세로 막대, 끝 살짝 둥글게 — 캘린더 블록 `CategoryBar`와 같은 모양, 완료 · 보관이면 회색), 상태 칩 배경, 진행률 바가 종류별 색.
 - PARA 상세 — 상태 칩 배경, 진행률 바, 아이콘 타일이 종류별 색.
 - 하위 할 일 진행률 — 링 · 바 · 하위 체크박스는 할 일의 카테고리 색(매핑 없으면 회색), 트랙은
@@ -93,8 +93,8 @@ AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBann
   한 컴포넌트가 반응형으로 모양만 바꿈. 항목: 목표(이번 주 진행률 링) · 캘린더 · PARA · 검색(⌘K) · Inbox(열기/닫기, 개수 배지) · 계정(아바타, Drive 미연결이면 주황 점).
   모바일 탭바는 6칸(2026-09-30 검색 시안 ⑦A).
 - **`InboxPanel`** — 데스크톱은 레일 옆 320px 패널이 **본문을 밀어냄**(sticky, 팝업 아님), 모바일은 하단 탭 위 바텀시트.
-  보관함 드롭 영역 · `SortableContext`는 앱에 하나만 있어야 하므로 이 컴포넌트가 유일한 보관함입니다.
-  열림 여부는 `localStorage`에 기억(`src/lib/shell-ui.tsx`).
+  보관함 드롭 영역 · 보관함 카드의 `SortableContext`(PARA 그룹마다 하나)는 앱에 한 벌만 있어야 하므로 이 컴포넌트가 유일한 보관함입니다.
+  열림 여부는 `localStorage`에 기억(`src/lib/shell-ui.tsx`). 항목은 PARA별 그룹(아래 6번 "Inbox PARA 그룹").
 - **`AccountMenu`** — 이메일 · Google Drive 연결됨/재연결 또는 연결 · 로그아웃. Drive 링크는 지금 화면으로 돌아오도록 `next`를 붙임.
 - **`DriveStatusBanner`** — OAuth 콜백의 `?google=` 결과를 어느 화면에서든 표시.
 - **`SearchPanel`** — ⌘K / 레일 검색으로 여는 검색(아래 6번 "검색 패널"). 셸에 한 번만 마운트되고 body 포털로 뜬다.
@@ -122,6 +122,10 @@ AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBann
   흰 1px 테두리 + 틴트 4% 어둡게). ③ 그 안에서 시작하면(같은 시각 포함) **나란히 같은 너비로**(둘이면 50:50, 사이 2px).
   같은 시각에 시작한 긴 업무 블록은 하루 종일 반 폭이 된다(애플도 같음). 블록 사이는 3px(`BLOCK_GAP`), 최소 높이는 30분 칸(26px)이라
   30분 블록끼리 붙어도 틈이 보이고 30분 이하는 한 줄(시간 없음). 계산은 `lib/calendar-layout.ts`의 `layoutDayBlocks` · `blockHeightPx` 한 곳.
+- **Inbox PARA 그룹**(INBOX-GROUPS-PLAN.md, 시안 https://claude.ai/artifact/NagRGwGtAevetvXLLSrr2p ① · ④): TickTick식 섹션 머리 —
+  34px 줄에 `CaretDown`(접으면 -90°) + 8px 카테고리 점(미분류는 회색 빈 원) + 13px 굵은 이름 + 오른쪽 개수(보조 텍스트). 흰 카드로 감싸지 않는다(B안 안 씀).
+  미분류 맨 위 → P → A → R, 완료 · 보관은 맨 아래. 다른 그룹으로 끌 때 그 그룹 전체를 카테고리 틴트로(미분류는 `bg-black/[0.04]`),
+  개수 자리에 "여기로 옮기기"(카테고리 색 75% + 검정 — 틴트 위 작은 글씨 대비), 펼친 그룹이면 끝에 카테고리 색 2px 선. 다른 그룹 카드는 비키지 않는다.
 - **PARA 목록**: 제목 + 설명, 오른쪽 Project/Area/Resource 세그먼트, 카드 그리드. 카드는 완료 · 보관을 맨 뒤로 보내고, 그 안에서 시작일 순(이른 것 먼저, Area/Resource는 만든 날 순).
   Project 카드는 이름 아래 `9월 1일 – 10월 15일`(올해가 아니면 연도 붙임, 마감일이 없으면 `–` 뒤 공란).
 - **PARA 상세**: `‹ Project` 뒤로가기(파란 텍스트), 카테고리 아이콘 타일 + 이름(클릭해서 수정), 회색 요약 줄
