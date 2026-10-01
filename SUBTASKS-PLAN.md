@@ -55,7 +55,7 @@ alter table public.todo_subtasks enable row level security;
   (`exists (select 1 from public.todos t where t.id = todo_id and t.user_id = auth.uid())`) — 남의 할 일 id로 끼워 넣기 방지.
 - Realtime: `supabase_realtime` publication에 `todo_subtasks` 추가.
 - `position`은 `todos`와 같은 `double precision`(사이에 끼워 넣을 때 중간값 사용).
-- 위치: **`supabase/migrations/20260928_todo_subtasks.sql`** (schema.sql은 더 늘리지 않음 — SQL Editor가 약 249줄까지만 붙여넣기돼서).
+- 위치: **`supabase/migrations/applied/20260928_todo_subtasks.sql`** (schema.sql은 더 늘리지 않음 — SQL Editor가 약 249줄까지만 붙여넣기돼서).
 - ⚠️ **사용자가 해야 할 일:** 배포 전에 Supabase SQL Editor에서 **이 마이그레이션 파일만** 실행.
 
 ### 타입 (`src/lib/types.ts`)
@@ -103,7 +103,7 @@ src/components/subtask/subtask-list.tsx      체크리스트 + "하위 할 일 �
 
 ### 1단계 — DB 스키마
 > ✅ 완료 (2026-09-28) — 로컬 PostgreSQL 16에서 schema.sql → 마이그레이션 2회 연속 실행(재실행 안전) · RLS(남의 할 일에 끼워 넣기 거부, 다른 사용자에게 안 보임) · 빈 내용 거부 · 부모 삭제 시 cascade 확인. **Supabase SQL Editor에서 마이그레이션 파일 실행은 사용자 몫.**
-- `supabase/migrations/20260928_todo_subtasks.sql`에 3번의 테이블 · 인덱스 · RLS 정책 · publication (재실행해도 안전하게 `if not exists` / `drop policy if exists`).
+- `supabase/migrations/applied/20260928_todo_subtasks.sql`에 3번의 테이블 · 인덱스 · RLS 정책 · publication (재실행해도 안전하게 `if not exists` / `drop policy if exists`).
 - 사용자에게 SQL 재실행 요청. **이 단계가 끝나야 2단계 이후를 실제로 확인할 수 있다.**
 
 ### 2단계 — 데이터 계층

@@ -71,7 +71,7 @@
 
 ## 4. 데이터 모델
 
-### 마이그레이션 `supabase/migrations/2026100X_context_balance.sql`
+### 마이그레이션 `supabase/migrations/applied/2026100X_context_balance.sql`
 
 ```sql
 alter table public.contexts add column if not exists color text not null default 'gray'
@@ -149,7 +149,7 @@ blue = `--primary`, green = `--category-area`, purple = `--category-resource`. �
    > `dnd`(`todoId` · `offsetMinutes`), `todo-time-editor.tsx` + 상세 팝업 일정 줄, `todo-actions.ts` `setTime`, `carry-over.ts` `isCarryDue`(끝이 다음 날).
    > `scripts/check-overnight.ts`(조각 · 배치 · 놓기 · 시간 편집 · 넘기기 시점) 통과, tsc · eslint · build 통과. 로그인이 필요해 브라우저 확인은 못 함.
 2. **마이그레이션 + 컨텍스트 색 · 수면 표시** — 관리 팝업 · 고르기 메뉴. `all` API. → 사용자 실행 + 7번 1–3.
-   > ✅ 완료 (2026-10-01) — `supabase/migrations/20261001_context_balance.sql`(`color` check 8색 · `is_sleep` + 사용자당 하나 인덱스 ·
+   > ✅ 완료 (2026-10-01) — `supabase/migrations/applied/20261001_context_balance.sql`(`color` check 8색 · `is_sleep` + 사용자당 하나 인덱스 ·
    > 처음부터 있던 `work`는 파랑). 로컬 PostgreSQL 16에서 schema.sql → 모든 마이그레이션 → 이 파일 2번 실행 · 고른 색 안 덮음 · 잘못된 색 거부 ·
    > 수면 둘 거부(다른 사용자는 따로) · RLS 확인. 코드: `types.ts` `ContextColor` · `Context.color/isSleep`, `lib/context-color.ts`,
    > `globals.css` `--ctx-*`, `contexts.ts` `setContextColor` · `setSleepContext` · 새 컨텍스트는 안 쓰는 첫 색 · 예약 키(`all` · `default`),

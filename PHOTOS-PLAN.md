@@ -29,7 +29,7 @@
 
 ## 3. 구현
 
-- DB: `supabase/migrations/20260929_todo_photos.sql` — `todo_photos`(RLS · Realtime · 할 일당 대표 하나 부분 unique 인덱스).
+- DB: `supabase/migrations/applied/20260929_todo_photos.sql` — `todo_photos`(RLS · Realtime · 할 일당 대표 하나 부분 unique 인덱스).
 - 서버: `POST /api/photos`(업로드: 폴더 찾기/만들기 → 원본 · 썸네일 업로드 → 행 추가),
   `GET /api/photos/[id]`(Drive에서 읽어 내려주기), `DELETE /api/photos/[id]`(휴지통 + 행 삭제).
   Drive 함수는 `lib/google-drive.ts`(`ensurePhotoFolder` · `ensurePhotoThumbFolder` · `getFileBytes`).

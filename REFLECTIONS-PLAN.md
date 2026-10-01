@@ -73,7 +73,7 @@ alter table public.todo_reflections enable row level security;
 - RLS: 4개 정책(`auth.uid() = user_id`). insert/update `with check`에 **붙는 대상도 내 것인지** 확인
   (`todo_id`면 `todos`, `project_id`면 `projects`에서 `user_id = auth.uid()`).
 - Realtime: `supabase_realtime` publication에 추가.
-- 위치: `supabase/migrations/20260928_todo_reflections.sql` (schema.sql은 늘리지 않음 — SUBTASKS-PLAN과 같은 규칙).
+- 위치: `supabase/migrations/applied/20260928_todo_reflections.sql` (schema.sql은 늘리지 않음 — SUBTASKS-PLAN과 같은 규칙).
 - ⚠️ **사용자가 해야 할 일:** 배포 전에 Supabase SQL Editor에서 이 마이그레이션 파일만 실행.
 - Area를 나중에 붙이면 `area_id` 컬럼 추가 + check를 `num_nonnulls(todo_id, project_id, area_id) = 1`로.
 
@@ -167,7 +167,7 @@ export interface Reflection {
 
 ## 7. 확인 체크리스트 (배포 후 실제 화면에서)
 
-- [x] SQL Editor에서 `supabase/migrations/20260928_todo_reflections.sql` 실행
+- [x] SQL Editor에서 `supabase/migrations/applied/20260928_todo_reflections.sql` 실행
 - [ ] 완료된 할 일을 열면 회고 탭, 미완료는 하위 할 일 탭으로 열린다
 - [ ] 종류를 바꿔가며 Enter로 여러 개 추가, 새로고침해도 남아 있다 / 다른 기기에 실시간으로 뜬다
 - [ ] 프로젝트 회고 탭에 할 일 회고 + 직접 쓴 회고가 3열로 모인다, 출처를 누르면 그 할 일 상세
