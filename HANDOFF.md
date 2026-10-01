@@ -618,7 +618,8 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     - **확인**: tsc · eslint · build + `scripts/check-overnight.ts` · `scripts/check-balance.ts`, 마이그레이션은 로컬 PostgreSQL 16(재실행 · 색 안 덮음 ·
       잘못된 색 · 수면 둘 · RLS), `all`은 가짜 Supabase로 요청 확인, 시간 균형 화면은 가짜 데이터 임시 페이지 스크린샷(데스크톱 · 모바일).
       실제 앱(로그인) 확인은 못 함. 머지 전 DESIGN.md에서 2단계 편집 때 지워진 "자정을 넘는 블록" 항목 머리를 복구.
-    - 사용자가 만들 컨텍스트 키: 업무 `work` · 기타 `personal`(기존, 이름만 바꿈) · 건강 `health` · 지적 `knowledge` · 관계 `relationship` · 수면 `sleep`.
+    - 사용자가 만들 컨텍스트 키: 업무 `work` · 기타 `personal`(기존, 이름만 바꿈) · 건강 `health` · 지적 `knowledge` · 관계 `relationship` · 수면 `sleep`
+      + 나중에 추가한 생활 `life`(44번 — 사용자가 만들었다고 확인). 나머지 영역을 다 만들었는지는 확인 안 됨.
 
 44. **(2026-10-01 추가) 색 = 영역(컨텍스트)**: 생활 / `life` 영역을 만든 뒤 "캘린더 색이 그대로네?" → 43번에서 미뤄둔 다음 단계를 바로 진행.
     "내집마련" 같은 프로젝트는 기타가 아니라 **생활** 영역으로(기타는 "아직 분류 안 함" 신호로 남겨 두려고).
@@ -628,7 +629,8 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
       PARA 종류 색을 바꿈. `CATEGORY_COLOR_VAR` · `CATEGORY_TINT_VAR`는 없앰(실수로 다시 쓰지 않게). PARA 카드 칩은 카드가 스스로 읽음.
     - 시간 균형의 펼친 PARA 점도 그 영역 색(한 행 안은 같은 영역).
     - **확인**: tsc · eslint · 4개 스크립트 · build + **가짜 Supabase(auth/rest 목)에 붙인 실제 앱** 스크린샷 — 주 · 월 보기, Inbox 그룹, PARA 목록 · 상세,
-      할 일 팝업, 목표 화면 시간 균형(43번 화면도 처음으로 실제 앱에서 확인). 목 서버는 커밋하지 않음.
+      할 일 팝업, 목표 화면 시간 균형(43번 화면도 처음으로 실제 앱에서 확인). 목 서버는 커밋하지 않음 — 다시 만드는 법은 맨 아래 "가짜 Supabase로 실제 앱 띄우기".
+    - `main` 머지 완료(`6c880bf`). 같은 날 43번 머지(`13eb938`) · HANDOFF 정리 머지(`0bba8db`)도 있음.
 
 ## 지금 구현된 것 (기능 목록)
 
@@ -665,6 +667,7 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
   PARA 상세에서 펼쳐 체크, 드래그로 순서 변경 (27번 결정, SUBTASKS-PLAN.md)
 - 메모 줄 표시(`[ ]` · `[?]`/`[i]` · `[p]` `[c]` `[I]`) — 툴바 · Enter 이어 쓰기 · 보기 모드에서 체크/질문 해결 (36번, MEMO-MARKS-PLAN.md)
 - 검색(⌘K · 레일 · 탭바) — 키워드 검색 + 확인할 것 · 질문 모아보기, 결과를 누르면 할 일 팝업 (37번, SEARCH-PLAN.md) — 현재 전체 목록은 FEATURES.md
+- 색 = 영역(컨텍스트) — 캘린더 블록 · 월 보기 · Inbox 그룹 점 · PARA 카드/상세 · 할 일 팝업 · 목표까지 그 영역 색, PARA 종류는 탭 · 순서 · 아이콘 (44번, DESIGN.md 3번)
 - 시간 균형(목표 화면) — 체크한 블록을 컨텍스트(영역)별로 요일 막대 · 목록 · 수면 · 공백, 지난주 같은 시점 대비. 자정을 넘는 블록 · 팝업 시간 편집 ·
   컨텍스트 색 · 수면으로 세기 · 단축어 `all` (43번, BALANCE-PLAN.md)
 
@@ -835,10 +838,11 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
     - (선택) 검색 도움말의 📝 예시를 `[i]`(알게 된 것) 검색으로 바꾸기, `알게 된 것` 칩. 메모 탭 안 `[i]` 답 색(지금 회색, 시안대로).
 12. **(2026-10-01) 시간 균형 다음 할 일** (43번, BALANCE-PLAN.md):
     - 사용자 설정(BALANCE-PLAN.md 7번): 회사 → 업무 · 개인 → 기타 이름 바꾸기, 건강 `health` · 지적 `knowledge` · 관계 `relationship` · 수면 `sleep` 추가 +
-      수면으로 세기, PARA마다 컨텍스트 고르기, 수면 블록 일주일치, 단축어 꺼질 때 `all`.
-    - 실제 데이터 확인: 목표 화면 숫자, 자정 넘는 수면 블록이 요일별로 나뉘는지, 아침에 다음 날 조각 손잡이 · 팝업으로 기상 시간 고치기가 편한지.
-    - 몇 주 써 본 뒤 후보(BALANCE-PLAN.md 10번): 캘린더 블록 · PARA 색 = 컨텍스트 색, 영역별 주간 목표 시간(`GoalRing`), 반복 할 일(수면 블록),
-      공백 나누기, 다섯 번째 영역 "마음". (캘린더 · PARA 색 = 컨텍스트 색은 44번에서 완료) 다크 모드를 켤 때는 `--category-area` · `--ctx-orange` 다크 값이 차트 밝기 기준을 넘는다(dataviz 검증기) — 그때 다시 보기.
+      수면으로 세기, PARA마다 컨텍스트 고르기(내집마련 → 생활), 수면 블록 일주일치, 단축어 꺼질 때 `all`. 생활 `life`는 추가 완료.
+    - 실제 데이터 확인: 목표 화면 숫자, 자정 넘는 수면 블록이 요일별로 나뉘는지, 아침에 다음 날 조각 손잡이 · 팝업으로 기상 시간 고치기가 편한지,
+      배포 후 캘린더 · Inbox · PARA가 영역 색으로 보이는지(44번 — 내집마련 일정 = 청록).
+    - 몇 주 써 본 뒤 후보(BALANCE-PLAN.md 10번): ~~캘린더 블록 · PARA 색 = 컨텍스트 색~~(44번 완료), 영역별 주간 목표 시간(`GoalRing`), 반복 할 일(수면 블록),
+      공백 나누기, 다섯 번째 영역 "마음". 다크 모드를 켤 때는 `--category-area` · `--ctx-orange` 다크 값이 차트 밝기 기준을 넘는다(dataviz 검증기) — 그때 다시 보기.
 
 ## `.env` / 키 노출 관련 (사용자 질문에 대한 답)
 
@@ -861,3 +865,17 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
 2. `git log --oneline`으로 커밋 히스토리 훑어보면 각 변경의 이유가 커밋 메시지에 꽤 자세히 적혀 있음.
 3. Supabase 설정부터 진행(README 참고)한 뒤, `npm run dev`로 실제 로그인부터 테스트.
 4. 이후 요청은 위 "아직 안 끝난 것" 목록 중 하나부터 진행하면 자연스럽게 이어집니다.
+
+## 가짜 Supabase로 실제 앱 띄우기 (화면 확인용, 커밋 안 함)
+
+이 클라우드 세션엔 Supabase 키가 없어서 로그인이 필요한 화면은 그냥은 못 본다. 매번 다시 만들던 방법을 적어 둔다(44번에서 씀).
+1. **목 서버**(파이썬 `http.server`, 예: 127.0.0.1:54329) — `GET /auth/v1/user` → 사용자 JSON, `GET /rest/v1/<테이블>` → 행 배열 +
+   `content-range: 0-N/N` 헤더(`fetchAllRows`가 개수를 읽음), `Accept`에 `vnd.pgrst.object`가 있으면 행 하나(`user_context` 등), POST · PATCH · DELETE는 그냥 성공.
+   행 모양은 `src/lib/supabase/*.ts`의 `fromRow`(snake_case). 테이블: todos · todo_subtasks · todo_photos · projects · areas · resources · contexts · user_context ·
+   weekly_goals · google_accounts. Realtime 웹소켓은 없어도 화면은 뜬다.
+2. `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54329 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=x npx next dev -p 3125`
+3. Playwright(스크래치 폴더에 `npm i playwright`, 브라우저는 `/opt/pw-browsers/chromium`) — 쿠키 `sb-127-auth-token`(호스트 첫 마디가 `127`) =
+   `"base64-" + base64url(JSON 세션)`, 세션의 `access_token`은 JWT 모양(헤더.페이로드.sig, exp 먼 미래), `expires_at`도 먼 미래.
+   "지금"을 고정하려면 `addInitScript`로 `Date`를 바꾼다(시간 균형 · 현재 시각 선). 폰트 CDN은 막혀 기본 글꼴로 보인다.
+4. 끝나면 `.next/dev`를 지운다 — 지운 임시 페이지의 타입이 남아 tsc가 실패한 적이 있다.
+
