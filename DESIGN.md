@@ -146,7 +146,7 @@ AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBann
   (`lib/context-color.ts` — `contextColor(color)`, 파랑 · 초록 · 보라는 `--primary` · `--category-area` · `--category-resource` 재사용, 나머지는 `--ctx-*`).
   빨강 · 노랑은 없다. **아직은 컨텍스트 고르는 곳(관리 팝업 · 고르기 메뉴 · PARA 카드 칩)과 시간 균형에만** — 캘린더 블록 · PARA 색은 그대로.
   고른 색 = 흰 2px 틈 + 같은 색 2px 링. 수면 컨텍스트 칩 = 남색 틴트 + `Moon`.
-, 시안 https://claude.ai/artifact/DfzCfv9eci2fj5k5F6mXXc ③): 애플 캘린더처럼 두 날에 두 조각 —
+- **자정을 넘는 블록**(BALANCE-PLAN.md 5번, 시안 https://claude.ai/artifact/DfzCfv9eci2fj5k5F6mXXc ③): 애플 캘린더처럼 두 날에 두 조각 —
   이어지는 쪽은 모서리 각지게 + 색 막대도 끝까지. 두 조각 모두 제목 · 시간(`오후 11:45 - 오전 7:15`) · 체크박스, 크기 조절 손잡이는 끝이 있는
   다음 날 조각에만(아침에 기상 시간 고치는 곳). 자정 직전 짧은 조각은 최소 높이 때문에 끝을 24시에 맞춰 올리고 한 줄에 `오후 11:45 ↓`.
   계산은 `lib/calendar-layout.ts`의 `daySegmentsOf` · `layoutDayBlocks`(조각 단위).
