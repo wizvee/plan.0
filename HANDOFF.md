@@ -600,6 +600,26 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
       접힌 그룹 / 미분류로 끌기 · 같은 그룹 순서 변경 · 미분류 접고 새로 적기 → 펼침 · 캘린더 블록은 PARA 유지 · PARA 상세 카드 → 그룹 ·
       팝업에서 PARA 바꿔도 팝업 유지 · 모바일 바텀시트) + 스크린샷.
 
+43. **(2026-10-01 추가) 시간 균형 — 영역별 한 주 시간**: [BALANCE-PLAN.md](./BALANCE-PLAN.md). 사용자가 예전에 쓴 종이 **타임트래커**(퇴사한 이형)에서
+    손 기록은 안 맞았지만 "영적 · 지적 · 사회적 · 신체적 · 기타로 일주일 시간을 보는 것"은 좋았다 → plan.0에 도입. 개념부터 여러 번 논의해서 합의:
+    - **영역 = 컨텍스트**(새 개념 안 만듦). **건강 · 지적 · 업무 · 관계 · 기타(기본)** + **수면**(따로) + **공백**(기록 없는 깨어 있는 시간, 안 나눔).
+      영적은 종교가 아니라 성찰이라는 설명 뒤 "마음 vs 관계" 고민 → 업무에 밀리는 축을 보려고 **관계**. "사회"는 두 글자 맞춰 **업무**로.
+    - **체크한 캘린더 블록만** 센다 — 사용자는 실제 한 시간으로 블록을 고치므로 캘린더 = 기록. 겹친 시간은 한 번만(짧은 블록이 가져감).
+      **수면도 블록으로 직접 입력 · 체크**(아침에 기상 시간 고치며 체크하는 게 루틴, 예외 처리 안 함). 168시간 = 수면 + 영역 + 공백.
+    - **집중 모드는 영역별**, 꺼지면 **전부**(`/api/context` `{"context": "all"}`).
+    - 보여주는 곳 = **목표 화면**(스크린 타임 방식: 요일별 누적 막대 + 영역 목록 + 지난주 같은 시점 대비). 색은 **목표 화면 먼저**,
+      캘린더 블록 · PARA 색을 컨텍스트 색으로 바꾸는 건 다음 단계.
+    - 시안 https://claude.ai/artifact/DfzCfv9eci2fj5k5F6mXXc (① 목표 화면 ② 모바일 ③ 자정 넘는 블록 ④ 팝업 시간 편집 ⑤ 컨텍스트 관리 ⑥ 색) 컨펌 → 4단계 구현 → `main` 머지.
+    - **1단계 자정을 넘는 블록 + 팝업 시간 편집**(데이터 변경 없음): 두 날에 두 조각, 손잡이는 다음 날 조각, 다음 날 조각 드래그 id `<id>:tail` +
+      `offsetMinutes`. 자정을 안 넘던 블록은 끌어서 넘기지 않음(팝업에서만). 팝업 일정 줄 → 시작 · 끝(끝 < 시작 = 다음 날). `isCarryDue`도 다음 날 끝을 바르게.
+    - **2단계 컨텍스트 색 · 수면으로 세기**: 마이그레이션 `20261001_context_balance.sql`(`color` 8색 · `is_sleep` 사용자당 하나) — **실행 완료**.
+      관리 팝업 색 점 · 색 8개 · 수면으로 세기, 새 컨텍스트는 안 쓰는 첫 색, `all` · `default`는 예약 키.
+    - **3단계 계산** `lib/balance.ts`(순수 함수) + `useBalance`. **4단계 화면** `goals/balance-section.tsx`. 수면을 한 주만 기록했으면 공백은 비교 안 함.
+    - **확인**: tsc · eslint · build + `scripts/check-overnight.ts` · `scripts/check-balance.ts`, 마이그레이션은 로컬 PostgreSQL 16(재실행 · 색 안 덮음 ·
+      잘못된 색 · 수면 둘 · RLS), `all`은 가짜 Supabase로 요청 확인, 시간 균형 화면은 가짜 데이터 임시 페이지 스크린샷(데스크톱 · 모바일).
+      실제 앱(로그인) 확인은 못 함. 머지 전 DESIGN.md에서 2단계 편집 때 지워진 "자정을 넘는 블록" 항목 머리를 복구.
+    - 사용자가 만들 컨텍스트 키: 업무 `work` · 기타 `personal`(기존, 이름만 바꿈) · 건강 `health` · 지적 `knowledge` · 관계 `relationship` · 수면 `sleep`.
+
 ## 지금 구현된 것 (기능 목록)
 
 - Todo List(전역 보관함, 사이드 패널) + Mon~Sun **시간 단위 캘린더 그리드** (0~24시, 스크롤 가능)
@@ -635,6 +655,8 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
   PARA 상세에서 펼쳐 체크, 드래그로 순서 변경 (27번 결정, SUBTASKS-PLAN.md)
 - 메모 줄 표시(`[ ]` · `[?]`/`[i]` · `[p]` `[c]` `[I]`) — 툴바 · Enter 이어 쓰기 · 보기 모드에서 체크/질문 해결 (36번, MEMO-MARKS-PLAN.md)
 - 검색(⌘K · 레일 · 탭바) — 키워드 검색 + 확인할 것 · 질문 모아보기, 결과를 누르면 할 일 팝업 (37번, SEARCH-PLAN.md) — 현재 전체 목록은 FEATURES.md
+- 시간 균형(목표 화면) — 체크한 블록을 컨텍스트(영역)별로 요일 막대 · 목록 · 수면 · 공백, 지난주 같은 시점 대비. 자정을 넘는 블록 · 팝업 시간 편집 ·
+  컨텍스트 색 · 수면으로 세기 · 단축어 `all` (43번, BALANCE-PLAN.md)
 
 ## 파일 맵
 
@@ -684,7 +706,11 @@ src/lib/shell-ui.tsx            셸 UI 상태(Inbox 열림 · localStorage 기�
 src/lib/inbox-groups.ts         Inbox PARA 그룹 — 묶기 · 그룹 순서 · 접힘 상태(localStorage) (42번, INBOX-GROUPS-PLAN.md)
 src/lib/use-dismiss.ts          팝오버 바깥 클릭 / Esc로 닫기
 src/lib/week.ts                 주차 계산(월요일 시작, ISO 주차, 오늘 여부 등)
-src/lib/time.ts                 시간 캘린더 계산(시간→px 변환, 스냅, 시간 라벨 포맷, BLOCK_GAP 등)
+src/lib/time.ts                 시간 캘린더 계산(시간→px 변환, 스냅, 시간 라벨 포맷, BLOCK_GAP, 끝 · 자정 넘김 · 길이 · 시간 칸 값 등)
+src/lib/calendar-layout.ts      주 보기 배치 — 겹침(layoutDayBlocks) · 자정 넘는 블록 조각(daySegmentsOf) · 놓았을 때 일정(droppedSchedule) (33 · 43번)
+src/lib/balance.ts              시간 균형 계산 순수 함수 — 체크한 블록 · 겹침 · 수면 · 공백 · 요일 · PARA별 · 지난주 같은 시점 (43번)
+src/lib/app-data/use-balance.ts useBalance(weekStart) — 할 일 · 컨텍스트 · 지금 시각으로 매번 계산 (43번)
+src/lib/context-color.ts        컨텍스트 색 8개 이름 → CSS 변수, 새 컨텍스트에 줄 색 (43번)
 src/lib/use-today.ts            "오늘 날짜"를 client-only로 계산하는 훅 (SSR 시간대 버그 방지)
 src/lib/utils.ts                cn() 헬퍼 (shadcn 표준)
 src/lib/google-drive.ts         Google Drive API 서버 전용 래퍼 — 컨테이너별 폴더 조회/생성,
@@ -727,6 +753,10 @@ src/components/shell/search-panel.tsx             검색 패널 — ⌘K · 칩 
 src/components/search/search-result.tsx           결과 카드(할 일 · PARA) · 이모지 줄 · 줄 표시 줄(체크 · 해결) · HighlightText (37번)
 src/components/todo-detail-by-id.tsx              id로 할 일 상세 팝업 열기(initialTab) — 검색 · 프로젝트 회고 탭이 같이 씀 (37번)
 scripts/check-search.ts                           검색 기준 케이스 확인 스크립트 (`npx tsx scripts/check-search.ts`)
+scripts/check-overnight.ts                        자정 넘는 블록 · 시간 편집 · 넘기기 시점 확인 (43번)
+scripts/check-balance.ts                          시간 균형 계산 확인 (43번)
+src/components/goals/balance-section.tsx          목표 화면 시간 균형 — BalanceSection(훅) + BalanceView(그리기) (43번)
+src/components/todo-time-editor.tsx               상세 팝업 시작 · 끝 시간 편집 (43번)
 src/components/add-todo-form.tsx  할 일/노트 추가 입력 행 (토글로 종류 선택)
 src/components/para-board.tsx   PARA 목록 화면 본문 — 세그먼트 컨트롤 + 컨테이너 카드 그리드
 src/components/para/container-card.tsx        Project/Area/Resource 카드 (droppable, 클릭 시 상세로 이동)
@@ -769,7 +799,7 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
    - `20260929_weekly_goals.sql` — 주간 목표 테이블 + `todos.goal_id` (GOALS-PLAN.md) 실행 완료
    - `20260929_todo_photos.sql` — 할 일 사진 테이블 (PHOTOS-PLAN.md) 실행 완료
    - `20260930_drop_todo_reflections.sql` — 회고 테이블 삭제 (38번) 실행 완료
-   - `20261001_context_balance.sql` — 컨텍스트 색 · 수면으로 세기 (BALANCE-PLAN.md 2단계) **실행 필요** (`20260928_webapp_push.sql` 다음)
+   - `20261001_context_balance.sql` — 컨텍스트 색 · 수면으로 세기 (BALANCE-PLAN.md 2단계, 43번) 실행 완료
 7. `/api/clip` 기능을 실제로 쓰려면 `SUPABASE_SECRET_KEY`/`CLIP_API_SECRET`/`CLIP_USER_ID` 세
    환경변수를 로컬(`.env.local`)과 Vercel 양쪽에 아직 등록 안 함 — README의 해당 섹션 참고해서
    설정하고 애플 단축어까지 만들어야 실제로 동작함. 코드/스키마는 준비 완료 상태.
@@ -792,6 +822,12 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
     - 실제 데이터에서 SEARCH-PLAN.md 기준 케이스 3개가 1등인지, 모바일에서 입력이 버벅이지 않는지 확인(SEARCH-PLAN.md 6번).
     - ~~(선택) 메모 탭에 열린 `[?]` · `[ ]` 개수~~ — **완료(40번)**. 주 보기 블록에 표시하는 건 아직(시안 먼저).
     - (선택) 검색 도움말의 📝 예시를 `[i]`(알게 된 것) 검색으로 바꾸기, `알게 된 것` 칩. 메모 탭 안 `[i]` 답 색(지금 회색, 시안대로).
+12. **(2026-10-01) 시간 균형 다음 할 일** (43번, BALANCE-PLAN.md):
+    - 사용자 설정(BALANCE-PLAN.md 7번): 회사 → 업무 · 개인 → 기타 이름 바꾸기, 건강 `health` · 지적 `knowledge` · 관계 `relationship` · 수면 `sleep` 추가 +
+      수면으로 세기, PARA마다 컨텍스트 고르기, 수면 블록 일주일치, 단축어 꺼질 때 `all`.
+    - 실제 데이터 확인: 목표 화면 숫자, 자정 넘는 수면 블록이 요일별로 나뉘는지, 아침에 다음 날 조각 손잡이 · 팝업으로 기상 시간 고치기가 편한지.
+    - 몇 주 써 본 뒤 후보(BALANCE-PLAN.md 10번): 캘린더 블록 · PARA 색 = 컨텍스트 색, 영역별 주간 목표 시간(`GoalRing`), 반복 할 일(수면 블록),
+      공백 나누기, 다섯 번째 영역 "마음". 다크 모드를 켤 때는 `--category-area` · `--ctx-orange` 다크 값이 차트 밝기 기준을 넘는다(dataviz 검증기) — 그때 다시 보기.
 
 ## `.env` / 키 노출 관련 (사용자 질문에 대한 답)
 
