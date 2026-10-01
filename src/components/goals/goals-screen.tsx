@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { addDays } from "date-fns";
 import { CaretDown, CaretLeft, CaretRight, Info, Plus } from "@/components/icons";
 
+import { BalanceSection } from "@/components/goals/balance-section";
 import { GoalCard } from "@/components/goals/goal-card";
 import { ParaMenu } from "@/components/para/para-menu";
 import { InlineText } from "@/components/inline-text";
@@ -133,6 +134,9 @@ export function GoalsScreen() {
           </p>
         </>
       )}
+
+      {/* 시간 균형 — 목표가 없는 주에도 보인다(지난 주를 돌아볼 때) (BALANCE-PLAN.md) */}
+      {loading ? null : <BalanceSection weekStart={weekKey} />}
     </div>
   );
 }
