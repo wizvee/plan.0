@@ -1,6 +1,6 @@
 # 현재 기능 목록 (FEATURES)
 
-2026-09-30 기준(애플 스타일 리디자인 + 하위 할 일 + 회고 + 메모 줄 표시 + 검색 반영), 코드에 실제로 구현돼 있는 사용자 기능을 화면별로 정리한 문서입니다.
+2026-10-01 기준(애플 스타일 리디자인 + 하위 할 일 + 회고 + 메모 줄 표시 + 검색 + Inbox PARA 그룹 반영), 코드에 실제로 구현돼 있는 사용자 기능을 화면별로 정리한 문서입니다.
 새 UI 시안을 그리거나 리디자인할 때 **빠뜨린 기능이 없는지 대조하는 체크리스트**로 씁니다.
 개념/기획은 [PLANNING.md](./PLANNING.md), 결정 이력은 [HANDOFF.md](./HANDOFF.md),
 시각 규칙은 [DESIGN.md](./DESIGN.md) 참고.
@@ -39,16 +39,18 @@
 | I3 | **할일/노트 전환 토글** (추가 입력창 오른쪽) | `add-todo-form.tsx` |
 | I4 | 항목 종류별 표시 — 할 일은 체크박스, 노트는 노트 아이콘(체크박스 없음) | `todo-card.tsx` |
 | I5 | 완료 체크 | `todo-card.tsx` |
-| I6 | 드래그 핸들 · 보관함 안 순서 변경 | `todo-card.tsx`, dnd-kit |
+| I6 | 드래그 핸들 · 보관함 안 순서 변경(같은 PARA 그룹 안) | `todo-card.tsx`, dnd-kit |
 | I7 | 보관함 → 캘린더 드래그로 날짜·시간 배치 (15분 스냅, 기본 1시간) | `week-board.tsx` |
 | I8 | 캘린더 → 보관함 드래그로 배치 해제 (Inbox를 연 상태에서, 드래그 중 강조) | `shell/inbox-panel.tsx`, `lib/dnd/handle-drop.ts` |
 | I9 | 보관함 → PARA 카드/상세 화면 드래그로 매핑 | `para-board.tsx`, `container-detail-screen.tsx` |
 | I10 | 카테고리 색 점 (PARA 배지가 없을 때만) | `todo-card.tsx` |
-| I11 | PARA 배지 (PARA 화면 안 보관함에서 소속 이름) | `todo-card.tsx` `badge` |
+| I11 | PARA 배지 (소속 이름) — Inbox는 그룹 머리가 대신하므로 안 씀(I16) | `todo-card.tsx` `badge` |
 | I12 | URL 칩 — 파비콘 + 도메인, 새 탭으로 열기 | `url-chip.tsx` |
 | I13 | 예약 날짜 표시, 지난 날짜면 빨간색 (PARA Tasks 탭 등) | `todo-card.tsx` |
 | I14 | 항목 텍스트 클릭 → 할 일 상세 팝업 (6번) | `todo-card.tsx` |
 | I15 | **하위 할 일 진행률** — 원형 링 + `2/4` (하위가 있는 할 일만, 노트 제외) | `todo-card.tsx`, `subtask/subtask-progress.tsx` |
+| I16 | **PARA별 그룹** — 미분류 → Project → Area → Resource(완료 · 보관은 맨 아래), 머리 = `⌄` + 카테고리 점 + 이름 + 개수, 눌러서 접기(이 브라우저에 기억). 새로 적으면 미분류를 펼침 | `shell/inbox-panel.tsx`, `lib/inbox-groups.ts` |
+| I17 | **다른 그룹으로 끌어 놓기** — Inbox · PARA 상세 카드를 그룹 머리나 그 그룹 카드 위에 놓으면 그 PARA로 매핑 + 맨 끝(미분류 = 매핑 해제). 놓을 그룹 틴트 + "여기로 옮기기" + 끝 선. 캘린더 블록은 PARA를 안 바꿈 | `lib/dnd/handle-drop.ts`, `shell/inbox-panel.tsx` |
 
 ## 4. 캘린더 — 주 보기
 

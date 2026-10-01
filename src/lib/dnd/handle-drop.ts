@@ -4,7 +4,8 @@ import type { DragEndEvent } from "@dnd-kit/core";
 import { nextPosition, type useTodos } from "@/lib/app-data/use-todos";
 import { DEFAULT_DURATION_MINUTES, HOUR_HEIGHT, MINUTES_PER_DAY, clampMinutes, snapMinutes } from "@/lib/time";
 import type { ActiveData, DraggedTodoData, OverData } from "@/lib/dnd/drop-targets";
-import type { Subtask } from "@/lib/types";
+import { inboxGroupKey, mappingOfGroup } from "@/lib/inbox-groups";
+import type { Subtask, Todo } from "@/lib/types";
 
 type DropContext = Pick<
   ReturnType<typeof useTodos>,
@@ -86,7 +87,22 @@ export function handleDrop(event: DragEndEvent, ctx: DropContext) {
     return;
   }
 
-  const droppedOnInbox = target.type === "inbox" || (target.type === "todo" && target.source === "inbox");
+  // Inbox의 PARA 그룹(머리 또는 그 그룹의 카드) → 그 PARA로 매핑하고 Inbox 맨 끝(= 그 그룹 맨 끝)으로
+  // (INBOX-GROUPS-PLAN.md). 캘린더 블록은 제외 — 날짜만 빼고 PARA는 그대로 둔다(아래).
+  if (source !== "calendar") {
+    const groupMapping = inboxGroupMappingOf(target, String(over.id), ctx.todos);
+    if (groupMapping) {
+      if (inboxGroupKey(groupMapping) !== inboxGroupKey(todo)) {
+        void ctx.updateTodo(todo.id, { ...groupMapping, position: nextPosition(ctx.backlogItems) });
+        return;
+      }
+      // PARA 상세 카드를 이미 속한 그룹에 놓음 → 그대로. Inbox 카드는 아래에서 순서 변경
+      if (source === "container") return;
+    }
+  }
+
+  const droppedOnInbox =
+    target.type === "inbox" || target.type === "inbox-group" || (target.type === "todo" && target.source === "inbox");
   if (!droppedOnInbox) return;
 
   // 캘린더 블록 → Inbox: 날짜 배치 해제, Inbox 맨 끝으로
@@ -100,7 +116,7 @@ export function handleDrop(event: DragEndEvent, ctx: DropContext) {
     return;
   }
 
-  // PARA 상세 목록의 카드 → Inbox: 매핑 해제
+  // PARA 상세 목록의 카드 → Inbox 빈 곳: 매핑 해제(미분류로)
   if (source === "container") {
     void ctx.updateTodo(todo.id, { projectId: null, areaId: null, resourceId: null });
     return;
@@ -117,4 +133,14 @@ export function handleDrop(event: DragEndEvent, ctx: DropContext) {
   const positionById = new Map(ordered.map((t, index) => [t.id, index]));
   ctx.setTodos((prev) => prev.map((t) => (positionById.has(t.id) ? { ...t, position: positionById.get(t.id)! } : t)));
   void ctx.persistPositions(ordered.map((t) => ({ id: t.id, position: positionById.get(t.id)! })));
+}
+
+/** 드롭 대상이 Inbox의 어느 PARA 그룹인지 — 그 그룹의 매핑. Inbox 그룹이 아니면 null. */
+function inboxGroupMappingOf(target: OverData, overId: string, todos: Todo[]) {
+  if (target.type === "inbox-group") return mappingOfGroup(target.kind, target.id);
+  if (target.type === "todo" && target.source === "inbox") {
+    const overTodo = todos.find((t) => t.id === overId);
+    if (overTodo) return { projectId: overTodo.projectId, areaId: overTodo.areaId, resourceId: overTodo.resourceId };
+  }
+  return null;
 }
