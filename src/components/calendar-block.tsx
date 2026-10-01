@@ -16,14 +16,17 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { TodoDetailModal } from "@/components/todo-detail-modal";
 import { InlineText } from "@/components/inline-text";
 import { cn } from "@/lib/utils";
-import { blockHeightPx } from "@/lib/calendar-layout";
+import { blockHeightPx, segmentHeightPx, type DaySegment } from "@/lib/calendar-layout";
 import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR, getParaCategory } from "@/lib/category";
 import {
   DEFAULT_DURATION_MINUTES,
   DEFAULT_START_MINUTES,
   HOUR_HEIGHT,
+  MAX_DURATION_MINUTES,
+  MINUTES_PER_DAY,
   MIN_DURATION_MINUTES,
   clampMinutes,
+  formatClock,
   minutesRangeLabel,
   minutesToPx,
   snapMinutes,
@@ -53,8 +56,10 @@ const PHOTO_THUMB_PX = 38;
 
 interface CalendarBlockProps {
   todo: Todo;
+  /** 이 칸에 그리는 조각 — 자정을 넘는 블록은 날마다 하나씩 (`daySegmentsOf`). 없으면 블록 전체 */
+  segment?: DaySegment;
   /** 겹침 배치 (`layoutDayBlocks`) — 없으면 칸 전체 너비 */
-  placement?: { left: string; width: string; nested: boolean };
+  placement?: { top: number; left: string; width: string; nested: boolean };
   projects?: Project[];
   areas?: Area[];
   resources?: Resource[];
@@ -66,10 +71,13 @@ interface CalendarBlockProps {
   onAssignPara?: (id: string, patch: { projectId: string | null; areaId: string | null; resourceId: string | null }) => void;
   onResize?: (id: string, durationMinutes: number) => void;
   overlay?: boolean;
+  /** 끌고 있는 조각이 블록 시작에서 몇 분 뒤인지(다음 날 조각) — 드래그 미리보기는 그 조각부터 끝까지만 그린다 */
+  overlayOffsetMinutes?: number;
 }
 
 export function CalendarBlock({
   todo,
+  segment,
   placement,
   projects,
   areas,
@@ -82,6 +90,7 @@ export function CalendarBlock({
   onAssignPara,
   onResize,
   overlay,
+  overlayOffsetMinutes = 0,
 }: CalendarBlockProps) {
   const [detailOpen, setDetailOpen] = useState(false);
   const [previewDuration, setPreviewDuration] = useState<number | null>(null);
@@ -98,13 +107,25 @@ export function CalendarBlock({
   const startMinutes = todo.startMinutes ?? DEFAULT_START_MINUTES;
   const baseDuration = todo.durationMinutes ?? DEFAULT_DURATION_MINUTES;
   const duration = previewDuration ?? baseDuration;
+  // 이 칸의 조각 — 크기 조절 중이면 끝이 있는 조각만 같이 늘고 준다
+  const continuesBefore = segment?.continuesBefore ?? false;
+  const continuesAfter = segment?.continuesAfter ?? false;
+  const segmentMinutes = segment
+    ? segment.end - segment.start + (continuesAfter ? 0 : duration - baseDuration)
+    : duration;
 
   // 완료된 할 일은 끌어서 옮길 수 없다 — 끝난 일정이 실수로 다른 날로 밀리지 않게. 완료를 풀면 다시 옮길 수 있다.
   const locked = todo.completed;
+  // 자정을 넘는 블록의 다음 날 조각은 드래그 id가 달라야 한다(같은 할 일이 두 칸에 있음). 놓으면 블록 전체가 움직인다.
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: todo.id,
+    id: continuesBefore ? `${todo.id}:tail` : todo.id,
     disabled: overlay || locked,
-    data: { type: "todo", source: "calendar" } satisfies DraggedTodoData,
+    data: {
+      type: "todo",
+      source: "calendar",
+      todoId: todo.id,
+      offsetMinutes: continuesBefore ? MINUTES_PER_DAY - startMinutes : 0,
+    } satisfies DraggedTodoData,
   });
 
   function handleBlockPointerDown(e: ReactPointerEvent<HTMLDivElement>) {
@@ -138,11 +159,11 @@ export function CalendarBlock({
   function handleResizePointerMove(e: ReactPointerEvent<HTMLDivElement>) {
     if (!resizeState.current) return;
     const deltaMinutes = ((e.clientY - resizeState.current.startY) / HOUR_HEIGHT) * 60;
-    const next = clampMinutes(
-      snapMinutes(resizeState.current.startDuration + deltaMinutes),
-      MIN_DURATION_MINUTES,
-      1440 - startMinutes
-    );
+    // 그날 안에서 끝나는 블록은 24시까지, 다음 날 조각은 다음 날 안에서(블록 길이 24시간까지) — 조각이 사라질 만큼 줄이지 않는다
+    const [min, max] = continuesBefore
+      ? [MINUTES_PER_DAY - startMinutes + MIN_DURATION_MINUTES, MAX_DURATION_MINUTES]
+      : [MIN_DURATION_MINUTES, MINUTES_PER_DAY - startMinutes];
+    const next = clampMinutes(snapMinutes(resizeState.current.startDuration + deltaMinutes), min, max);
     setPreviewDuration(next);
   }
 
@@ -153,7 +174,9 @@ export function CalendarBlock({
     setPreviewDuration(null);
   }
 
-  const renderedHeight = blockHeightPx(duration);
+  const renderedHeight = overlay
+    ? blockHeightPx(duration - overlayOffsetMinutes)
+    : segmentHeightPx(segmentMinutes, continuesAfter);
   const compact = renderedHeight <= 34;
 
   const category = getParaCategory(todo);
@@ -197,7 +220,7 @@ export function CalendarBlock({
 
   const style: CSSProperties = {
     position: "absolute",
-    top: minutesToPx(startMinutes),
+    top: placement?.top ?? minutesToPx(segment?.start ?? startMinutes),
     height: renderedHeight,
     left: placement?.left ?? 3,
     width: placement?.width ?? "calc(100% - 7px)",
@@ -217,6 +240,9 @@ export function CalendarBlock({
         onKeyDown={handleBlockKeyDown}
         className={cn(
           "absolute z-[1] flex cursor-pointer select-none flex-col justify-start overflow-hidden rounded-[4px] py-[5px] pl-[13px] pr-[7px] hover:brightness-[0.98]",
+          // 자정을 넘는 블록 — 이어지는 쪽 모서리는 각지게(애플 캘린더 방식)
+          continuesAfter && "rounded-b-none",
+          continuesBefore && "rounded-t-none",
           // 끌 수 있을 때만 touch-none — 잠긴 블록 위에서는 모바일에서 손가락으로 캘린더를 스크롤할 수 있게
           !locked && "touch-none",
           // 안쪽에 얹힌 블록은 흰 테두리 + 틴트를 살짝 어둡게 — 같은 색 블록 위에서도 구분되게
@@ -248,7 +274,7 @@ export function CalendarBlock({
             className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.6)_0%,rgba(0,0,0,0.22)_60%,rgba(0,0,0,0.05)_100%)]"
           />
         ) : null}
-        <CategoryBar color={colorVar} />
+        <CategoryBar color={colorVar} continuesBefore={continuesBefore} continuesAfter={continuesAfter} />
         <div className={cn("relative flex min-w-0 items-center gap-1.5", compact && "flex-1")} style={thumbPad}>
           <span
             onPointerDown={(e) => e.stopPropagation()}
@@ -285,6 +311,10 @@ export function CalendarBlock({
             >
               {subtaskDone}/{subtasks.length}
             </span>
+          ) : null}
+          {compact && continuesAfter ? (
+            // 자정 직전 짧은 조각 — 시간 줄이 없으니 시작 시각과 이어짐 표시를 제목 옆에
+            <span className="shrink-0 text-[10.5px] text-foreground/60">{formatClock(startMinutes)} ↓</span>
           ) : null}
         </div>
         {!compact ? (
@@ -350,13 +380,16 @@ export function CalendarBlock({
             />
           </div>
         ) : null}
-        <div
-          onPointerDown={handleResizePointerDown}
-          onPointerMove={handleResizePointerMove}
-          onPointerUp={handleResizePointerUp}
-          onClick={(e) => e.stopPropagation()}
-          className="absolute inset-x-0 bottom-0 h-2 cursor-ns-resize touch-none"
-        />
+        {continuesAfter ? null : (
+          // 크기 조절은 끝이 있는 조각에서만 — 자정을 넘는 블록은 다음 날 조각 아래(아침에 기상 시간 고치는 곳)
+          <div
+            onPointerDown={handleResizePointerDown}
+            onPointerMove={handleResizePointerMove}
+            onPointerUp={handleResizePointerUp}
+            onClick={(e) => e.stopPropagation()}
+            className="absolute inset-x-0 bottom-0 h-2 cursor-ns-resize touch-none"
+          />
+        )}
       </div>
       {detailOpen ? (
         <TodoDetailModal
@@ -380,11 +413,24 @@ export function CalendarBlock({
  * 블록 왼쪽 카테고리 선 — 가장자리에 붙이지 않고 위 · 아래 · 왼쪽에서 3px 띄운 3px 막대(끝은 살짝 둥글게).
  * 애플 캘린더 방식이라 블록 모서리를 따라 휘지 않는다.
  */
-function CategoryBar({ color }: { color: string }) {
+function CategoryBar({
+  color,
+  continuesBefore = false,
+  continuesAfter = false,
+}: {
+  color: string;
+  /** 자정을 넘는 블록 — 이어지는 쪽 끝은 띄우지 않고 블록 끝까지 */
+  continuesBefore?: boolean;
+  continuesAfter?: boolean;
+}) {
   return (
     <span
       aria-hidden="true"
-      className="pointer-events-none absolute bottom-[3px] left-[3px] top-[3px] w-[3px] rounded-[2px]"
+      className={cn(
+        "pointer-events-none absolute bottom-[3px] left-[3px] top-[3px] w-[3px] rounded-[2px]",
+        continuesBefore && "top-0 rounded-t-none",
+        continuesAfter && "bottom-0 rounded-b-none"
+      )}
       style={{ backgroundColor: color }}
     />
   );

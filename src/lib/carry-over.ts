@@ -1,7 +1,7 @@
-import { addDays, format, isWeekend, parseISO } from "date-fns";
+import { addDays, differenceInCalendarDays, format, isWeekend, parseISO } from "date-fns";
 import { ko } from "date-fns/locale";
 
-import { DEFAULT_DURATION_MINUTES, DEFAULT_START_MINUTES } from "@/lib/time";
+import { DEFAULT_DURATION_MINUTES, DEFAULT_START_MINUTES, MINUTES_PER_DAY, endMinutesOf } from "@/lib/time";
 import type { Todo } from "@/lib/types";
 
 /**
@@ -21,10 +21,10 @@ export function nextWeekday(dateKey: string): string {
  */
 export function isCarryDue(todo: Todo, now: Date): boolean {
   if (!todo.scheduledDate) return false;
-  const today = format(now, "yyyy-MM-dd");
-  if (todo.scheduledDate !== today) return todo.scheduledDate < today;
-  const end = (todo.startMinutes ?? DEFAULT_START_MINUTES) + (todo.durationMinutes ?? DEFAULT_DURATION_MINUTES);
-  return now.getHours() * 60 + now.getMinutes() >= end;
+  // 끝나는 시각은 다음 날일 수 있다(자정을 넘는 블록) — 시작한 날 0시 기준 분으로 비교
+  const end = endMinutesOf(todo.startMinutes ?? DEFAULT_START_MINUTES, todo.durationMinutes ?? DEFAULT_DURATION_MINUTES);
+  const elapsed = differenceInCalendarDays(now, parseISO(todo.scheduledDate)) * MINUTES_PER_DAY;
+  return elapsed + now.getHours() * 60 + now.getMinutes() >= end;
 }
 
 /** "9월 29일 (화)" */

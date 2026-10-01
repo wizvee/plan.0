@@ -2,7 +2,8 @@ import { arrayMove } from "@dnd-kit/sortable";
 import type { DragEndEvent } from "@dnd-kit/core";
 
 import { nextPosition, type useTodos } from "@/lib/app-data/use-todos";
-import { DEFAULT_DURATION_MINUTES, HOUR_HEIGHT, MINUTES_PER_DAY, clampMinutes, snapMinutes } from "@/lib/time";
+import { HOUR_HEIGHT } from "@/lib/time";
+import { droppedSchedule } from "@/lib/calendar-layout";
 import type { ActiveData, DraggedTodoData, OverData } from "@/lib/dnd/drop-targets";
 import { inboxGroupKey, mappingOfGroup } from "@/lib/inbox-groups";
 import type { Subtask, Todo } from "@/lib/types";
@@ -41,21 +42,20 @@ export function handleDrop(event: DragEndEvent, ctx: DropContext) {
     return;
   }
 
-  const todo = ctx.todos.find((t) => t.id === String(active.id));
+  const dragged = active.data.current as DraggedTodoData | undefined;
+  const todo = ctx.todos.find((t) => t.id === (dragged?.todoId ?? String(active.id)));
   if (!todo) return;
 
-  const source = (active.data.current as DraggedTodoData | undefined)?.source ?? "inbox";
+  const source = dragged?.source ?? "inbox";
   const target = over.data.current as OverData | undefined;
   if (!target) return;
 
   // 캘린더 하루 칸 → 그 날짜 · 놓은 위치의 시간(15분 스냅)으로 배치
   if (target.type === "calendar-day") {
-    const duration = todo.durationMinutes ?? DEFAULT_DURATION_MINUTES;
     const gridTop = over.rect.top;
     const itemTop = active.rect.current.translated?.top ?? gridTop;
-    const rawMinutes = ((itemTop - gridTop) / HOUR_HEIGHT) * 60;
-    const startMinutes = clampMinutes(snapMinutes(rawMinutes), 0, MINUTES_PER_DAY - duration);
-    void ctx.updateTodo(todo.id, { scheduledDate: target.date, startMinutes, durationMinutes: duration });
+    const droppedMinutes = ((itemTop - gridTop) / HOUR_HEIGHT) * 60;
+    void ctx.updateTodo(todo.id, droppedSchedule(todo, target.date, droppedMinutes, dragged?.offsetMinutes ?? 0));
     return;
   }
 

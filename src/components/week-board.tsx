@@ -17,7 +17,8 @@ import {
 } from "@/lib/week";
 import { cn } from "@/lib/utils";
 import { useTodayKey } from "@/lib/use-today";
-import { DAY_KEYS, DAY_LABELS_KO, type DayKey, type Todo } from "@/lib/types";
+import { DAY_KEYS, DAY_LABELS_KO, type DayKey } from "@/lib/types";
+import { daySegmentsOf, type DaySegment } from "@/lib/calendar-layout";
 import { WeekCalendar } from "@/components/week-calendar";
 import { MonthCalendar } from "@/components/month-calendar";
 import { CalendarHeader } from "@/components/calendar-header";
@@ -61,15 +62,18 @@ export function WeekBoard() {
     router.replace(`/?week=${toDateKey(mondayOf(date))}`, { scroll: false });
   }
 
-  const scheduledByDay = useMemo(() => {
-    const grouped: Record<DayKey, Todo[]> = { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] };
-    for (const todo of todos) {
-      if (todo.scheduledDate !== null && todo.scheduledDate >= weekKey && todo.scheduledDate <= weekEndKey) {
-        grouped[dayKeyOf(new Date(`${todo.scheduledDate}T00:00:00`))].push(todo);
-      }
-    }
+  // 요일 칸마다 그릴 조각 — 전날 밤에 시작해 자정을 넘어온 블록도 포함(월요일 칸은 지난 일요일 것까지)
+  const segmentsByDay = useMemo(() => {
+    const previousKey = toDateKey(addDays(monday, -1));
+    const inRange = todos.filter(
+      (t) => t.scheduledDate !== null && t.scheduledDate >= previousKey && t.scheduledDate <= weekEndKey
+    );
+    const grouped = {} as Record<DayKey, DaySegment[]>;
+    DAY_KEYS.forEach((day, index) => {
+      grouped[day] = daySegmentsOf(inRange, toDateKey(addDays(monday, index)), toDateKey(addDays(monday, index - 1)));
+    });
     return grouped;
-  }, [todos, weekKey, weekEndKey]);
+  }, [todos, monday, weekEndKey]);
 
   const replace = (url: string) => router.replace(url, { scroll: false });
   const weekUrl = (date: Date) => `/?week=${toDateKey(mondayOf(date))}`;
@@ -143,7 +147,7 @@ export function WeekBoard() {
           <WeekCalendar
             monday={monday}
             mobileDay={mobileDay}
-            itemsByDay={scheduledByDay}
+            itemsByDay={segmentsByDay}
             projects={projects}
             areas={areas}
             resources={resources}
