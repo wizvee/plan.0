@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { Check, QuestionMark } from "@/components/icons";
 
 import { cn } from "@/lib/utils";
-import { InlineText } from "@/components/inline-text";
+import { LinkedText, type MemoLinks } from "@/components/memo/memo-link";
 import { MARK_META } from "@/components/memo/mark-meta";
 import {
   parseMemoLines,
@@ -81,16 +81,19 @@ export function MarkIcon({ state, className }: { state: MarkState; className?: s
  * 메모 보기 모드 — 줄 앞 표시를 아이콘으로 그리고, 누르면 상태가 바뀐다 (MEMO-MARKS-PLAN.md 4번).
  * 확인 체크박스 `[ ]` ↔ `[x]`, 질문 `?` → 답 입력칸(Enter/포커스 해제 시 `[i]` + `→ 답`), `i` → `[?]`로 되돌리기.
  * 회고 3종은 아이콘만. 줄(아이콘 밖)을 누르면 `onEdit(줄 번호)`로 원문 편집에 들어간다.
+ * `links`가 있으면 `[[이름(10/1)]]`을 할 일 링크로 그린다(LINKS-PLAN.md).
  */
 export function MemoView({
   text,
   onChange,
   onEdit,
+  links,
   className,
 }: {
   text: string;
   onChange: (next: string) => void;
   onEdit: (lineIndex: number | null) => void;
+  links?: MemoLinks;
   className?: string;
 }) {
   const [resolving, setResolving] = useState<number | null>(null);
@@ -127,6 +130,7 @@ export function MemoView({
           <MemoLineRow
             key={index}
             line={line}
+            links={links}
             resolving={resolving === index}
             answer={answer}
             onAnswerChange={setAnswer}
@@ -152,6 +156,7 @@ export function MemoView({
 
 function MemoLineRow({
   line,
+  links,
   resolving,
   answer,
   onAnswerChange,
@@ -163,6 +168,7 @@ function MemoLineRow({
   onEdit,
 }: {
   line: MemoLine;
+  links?: MemoLinks;
   resolving: boolean;
   answer: string;
   onAnswerChange: (value: string) => void;
@@ -255,11 +261,12 @@ function MemoLineRow({
           checked && "text-muted-foreground line-through"
         )}
       >
-        <InlineText text={question} />
+        {/* 표시 없는 줄만 예전 "…에서 옮김"을 링크로 읽는다 */}
+        <LinkedText text={question} links={links} legacy={line.kind === null} />
         {savedAnswer !== null ? (
           <span className="text-muted-foreground">
             {"  → "}
-            <InlineText text={savedAnswer} />
+            <LinkedText text={savedAnswer} links={links} />
           </span>
         ) : null}
       </span>

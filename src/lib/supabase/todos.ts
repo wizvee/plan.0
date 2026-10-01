@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/client";
 import { fetchAllRows } from "@/lib/supabase/fetch-all";
+import { retargetLinks } from "@/lib/memo-links";
 import type { ParaKind, Todo, TodoKind } from "@/lib/types";
 
 interface TodoRow {
@@ -81,6 +82,11 @@ export function useSupabaseTodos(userId: string) {
   const [supabase] = useState(() => createClient());
   const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
+  // updateTodo가 바뀌기 전 목록을 읽으려고(메모 링크 고치기) — 콜백을 todos마다 새로 만들지 않게 ref로
+  const todosRef = useRef(todos);
+  useEffect(() => {
+    todosRef.current = todos;
+  }, [todos]);
 
   useEffect(() => {
     let active = true;
@@ -188,7 +194,23 @@ export function useSupabaseTodos(userId: string) {
 
   const updateTodo = useCallback(
     async (id: string, patch: UpdatablePatch) => {
-      setTodos((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+      // 이름 · 날짜가 바뀌면 이 할 일을 가리키던 다른 메모의 `[[이름(10/1)]]` 링크도 새 대상으로 (LINKS-PLAN.md)
+      const before = todosRef.current.find((t) => t.id === id);
+      const relinks =
+        before && (patch.content !== undefined || patch.scheduledDate !== undefined)
+          ? retargetLinks(todosRef.current, before, {
+              content: patch.content ?? before.content,
+              scheduledDate: patch.scheduledDate !== undefined ? patch.scheduledDate : before.scheduledDate,
+            })
+          : [];
+      const relinked = new Map(relinks.map((r) => [r.id, r.memo]));
+      setTodos((prev) =>
+        prev.map((t) => {
+          if (t.id === id) return { ...t, ...patch };
+          const memo = relinked.get(t.id);
+          return memo === undefined ? t : { ...t, memo };
+        })
+      );
 
       const dbPatch: Record<string, unknown> = {};
       if (patch.content !== undefined) dbPatch.content = patch.content;
@@ -205,7 +227,10 @@ export function useSupabaseTodos(userId: string) {
       if (patch.resourceId !== undefined) dbPatch.resource_id = patch.resourceId;
       if (patch.goalId !== undefined) dbPatch.goal_id = patch.goalId;
 
-      await supabase.from("todos").update(dbPatch).eq("id", id);
+      await Promise.all([
+        supabase.from("todos").update(dbPatch).eq("id", id),
+        ...relinks.map((r) => supabase.from("todos").update({ memo: r.memo }).eq("id", r.id)),
+      ]);
     },
     [supabase]
   );

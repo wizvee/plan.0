@@ -9,13 +9,16 @@ import { ko } from "date-fns/locale";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { SubtaskList } from "@/components/subtask/subtask-list";
+import { MovedTodoList } from "@/components/subtask/moved-todo-list";
 import { ParaMenu } from "@/components/para/para-menu";
 import { PhotoTab } from "@/components/photo/photo-tab";
 import { InlineText } from "@/components/inline-text";
 import { MemoEditor } from "@/components/memo/memo-editor";
 import { MemoView } from "@/components/memo/memo-view";
+import type { MemoLinks } from "@/components/memo/memo-link";
 import { MARK_META } from "@/components/memo/mark-meta";
 import { hasMemoMarks, parseMemoLines } from "@/lib/memo-marks";
+import { hasMemoLinks, movedTodosOf, resolveLink } from "@/lib/memo-links";
 import { hasRetroLines, RETRO_KINDS, RETRO_STATE, type RetroKind } from "@/lib/retro";
 import { cn } from "@/lib/utils";
 import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR, getParaCategory } from "@/lib/category";
@@ -89,6 +92,8 @@ export function TodoDetailModal({
 }: TodoDetailModalProps) {
   const [title, setTitle] = useState(todo.content);
   const [memo, setMemo] = useState(todo.memo ?? "");
+  // 메모가 밖에서 바뀌면(링크 대상 이름이 바뀌어 고쳐짐 · 다른 기기) 편집 중이 아닐 때 따라간다
+  const [syncedMemo, setSyncedMemo] = useState(todo.memo);
   // 제목 · 메모는 평소엔 `코드`가 렌더링된 텍스트로 보여주고, 누르면 원문 입력칸으로 바뀐다
   const [editingTitle, setEditingTitle] = useState(false);
   const [editingMemo, setEditingMemo] = useState(false);
@@ -105,15 +110,26 @@ export function TodoDetailModal({
   // 완료된 할 일은 메모 탭으로 연다 — 끝낸 직후가 회고([p] [c] [I] 줄)하기 가장 좋은 때라서 (MEMO-MARKS-PLAN.md 7번).
   // 모달 안에서만 기억한다(URL · localStorage에 저장하지 않음).
   const [tab, setTab] = useState<DetailTab>(initialTab ?? (todo.completed ? "memo" : "subtasks"));
+  // 메모 링크 · 옮긴 할 일 목록으로 연 다른 할 일 — 이 팝업 위에 겹쳐 열고, 닫으면 여기로 돌아온다 (LINKS-PLAN.md)
+  const [linked, setLinked] = useState<{ id: string; tab: DetailTab | undefined } | null>(null);
+  // 겹쳐 연 할 일이 지워졌으면(그 팝업에서 삭제) 닫힌 것으로
+  const linkedTodo = linked ? (todos.find((t) => t.id === linked.id) ?? null) : null;
+
+  if (!editingMemo && todo.memo !== syncedMemo) {
+    setSyncedMemo(todo.memo);
+    setMemo(todo.memo ?? "");
+  }
 
   useEffect(() => {
+    // 위에 겹쳐 연 팝업이 있으면 Esc는 그것만 닫는다
+    if (linkedTodo) return;
     function onKeyDown(e: KeyboardEvent) {
       // 모달 안 팝오버(회고 종류 메뉴 등)가 Esc를 처리했으면 그 팝오버만 닫힌다 (useDismiss)
       if (e.key === "Escape" && !e.defaultPrevented) onClose();
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
+  }, [onClose, linkedTodo]);
 
   useEffect(() => {
     if (!paraOpen) return;
@@ -219,6 +235,17 @@ export function TodoDetailModal({
     }
   }
   const hasMemoOrUrl = Boolean(todo.memo?.trim() || todo.url?.trim());
+  // 이 할 일에서 "나중에"로 옮겨 간 할 일들(역링크) — 하위 할 일 탭 아래
+  const movedTodos = isTask ? movedTodosOf(todo, todos) : [];
+  const memoLinks: MemoLinks = {
+    resolve: (target) => resolveLink(target, todos, todo),
+    // 원래 할 일(옮긴 할 일이 있는 쪽)은 그 목록이 보이는 하위 할 일 탭으로 연다
+    open: (target) =>
+      setLinked({
+        id: target.id,
+        tab: target.kind === "task" && movedTodosOf(target, todos).length > 0 ? "subtasks" : undefined,
+      }),
+  };
   // 메모에 남은 일 — 열린 질문 [?] + 열린 확인 [ ] (시안 ⑰). 있으면 회색 알약 숫자, 없으면 내용 점
   const openMarks = parseMemoLines(memo).filter((line) => line.state === " " || line.state === "?").length;
   const tabs: { id: DetailTab; label: string; badge: string | null; pill: number; dot: boolean }[] = [
@@ -241,11 +268,12 @@ export function TodoDetailModal({
         />
       ) : isTask && todo.completed && !memo.trim() ? (
         <RetroPrompt onPick={startRetro} onPlain={() => editMemo(null)} />
-      ) : hasMemoMarks(memo) ? (
+      ) : hasMemoMarks(memo) || hasMemoLinks(memo) ? (
         <MemoView
           text={memo}
           onChange={saveMemo}
           onEdit={editMemo}
+          links={memoLinks}
           className={isTask ? "min-h-0 flex-1 overflow-y-auto" : "mt-2.5"}
         />
       ) : (
@@ -497,6 +525,7 @@ export function TodoDetailModal({
                     color={color}
                     className="min-h-0 overflow-y-auto rounded-[10px] border border-border"
                   />
+                  <MovedTodoList todos={movedTodos} onOpen={(t) => setLinked({ id: t.id, tab: undefined })} />
                   {carryDue && carryDate ? (
                     <button
                       type="button"
@@ -574,6 +603,25 @@ export function TodoDetailModal({
             <Trash className="size-[17px]" />
           </button>
         </div>
+        {/* 메모 링크로 연 할 일 — 그 팝업도 body로 포털이라 이 팝업 위에 뜬다. 클릭은 위 stopPropagation에서 멈춰
+            이 팝업의 배경(닫기)까지 올라오지 않는다 */}
+        {linkedTodo ? (
+          <TodoDetailModal
+            key={linkedTodo.id}
+            todo={linkedTodo}
+            projects={projects}
+            areas={areas}
+            resources={resources}
+            initialTab={linked?.tab}
+            onEdit={onEdit}
+            onMemoEdit={onMemoEdit}
+            onUrlEdit={onUrlEdit}
+            onAssignPara={onAssignPara}
+            onRemove={onRemove}
+            onConvert={onConvert}
+            onClose={() => setLinked(null)}
+          />
+        ) : null}
       </div>
     </div>,
     document.body
