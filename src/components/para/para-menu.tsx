@@ -4,8 +4,8 @@ import { useState } from "react";
 import { Check, Prohibit } from "@/components/icons";
 
 import { cn } from "@/lib/utils";
-import { CATEGORY_COLOR_VAR } from "@/lib/category";
 import type { Area, ParaKind, Project, Resource } from "@/lib/types";
+import { useParaColor } from "@/lib/app-data/use-para-color";
 
 const KIND_LABEL: Record<ParaKind, string> = {
   project: "프로젝트",
@@ -35,6 +35,7 @@ export function ParaMenu({
   className?: string;
 }) {
   const [query, setQuery] = useState("");
+  const paraColor = useParaColor();
 
   const q = query.trim().toLowerCase();
   const filterItems = <T extends { name: string }>(list: T[]) =>
@@ -80,7 +81,7 @@ export function ParaMenu({
           <div key={kind}>
             <div className="px-2 pb-1 pt-2 text-[11px] font-bold text-muted-foreground">{KIND_LABEL[kind]}</div>
             {items.map((item) => {
-              const dotColor = `var(${CATEGORY_COLOR_VAR[kind]})`;
+              const dotColor = paraColor.ofContainer(kind, item.id).color;
               const isSelected = selected?.kind === kind && selected.id === item.id;
               return (
                 <button

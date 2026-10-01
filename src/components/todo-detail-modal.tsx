@@ -22,7 +22,7 @@ import { hasMemoMarks, parseMemoLines } from "@/lib/memo-marks";
 import { hasMemoLinks, movedTodosOf, resolveLink } from "@/lib/memo-links";
 import { hasRetroLines, RETRO_KINDS, RETRO_STATE, type RetroKind } from "@/lib/retro";
 import { cn } from "@/lib/utils";
-import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR, getParaCategory } from "@/lib/category";
+import { getParaCategory } from "@/lib/category";
 import {
   DEFAULT_DURATION_MINUTES,
   DEFAULT_START_MINUTES,
@@ -37,6 +37,7 @@ import { useTodoActions } from "@/lib/app-data/todo-actions";
 import { useTodos } from "@/lib/app-data/use-todos";
 import { useSubtasks } from "@/lib/app-data/use-subtasks";
 import { usePhotos } from "@/lib/app-data/use-photos";
+import { useParaColor } from "@/lib/app-data/use-para-color";
 
 const KIND_ICON: Record<ParaKind, typeof Target> = {
   project: Target,
@@ -112,6 +113,7 @@ export function TodoDetailModal({
   const [paraOpen, setParaOpen] = useState(false);
   const paraRef = useRef<HTMLDivElement>(null);
   const { toggle, carryOver, setTime } = useTodoActions();
+  const paraColor = useParaColor();
   // 일정 줄을 누르면 시작 · 끝 편집이 열린다 (BALANCE-PLAN.md 6번)
   const [editingTime, setEditingTime] = useState(false);
   const { todos } = useTodos();
@@ -217,8 +219,8 @@ export function TodoDetailModal({
         ?.name ?? null
     : null;
 
-  const color = category ? `var(${CATEGORY_COLOR_VAR[category]})` : "var(--muted-foreground)";
-  const tint = category ? `var(${CATEGORY_TINT_VAR[category]})` : "var(--secondary)";
+  // 색 = 영역(컨텍스트) 색, 종류는 타일 아이콘 · 라벨이 말한다
+  const { color, tint, context } = paraColor.ofMapping(todo);
   const KindIcon = category ? KIND_ICON[category] : Stack;
 
   const isTask = todo.kind === "task";
@@ -462,6 +464,7 @@ export function TodoDetailModal({
             <span className="flex min-w-0 flex-1 flex-col gap-px">
               <span className="text-[11px] font-semibold text-muted-foreground">
                 {category ? KIND_LABEL[category] : "PARA"}
+                {category && context ? ` · ${context.name}` : ""}
               </span>
               <span
                 className="truncate text-[14px] font-semibold"

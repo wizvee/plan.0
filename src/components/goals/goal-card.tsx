@@ -12,7 +12,7 @@ import { GoalRing } from "@/components/goals/goal-ring";
 import { GoalLinkPopover } from "@/components/goals/goal-link-popover";
 import { ParaMenu } from "@/components/para/para-menu";
 import { cn } from "@/lib/utils";
-import { CATEGORY_COLOR_VAR, getParaCategory } from "@/lib/category";
+import { getParaCategory } from "@/lib/category";
 import { formatClock, DEFAULT_START_MINUTES } from "@/lib/time";
 import { isInWeek, progressRatio } from "@/lib/goals";
 import { useDismiss } from "@/lib/use-dismiss";
@@ -23,6 +23,7 @@ import { useGoalActions } from "@/lib/app-data/goal-actions";
 import { useTodos } from "@/lib/app-data/use-todos";
 import { useTodoActions } from "@/lib/app-data/todo-actions";
 import { useContainers } from "@/lib/app-data/use-containers";
+import { useParaColor } from "@/lib/app-data/use-para-color";
 
 /** "화 오전 7:30" (그 주) · "10/6 (월)" (다른 주) · 캘린더에 안 올렸으면 null */
 function whenLabel(todo: Todo, weekDays: string[]): string | null {
@@ -60,13 +61,13 @@ export function GoalCard({ goal, weekDays }: { goal: WeeklyGoal; weekDays: strin
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState("");
 
+  const paraColor = useParaColor();
   const { setNodeRef, isOver } = useDroppable({
     id: `goal:${goal.id}`,
     data: { type: "goal", id: goal.id } satisfies DropTargetData,
   });
 
-  const category = getParaCategory(goal);
-  const color = category ? `var(${CATEGORY_COLOR_VAR[category]})` : "var(--muted-foreground)";
+  const color = paraColor.ofMapping(goal).color;
   const progress = progressOf(goal.id);
   const linked = todos.filter((t) => t.goalId === goal.id && t.kind === "task").sort(byWhen);
 
@@ -292,6 +293,7 @@ function GoalParaChip({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useDismiss(open, ref, () => setOpen(false));
+  const paraColor = useParaColor();
 
   const category = getParaCategory(goal);
   const mappedId = goal.projectId ?? goal.areaId ?? goal.resourceId;
@@ -306,7 +308,7 @@ function GoalParaChip({
         className="flex items-center gap-[5px] rounded-[5px] text-[12px] text-muted-foreground hover:text-foreground"
       >
         {category ? (
-          <span className="size-[7px] rounded-full" style={{ backgroundColor: `var(${CATEGORY_COLOR_VAR[category]})` }} />
+          <span className="size-[7px] rounded-full" style={{ backgroundColor: paraColor.ofMapping(goal).color }} />
         ) : null}
         {name ? <InlineText text={name} /> : "PARA 없음"}
         <CaretDown weight="bold" className="size-3" aria-hidden="true" />

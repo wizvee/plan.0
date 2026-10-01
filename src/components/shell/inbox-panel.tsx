@@ -11,7 +11,6 @@ import { AddTodoForm } from "@/components/add-todo-form";
 import { cn } from "@/lib/utils";
 import { BACKLOG, type Todo } from "@/lib/types";
 import type { ActiveData, DropTargetData, OverData } from "@/lib/dnd/drop-targets";
-import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR } from "@/lib/category";
 import {
   UNSORTED_GROUP_KEY,
   groupInboxItems,
@@ -24,6 +23,7 @@ import { useTodos } from "@/lib/app-data/use-todos";
 import { useContainers } from "@/lib/app-data/use-containers";
 import { useTodoActions } from "@/lib/app-data/todo-actions";
 import { useShellUI } from "@/lib/shell-ui";
+import { useParaColor } from "@/lib/app-data/use-para-color";
 
 /**
  * Inbox(할 일 보관함) — 데스크톱은 레일 옆에서 본문을 밀어내는 320px 패널(본문을 가리지 않음),
@@ -197,14 +197,17 @@ function InboxGroupSection({
     id: `inbox-group:${group.key}`,
     data: { type: "inbox-group", kind: group.kind, id: group.containerId } satisfies DropTargetData,
   });
-  const color = group.kind ? `var(${CATEGORY_COLOR_VAR[group.kind]})` : null;
+  // 점 · 틴트 = 그 PARA의 영역(컨텍스트) 색. 미분류는 회색 빈 원
+  const paraColor = useParaColor();
+  const groupColor = group.kind && group.containerId ? paraColor.ofContainer(group.kind, group.containerId) : null;
+  const color = groupColor?.color ?? null;
 
   return (
     <section
       ref={setNodeRef}
       aria-label={group.name}
       className={cn("mt-1.5", dropping && "pb-1.5", dropping && !group.kind && "bg-black/[0.04]")}
-      style={dropping && group.kind ? { backgroundColor: `var(${CATEGORY_TINT_VAR[group.kind]})` } : undefined}
+      style={dropping && groupColor ? { backgroundColor: groupColor.tint } : undefined}
     >
       <button
         type="button"
@@ -223,7 +226,7 @@ function InboxGroupSection({
         )}
         <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">{group.name}</span>
         {dropping ? (
-          // 카테고리 색을 살짝 어둡게 — 틴트 위 작은 글씨라 대비(DESIGN.md 3번)
+          // 영역 색을 살짝 어둡게 — 틴트 위 작은 글씨라 대비(DESIGN.md 3번)
           <span
             className="shrink-0 text-[12.5px] font-semibold"
             style={color ? { color: `color-mix(in srgb, ${color} 75%, black)` } : undefined}

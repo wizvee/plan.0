@@ -45,13 +45,13 @@
 | I7 | 보관함 → 캘린더 드래그로 날짜·시간 배치 (15분 스냅, 기본 1시간) | `week-board.tsx` |
 | I8 | 캘린더 → 보관함 드래그로 배치 해제 (Inbox를 연 상태에서, 드래그 중 강조) | `shell/inbox-panel.tsx`, `lib/dnd/handle-drop.ts` |
 | I9 | 보관함 → PARA 카드/상세 화면 드래그로 매핑 | `para-board.tsx`, `container-detail-screen.tsx` |
-| I10 | 카테고리 색 점 (PARA 배지가 없을 때만) | `todo-card.tsx` |
+| I10 | 영역(컨텍스트) 색 점 (PARA 배지가 없을 때만) | `todo-card.tsx` |
 | I11 | PARA 배지 (소속 이름) — Inbox는 그룹 머리가 대신하므로 안 씀(I16) | `todo-card.tsx` `badge` |
 | I12 | URL 칩 — 파비콘 + 도메인, 새 탭으로 열기 | `url-chip.tsx` |
 | I13 | 예약 날짜 표시, 지난 날짜면 빨간색 (PARA Tasks 탭 등) | `todo-card.tsx` |
 | I14 | 항목 텍스트 클릭 → 할 일 상세 팝업 (6번) | `todo-card.tsx` |
 | I15 | **하위 할 일 진행률** — 원형 링 + `2/4` (하위가 있는 할 일만, 노트 제외) | `todo-card.tsx`, `subtask/subtask-progress.tsx` |
-| I16 | **PARA별 그룹** — 미분류 → Project → Area → Resource(완료 · 보관은 맨 아래), 머리 = `⌄` + 카테고리 점 + 이름 + 개수, 눌러서 접기(이 브라우저에 기억). 새로 적으면 미분류를 펼침 | `shell/inbox-panel.tsx`, `lib/inbox-groups.ts` |
+| I16 | **PARA별 그룹** — 미분류 → Project → Area → Resource(완료 · 보관은 맨 아래), 머리 = `⌄` + 영역 색 점 + 이름 + 개수, 눌러서 접기(이 브라우저에 기억). 새로 적으면 미분류를 펼침 | `shell/inbox-panel.tsx`, `lib/inbox-groups.ts` |
 | I17 | **다른 그룹으로 끌어 놓기** — Inbox · PARA 상세 카드를 그룹 머리나 그 그룹 카드 위에 놓으면 그 PARA로 매핑 + 맨 끝(미분류 = 매핑 해제). 놓을 그룹 틴트 + "여기로 옮기기" + 끝 선. 캘린더 블록은 PARA를 안 바꿈 | `lib/dnd/handle-drop.ts`, `shell/inbox-panel.tsx` |
 
 ## 4. 캘린더 — 주 보기
@@ -62,7 +62,7 @@
 | W2 | 헤더 — 주차 번호("39주") + 기간 | `week-board.tsx` |
 | W3 | 이전 / 오늘 / 다음 (주 보기는 주 단위, 월 보기는 달 단위) | `calendar-header.tsx` |
 | W4 | 오늘 날짜 강조 + 현재 시각 선 (클라이언트에서만 계산) | `week-calendar.tsx`, `lib/use-today.ts` |
-| W5 | 일정 블록 — 카테고리 색, 제목 + 시간 범위, 짧으면 한 줄 compact | `calendar-block.tsx` |
+| W5 | 일정 블록 — 영역(컨텍스트) 색(PARA 없음 = 기본 · 기타 색), 제목 + 시간 범위, 짧으면 한 줄 compact | `calendar-block.tsx` |
 | W6 | 블록 안 **완료 체크박스**, 완료 시 muted + 취소선 | `calendar-block.tsx` |
 | W7 | 블록 드래그로 다른 요일/시간 이동 — **완료된 할 일은 옮길 수 없음**(완료를 풀면 다시 가능) | `calendar-block.tsx` |
 | W8 | 블록 하단 모서리 드래그로 소요 시간 조절 | `calendar-block.tsx` |

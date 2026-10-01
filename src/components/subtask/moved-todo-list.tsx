@@ -4,9 +4,9 @@ import { format, parseISO } from "date-fns";
 import { CaretRight, Check, FolderSimplePlus } from "@/components/icons";
 
 import { InlineText } from "@/components/inline-text";
-import { CATEGORY_COLOR_VAR, getParaCategory } from "@/lib/category";
 import { cn } from "@/lib/utils";
 import type { Todo } from "@/lib/types";
+import { useParaColor } from "@/lib/app-data/use-para-color";
 
 /**
  * 원래 할 일에서 "나중에"로 옮겨 간 할 일들(역링크, LINKS-PLAN.md) — 상세 팝업 하위 할 일 탭의 체크리스트 아래.
@@ -14,6 +14,7 @@ import type { Todo } from "@/lib/types";
  * 줄을 누르면 그 할 일을 연다. 없으면 아무것도 그리지 않는다.
  */
 export function MovedTodoList({ todos, onOpen }: { todos: Todo[]; onOpen: (todo: Todo) => void }) {
+  const paraColor = useParaColor();
   if (todos.length === 0) return null;
   return (
     <section aria-label="나중에로 옮긴 할 일" className="flex shrink-0 flex-col gap-1.5">
@@ -24,8 +25,7 @@ export function MovedTodoList({ todos, onOpen }: { todos: Todo[]; onOpen: (todo:
       </h3>
       <ul className="max-h-[122px] overflow-y-auto rounded-[10px] border border-border">
         {todos.map((todo) => {
-          const category = getParaCategory(todo);
-          const color = category ? `var(${CATEGORY_COLOR_VAR[category]})` : "var(--muted-foreground)";
+          const color = paraColor.ofMapping(todo).color;
           return (
             <li key={todo.id} className="border-b border-border last:border-b-0">
               <button

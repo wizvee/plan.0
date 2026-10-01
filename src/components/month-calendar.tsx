@@ -6,7 +6,6 @@ import { eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, startOfM
 import { TodoDetailModal } from "@/components/todo-detail-modal";
 import { InlineText } from "@/components/inline-text";
 import { cn } from "@/lib/utils";
-import { CATEGORY_COLOR_VAR, getParaCategory } from "@/lib/category";
 import { DEFAULT_START_MINUTES, formatClock } from "@/lib/time";
 import { toDateKey } from "@/lib/week";
 import { DAY_LABELS_KO, type Area, type Project, type Resource, type Todo } from "@/lib/types";
@@ -15,6 +14,7 @@ import { usePhotos } from "@/lib/app-data/use-photos";
 import { useSession } from "@/lib/app-data/app-data-provider";
 import { photoUrl } from "@/lib/photos";
 import type { TodoPhoto } from "@/lib/types";
+import { useParaColor } from "@/lib/app-data/use-para-color";
 
 const WEEKDAY_ORDER: (keyof typeof DAY_LABELS_KO)[] = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const MAX_VISIBLE_EVENTS = 2;
@@ -50,6 +50,7 @@ export function MonthCalendar({
 }: MonthCalendarProps) {
   const [detailTodoId, setDetailTodoId] = useState<string | null>(null);
   const { progressOf } = useSubtasks();
+  const paraColor = useParaColor();
   const { coverOf } = usePhotos();
   const { googleConnected } = useSession();
   // Drive 연결이 끊겼거나 파일이 없어서 못 불러온 사진 — 그 칸은 평소 모양으로
@@ -153,8 +154,7 @@ export function MonthCalendar({
                 {label}
               </span>
               {visible.map((todo) => {
-                const category = getParaCategory(todo);
-                const colorVar = category ? `var(${CATEGORY_COLOR_VAR[category]})` : "var(--muted-foreground)";
+                const colorVar = paraColor.ofMapping(todo).color;
                 const progress = todo.kind === "task" ? progressOf(todo.id) : null;
                 return (
                   <button

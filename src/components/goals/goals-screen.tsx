@@ -10,7 +10,7 @@ import { GoalCard } from "@/components/goals/goal-card";
 import { ParaMenu } from "@/components/para/para-menu";
 import { InlineText } from "@/components/inline-text";
 import { cn } from "@/lib/utils";
-import { CATEGORY_COLOR_VAR, getParaCategory } from "@/lib/category";
+import { getParaCategory } from "@/lib/category";
 import { RECOMMENDED_GOAL_COUNT } from "@/lib/goals";
 import { useDismiss } from "@/lib/use-dismiss";
 import { useTodayKey } from "@/lib/use-today";
@@ -19,6 +19,7 @@ import type { GoalParaPatch } from "@/lib/supabase/goals";
 import { useGoals } from "@/lib/app-data/use-goals";
 import { useGoalActions } from "@/lib/app-data/goal-actions";
 import { useContainers } from "@/lib/app-data/use-containers";
+import { useParaColor } from "@/lib/app-data/use-para-color";
 
 const NO_PARA: GoalParaPatch = { projectId: null, areaId: null, resourceId: null };
 
@@ -234,6 +235,7 @@ function ParaChipPicker({ value, onChange }: { value: GoalParaPatch; onChange: (
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useDismiss(open, ref, () => setOpen(false));
+  const paraColor = useParaColor();
 
   const category = getParaCategory(value);
   const mappedId = value.projectId ?? value.areaId ?? value.resourceId;
@@ -252,7 +254,7 @@ function ParaChipPicker({ value, onChange }: { value: GoalParaPatch; onChange: (
         )}
       >
         {category ? (
-          <span className="size-[7px] rounded-full" style={{ backgroundColor: `var(${CATEGORY_COLOR_VAR[category]})` }} />
+          <span className="size-[7px] rounded-full" style={{ backgroundColor: paraColor.ofMapping(value).color }} />
         ) : null}
         <span className="max-w-[120px] truncate">{name ? <InlineText text={name} /> : "PARA 없음"}</span>
         <CaretDown weight="bold" className="size-3 text-muted-foreground" aria-hidden="true" />
@@ -293,6 +295,7 @@ function EmptyWeek({
   previousWeekLabel: string;
 }) {
   const { goalsOfWeek, progressOf, weekRatioOf } = useGoals();
+  const paraColor = useParaColor();
   const lastGoals = goalsOfWeek(previousWeekKey);
   const lastRatio = weekRatioOf(previousWeekKey);
 
@@ -338,14 +341,13 @@ function EmptyWeek({
               </span>
             </div>
             {lastGoals.map((g) => {
-              const category = getParaCategory(g);
               const p = progressOf(g.id);
               return (
                 <div key={g.id} className="flex items-center gap-2 text-[13px]">
                   <span
                     className="size-[7px] shrink-0 rounded-full"
                     style={{
-                      backgroundColor: category ? `var(${CATEGORY_COLOR_VAR[category]})` : "var(--muted-foreground)",
+                      backgroundColor: paraColor.ofMapping(g).color,
                     }}
                   />
                   <span className="min-w-0 flex-1 truncate">

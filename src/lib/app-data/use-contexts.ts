@@ -35,7 +35,7 @@ export function useContexts() {
 
   /** 할 일의 컨텍스트 — 매핑된 컨테이너를 따르고, 매핑이 없으면 기본 */
   const contextOfTodo = useCallback(
-    (todo: Todo): Context | null => {
+    (todo: Pick<Todo, "projectId" | "areaId" | "resourceId">): Context | null => {
       const mappedId = todo.projectId ?? todo.areaId ?? todo.resourceId;
       return contextOfContainer(mappedId ? (containerContextId.get(mappedId) ?? null) : null);
     },

@@ -44,6 +44,11 @@ export function contextColor(color: ContextColor): string {
   return `var(${CONTEXT_COLOR_VAR[color]})`;
 }
 
+/** 블록 배경 · 아이콘 타일 · 상태 칩 같은 옅은 바탕 */
+export function contextTint(color: ContextColor): string {
+  return `var(${CONTEXT_TINT_VAR[color]})`;
+}
+
 /** 새 컨텍스트에 줄 색 — 아직 아무도 안 쓰는 첫 색(회색은 마지막), 다 쓰였으면 회색 */
 export function nextUnusedColor(used: ContextColor[]): ContextColor {
   return CONTEXT_COLORS.find((c) => !used.includes(c)) ?? "gray";

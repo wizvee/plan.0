@@ -5,7 +5,6 @@ import { CaretRight, Moon } from "@/components/icons";
 
 import { InlineText } from "@/components/inline-text";
 import { cn } from "@/lib/utils";
-import { CATEGORY_COLOR_VAR } from "@/lib/category";
 import { contextColor } from "@/lib/context-color";
 import { balanceDelta, previousMinutesOf, type BalanceRow, type WeekBalance } from "@/lib/balance";
 import { DAY_LABELS_KO, DAY_KEYS, type ParaKind } from "@/lib/types";
@@ -371,7 +370,7 @@ function RowList({
                       {c.kind ? (
                         <span
                           className="size-[7px] shrink-0 rounded-full"
-                          style={{ backgroundColor: `var(${CATEGORY_COLOR_VAR[c.kind]})` }}
+                          style={{ backgroundColor: rowColor(row) }}
                         />
                       ) : (
                         <span className="size-[7px] shrink-0 rounded-full border border-muted-foreground/60" />

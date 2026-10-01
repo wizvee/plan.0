@@ -620,6 +620,16 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
       실제 앱(로그인) 확인은 못 함. 머지 전 DESIGN.md에서 2단계 편집 때 지워진 "자정을 넘는 블록" 항목 머리를 복구.
     - 사용자가 만들 컨텍스트 키: 업무 `work` · 기타 `personal`(기존, 이름만 바꿈) · 건강 `health` · 지적 `knowledge` · 관계 `relationship` · 수면 `sleep`.
 
+44. **(2026-10-01 추가) 색 = 영역(컨텍스트)**: 생활 / `life` 영역을 만든 뒤 "캘린더 색이 그대로네?" → 43번에서 미뤄둔 다음 단계를 바로 진행.
+    "내집마련" 같은 프로젝트는 기타가 아니라 **생활** 영역으로(기타는 "아직 분류 안 함" 신호로 남겨 두려고).
+    - 시안 https://claude.ai/artifact/9V2Fz7bEfE3DhEqha5kyPg(주 · 월 · Inbox · PARA 목록/상세 · 할 일 팝업, 지금 / 바꾼 뒤) 컨펌 —
+      **Inbox 그룹 머리는 종류 아이콘 말고 점(영역 색) 그대로**(사용자 결정). 팝업 라벨은 `프로젝트 · 생활`.
+    - `lib/app-data/use-para-color.ts` `useParaColor()`(`ofMapping` · `ofContainer` · `ofContextId` → `{ color, tint, context }`) 하나로 15개 화면의
+      PARA 종류 색을 바꿈. `CATEGORY_COLOR_VAR` · `CATEGORY_TINT_VAR`는 없앰(실수로 다시 쓰지 않게). PARA 카드 칩은 카드가 스스로 읽음.
+    - 시간 균형의 펼친 PARA 점도 그 영역 색(한 행 안은 같은 영역).
+    - **확인**: tsc · eslint · 4개 스크립트 · build + **가짜 Supabase(auth/rest 목)에 붙인 실제 앱** 스크린샷 — 주 · 월 보기, Inbox 그룹, PARA 목록 · 상세,
+      할 일 팝업, 목표 화면 시간 균형(43번 화면도 처음으로 실제 앱에서 확인). 목 서버는 커밋하지 않음.
+
 ## 지금 구현된 것 (기능 목록)
 
 - Todo List(전역 보관함, 사이드 패널) + Mon~Sun **시간 단위 캘린더 그리드** (0~24시, 스크롤 가능)
@@ -711,6 +721,7 @@ src/lib/calendar-layout.ts      주 보기 배치 — 겹침(layoutDayBlocks) ·
 src/lib/balance.ts              시간 균형 계산 순수 함수 — 체크한 블록 · 겹침 · 수면 · 공백 · 요일 · PARA별 · 지난주 같은 시점 (43번)
 src/lib/app-data/use-balance.ts useBalance(weekStart) — 할 일 · 컨텍스트 · 지금 시각으로 매번 계산 (43번)
 src/lib/context-color.ts        컨텍스트 색 8개 이름 → CSS 변수, 새 컨텍스트에 줄 색 (43번)
+src/lib/app-data/use-para-color.ts  할 일 · PARA · 목표의 색 = 영역(컨텍스트) 색 — 앱 전체가 이걸로 칠함 (44번)
 src/lib/use-today.ts            "오늘 날짜"를 client-only로 계산하는 훅 (SSR 시간대 버그 방지)
 src/lib/utils.ts                cn() 헬퍼 (shadcn 표준)
 src/lib/google-drive.ts         Google Drive API 서버 전용 래퍼 — 컨테이너별 폴더 조회/생성,
@@ -827,7 +838,7 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
       수면으로 세기, PARA마다 컨텍스트 고르기, 수면 블록 일주일치, 단축어 꺼질 때 `all`.
     - 실제 데이터 확인: 목표 화면 숫자, 자정 넘는 수면 블록이 요일별로 나뉘는지, 아침에 다음 날 조각 손잡이 · 팝업으로 기상 시간 고치기가 편한지.
     - 몇 주 써 본 뒤 후보(BALANCE-PLAN.md 10번): 캘린더 블록 · PARA 색 = 컨텍스트 색, 영역별 주간 목표 시간(`GoalRing`), 반복 할 일(수면 블록),
-      공백 나누기, 다섯 번째 영역 "마음". 다크 모드를 켤 때는 `--category-area` · `--ctx-orange` 다크 값이 차트 밝기 기준을 넘는다(dataviz 검증기) — 그때 다시 보기.
+      공백 나누기, 다섯 번째 영역 "마음". (캘린더 · PARA 색 = 컨텍스트 색은 44번에서 완료) 다크 모드를 켤 때는 `--category-area` · `--ctx-orange` 다크 값이 차트 밝기 기준을 넘는다(dataviz 검증기) — 그때 다시 보기.
 
 ## `.env` / 키 노출 관련 (사용자 질문에 대한 답)
 

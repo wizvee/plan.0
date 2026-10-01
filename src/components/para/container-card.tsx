@@ -5,9 +5,9 @@ import { format } from "date-fns";
 
 import { InlineText } from "@/components/inline-text";
 import { cn } from "@/lib/utils";
-import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR } from "@/lib/category";
 import type { ParaKind } from "@/lib/types";
 import type { DropTargetData } from "@/lib/dnd/drop-targets";
+import { useParaColor } from "@/lib/app-data/use-para-color";
 
 interface ContainerCardProps {
   kind: ParaKind;
@@ -19,10 +19,6 @@ interface ContainerCardProps {
   /** Project 전용 — 매핑된 할 일의 완료 비율 */
   progress?: number;
   onClick: () => void;
-  /** 기본이 아닌 컨텍스트 이름(회사 · 공부 …) — 있으면 이름 옆에 작은 칩 */
-  contextName?: string;
-  /** 컨텍스트 칩의 색 점 (`contextColor`) */
-  contextColor?: string;
   /** Project 전용 — 시작일 ~ 종료일(yyyy-MM-dd). 종료일이 없으면 null(공란) */
   period?: { start: string; end: string | null };
 }
@@ -36,8 +32,6 @@ export function ContainerCard({
   count,
   progress,
   onClick,
-  contextName,
-  contextColor,
   period,
 }: ContainerCardProps) {
   const { setNodeRef, isOver } = useDroppable({
@@ -45,7 +39,9 @@ export function ContainerCard({
     data: { type: "para-container", kind, id } satisfies DropTargetData,
   });
 
-  const colorVar = `var(${CATEGORY_COLOR_VAR[kind]})`;
+  // 막대 · 상태 칩 · 진행률 = 영역(컨텍스트) 색. 기본(기타)이 아닌 영역이면 이름 옆에 칩도
+  const { color: colorVar, tint: tintVar, context } = useParaColor().ofContainer(kind, id);
+  const contextName = context && !context.isDefault ? context.name : undefined;
 
   return (
     <div
@@ -78,7 +74,7 @@ export function ContainerCard({
           </span>
           {contextName ? (
             <span className="flex shrink-0 items-center gap-[5px] rounded-[5px] bg-black/[0.06] px-[7px] py-0.5 text-[11.5px] font-semibold text-foreground/80">
-              {contextColor ? <span className="size-1.5 rounded-full" style={{ backgroundColor: contextColor }} /> : null}
+              <span className="size-1.5 rounded-full" style={{ backgroundColor: colorVar }} />
               {contextName}
             </span>
           ) : null}
@@ -95,7 +91,7 @@ export function ContainerCard({
             "rounded-[5px] px-[7px] py-0.5 font-semibold",
             statusDone ? "bg-black/[0.06] text-muted-foreground" : "text-foreground"
           )}
-          style={statusDone ? undefined : { backgroundColor: `var(${CATEGORY_TINT_VAR[kind]})` }}
+          style={statusDone ? undefined : { backgroundColor: tintVar }}
         >
           {statusLabel}
         </span>

@@ -202,7 +202,8 @@ blue = `--primary`, green = `--category-area`, purple = `--category-resource`. �
 
 ## 10. 나중에 (이번 범위 밖)
 
-- **캘린더 블록 · PARA 색 = 컨텍스트 색**(색 하나 = 영역 하나, PARA 종류는 아이콘으로) — 시간 균형을 몇 주 써 본 뒤
+- ~~**캘린더 블록 · PARA 색 = 컨텍스트 색**~~ — **완료(2026-10-01)**. 사용자가 생활 영역을 만든 뒤 캘린더도 바꾸고 싶어 해서 바로 진행.
+  시안 https://claude.ai/artifact/9V2Fz7bEfE3DhEqha5kyPg 컨펌(Inbox 그룹 머리는 아이콘 말고 점 그대로). `useParaColor()`, DESIGN.md 3번.
 - 영역별 주간 목표 시간(예: 건강 주 5시간 → `GoalRing`)
 - 공백 나누기(계획했지만 못 함 / 계획 없음)
 - 반복 할 일(수면 블록 자동)
