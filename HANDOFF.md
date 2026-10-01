@@ -581,6 +581,14 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
 40. **(2026-09-30 추가) 메모 탭 남은 개수 뱃지**: 할 일 팝업 "메모 · URL" 탭에 열린 `[?]` + `[ ]` 합계를 회색 알약으로(MEMO-MARKS-PLAN.md 9번).
     시안 ⑬~⑯에서 종류별 표시(질문 · 확인 칸 따로)를 그렸다가 "탭이 좁다, 뱃지 하나로"(⑰ D안) 컨펌. 탭 이름은 "메모 · URL" 유지.
     - **확인**: tsc · eslint · build + 가짜 Supabase 앱에서 데스크톱 · 모바일 폭 한 줄, 해결 · 체크하면 2 → 1 → 점.
+41. **(2026-10-01 추가) 메모 링크 — "나중에" 원래 할 일 연결**: [LINKS-PLAN.md](./LINKS-PLAN.md). 사용자가 회의에서 나온 할 일을 회의의 하위 할 일로
+    적고 "나중에"를 눌러 출처를 남기는 식으로 쓰고 있어서, 메모를 옵시디언 내부 링크 `- [[이름(10/1)]]에서 옮김`으로 바꾸자는 제안.
+    시안(https://claude.ai/artifact/24GBhW8d4UHbpprCRwPXtv) + 추천안 4개 컨펌: 형식(`에서 옮김`은 괄호 밖) · 원래 할 일에 "나중에로 옮긴 할 일" 목록 ·
+    이름 · 날짜 바뀌면 링크 자동 고침 · 예전 메모는 원문 그대로 두고 링크로 읽기.
+    - 이름 + 날짜로 찾으므로 DB 변경 없음. 링크 고치기는 `lib/supabase/todos.ts` `updateTodo` 한 곳(제목 · 드래그 · 노트 전환 모두 지나감).
+    - 링크로 연 할 일은 같은 `TodoDetailModal`을 안에 한 번 더 렌더링(body 포털이라 위에 뜸) — Esc는 위 팝업만.
+    - **확인**: tsc · eslint · build · `scripts/check-links.ts`(찾기 · 같은 M/d 다른 해 · 예전 줄 · 역링크 · 이름 · 날짜 · 별칭 고치기) · check-search +
+      임시 페이지에서 링크 · 예전 줄 · 끊긴 링크 · 옮긴 할 일 목록 스크린샷. 실제 앱(로그인) 확인은 못 함 — 이 세션에 Supabase 키가 없었음.
 
 ## 지금 구현된 것 (기능 목록)
 
@@ -689,6 +697,7 @@ src/components/todo-card.tsx    할 일/노트 한 줄(할 일=체크박스, 노
 src/components/todo-detail-modal.tsx  할 일/노트 상세 팝업 (제목/메모 수정, 할일↔노트 전환, 삭제, 완료 체크, 탭: 하위 할 일 · 메모·URL · 사진, `initialTab`, 빈 메모 회고 유도) — body 포털
 src/components/subtask/subtask-list.tsx      하위 할 일 체크리스트(수정 · 삭제 · 연속 추가 · 드래그 순서) + DragOverlay 미리보기 (27번)
 src/components/subtask/subtask-progress.tsx  하위 할 일 진행률 링 + done/total (27번)
+src/components/subtask/moved-todo-list.tsx   원래 할 일의 "나중에로 옮긴 할 일" 목록(역링크) (41번)
 src/components/para/open-marks-card.tsx            PARA 개요 "남은 것" — 열린 확인 · 질문 모아보기 (39번)
 src/components/search/mark-chips.tsx              확인할 것 · 질문 칩 + 끝난 것도 보기 스위치 — 검색 패널 · 남은 것 카드 (39번)
 src/components/retro/retro-kind.tsx               회고 종류 아이콘(메모 줄 표시 칸) + 종류 드롭다운 (38번)
@@ -699,6 +708,8 @@ src/components/memo/memo-toolbar.tsx              줄 표시 버튼 5개 (36번)
 src/components/memo/memo-view.tsx                 메모 보기 모드 — 표시 아이콘 · 체크 · 질문 해결 입력칸 (36번)
 src/components/memo/mark-meta.ts                  표시 종류별 라벨 · 아이콘 · 색
 src/lib/memo-marks.ts                             메모 줄 표시 인식 · 고치기 순수 함수 (36번)
+src/components/memo/memo-link.tsx                 메모 링크 `[[이름(10/1)]]` 그리기 — 링크 · 끊긴 링크 · 예전 "…에서 옮김" 줄 (41번)
+src/lib/memo-links.ts                             메모 링크 찾기 · 나누기 · 역링크 · 이름 바뀔 때 고치기 순수 함수 (41번)
 src/lib/search.ts                                 키워드 검색 순수 함수 — 검색어 다듬기 · 색인 · 점수 · 줄 모드 · 메모 스니펫 · 강조 위치 (37번)
 src/lib/app-data/use-search.ts                    검색 색인(useMemo) + 검색어 · 칩 useDeferredValue (37번)
 src/components/shell/search-panel.tsx             검색 패널 — ⌘K · 칩 · 결과 목록 · 키보드 · 결과 열기 (37번)

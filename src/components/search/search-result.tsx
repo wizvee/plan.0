@@ -10,6 +10,7 @@ import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR, getParaCategory } from "@/lib/ca
 import { INLINE_CODE_CLASS, splitInlineCode } from "@/components/inline-text";
 import { MARK_BOX, InfoGlyph, MarkIcon } from "@/components/memo/memo-view";
 import { parseMemoLine, reopenQuestion, resolveQuestion, splitAnswer, toggleDone } from "@/lib/memo-marks";
+import { stripLinks } from "@/lib/memo-links";
 import {
   highlightRanges,
   splitMemoMark,
@@ -209,7 +210,7 @@ function MemoSnippetBlock({ hit, words }: { hit: TodoHit; words: string[] }) {
               </span>
             )}
             <span className={cn("min-w-0 flex-1 break-words", checked && "text-muted-foreground line-through")}>
-              <HighlightText text={question} words={words} />
+              <HighlightText text={stripLinks(question)} words={words} />
               {answer !== null ? <AnswerPart answer={answer} known={parsed.state === "i"} words={words} /> : null}
             </span>
           </div>
@@ -523,7 +524,7 @@ export function MarkLineRow({
             state === "x" && "text-muted-foreground line-through"
           )}
         >
-          <HighlightText text={question} words={words} />
+          <HighlightText text={stripLinks(question)} words={words} />
           {saved !== null ? <AnswerPart answer={saved} known={state === "i"} words={words} /> : null}
         </span>
         <CaretRight weight="bold" className="mt-[3px] size-3.5 shrink-0 text-black/25" aria-hidden="true" />
