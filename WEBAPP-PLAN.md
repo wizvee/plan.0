@@ -79,7 +79,7 @@ DB 변경은 `supabase/migrations/` 새 파일로만(schema.sql은 안 늘림).
 - 앱 시작 시 등록, `next.config.ts`에 `sw.js` 캐시 금지 헤더. 오프라인 캐시는 넣지 않음.
 
 ### 3단계 — DB 마이그레이션 (`supabase/migrations/YYYYMMDD_webapp_push.sql`)
-> ✅ 완료 (2026-09-28) — `supabase/migrations/20260928_webapp_push.sql`: `contexts`(회사 `work` · 개인 `personal` 기본, 기존 사용자에 미리 넣음), 컨테이너 `context_id`(복합 FK로 남의 컨텍스트 금지, 컨텍스트 삭제 시 `context_id`만 null — **Postgres 15+ 문법**), `user_context`(현재 컨텍스트 + `notify_on_change` 기본 켬 — Q1), `push_subscriptions`, `push_log`, Realtime(contexts · user_context). 로컬 PostgreSQL 16에서 기존 스키마 → 하위 할 일 → 이 파일 2회 실행 · 시드 · 남의 컨텍스트 거부 · 기본 2개 거부 · 잘못된 키 거부 · 삭제 시 null · RLS 확인. **사용자가 SQL Editor에서 실행 필요.**
+> ✅ 완료 (2026-09-28) — `supabase/migrations/applied/20260928_webapp_push.sql`: `contexts`(회사 `work` · 개인 `personal` 기본, 기존 사용자에 미리 넣음), 컨테이너 `context_id`(복합 FK로 남의 컨텍스트 금지, 컨텍스트 삭제 시 `context_id`만 null — **Postgres 15+ 문법**), `user_context`(현재 컨텍스트 + `notify_on_change` 기본 켬 — Q1), `push_subscriptions`, `push_log`, Realtime(contexts · user_context). 로컬 PostgreSQL 16에서 기존 스키마 → 하위 할 일 → 이 파일 2회 실행 · 시드 · 남의 컨텍스트 거부 · 기본 2개 거부 · 잘못된 키 거부 · 삭제 시 null · RLS 확인. **사용자가 SQL Editor에서 실행 필요.**
 - `contexts` — (id, user_id, name, key, position, is_default). `(user_id, key)` unique, 사용자당 기본 1개. **회사(`work`) · 개인(`personal`, 기본)** 을 미리 넣어 둔다.
 - `projects` / `areas` / `resources`에 `context_id uuid null references contexts on delete set null` (null = 기본 컨텍스트).
 - `push_subscriptions` — 기기별 구독(endpoint · 키 · user_id · 만든 시각). 여러 기기 가능.

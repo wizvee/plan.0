@@ -73,7 +73,7 @@ create index if not exists todos_goal_id_idx on public.todos (goal_id);
 - RLS: `weekly_goals` 4개 정책(`auth.uid() = user_id`). insert/update `with check`에 PARA가 내 것인지 확인(회고 테이블과 같은 방식).
   `todos` 정책은 그대로 — 남의 목표 id는 위 복합 FK가 막는다. 재실행 안전하게 FK 추가는 `do $$ … if not exists` 블록으로 감싼다.
 - Realtime: `weekly_goals`를 `supabase_realtime` publication에 추가(`todos`는 이미 있음).
-- 위치: `supabase/migrations/20260929_weekly_goals.sql` (schema.sql은 늘리지 않는다).
+- 위치: `supabase/migrations/applied/20260929_weekly_goals.sql` (schema.sql은 늘리지 않는다).
 - ⚠️ **사용자가 해야 할 일:** 배포 전에 SQL Editor에서 이 파일만 실행.
 
 ### 타입 (`src/lib/types.ts`)

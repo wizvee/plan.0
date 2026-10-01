@@ -19,6 +19,12 @@
   이전에는 `claude/weekly-todo-webapp-plan-hx1le7`라는 긴 이름이었는데, 사용자 요청으로 GitHub
   기본 브랜치 설정 + Vercel Production Branch 설정을 둘 다 `main`으로 바꿈. 옛 브랜치는 당분간
   그대로 남겨둠 — 필요 없어지면 사용자가 정리하기로 함.)
+- **(2026-10-01) 브랜치 정리**: `main`에 머지된 브랜치를 지우려 했지만 Claude 세션의 git 프록시가 자기 작업 브랜치 말고는 지우기를 막는다(HTTP 403).
+  사용자가 GitHub 웹(Branches)에서 지운다. 그 시점에 머지된 브랜치 14개: `claude/eager-allen-e8yh5u` · `claude/ecstatic-euler-m5k1z0` ·
+  `claude/gracious-galileo-tmes1w` · `claude/inbox-para-groups` · `claude/memo-marks` · `claude/memo-tab-badge` · `claude/optimistic-noether-311on4` ·
+  `claude/para-open-marks` · `claude/project-docs-review-0ectiz` · `claude/retro-to-memo` · `claude/search` · `claude/tender-allen-0vra8b` ·
+  `claude/weekly-calendar-default-day-p9dqya` · `claude/weekly-todo-webapp-plan-hx1le7`(옛 프로덕션 브랜치).
+  머지 안 된 6개(`brave-ptolemy` · `festive-mendel` · `happy-dirac` · `keen-clarke` · `new-ui-design` · `weekly-planner-header-change`)는 남겨 둠 — 지울지는 사용자가 판단.
 - 로컬로 가져오기:
   ```bash
   git clone https://github.com/wizvee/plan.0.git
@@ -474,7 +480,7 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     계획 [REFLECTIONS-PLAN.md](./REFLECTIONS-PLAN.md) → 구현.
     - **합의 규칙**: 종류는 KPT 3개(keep/problem/try), 할 일에 여러 개 또는 **프로젝트에 직접**(할 일 없이), 노트/스크랩엔 없음
       (할 일 → 노트 전환 시 숨기기만), 할 일 삭제 시 회고도 삭제. Area/Resource에는 회고 탭 없음(1차).
-    - **DB**: `todo_reflections`(todo_id 또는 project_id 정확히 하나, `converted_todo_id`) — `supabase/migrations/20260928_todo_reflections.sql`.
+    - **DB**: `todo_reflections`(todo_id 또는 project_id 정확히 하나, `converted_todo_id`) — `supabase/migrations/applied/20260928_todo_reflections.sql`.
       할 일 회고는 project_id를 저장하지 않고 할 일의 **현재 매핑**으로 모은다(할 일을 옮기면 회고도 따라감).
     - **할 일 상세 팝업**: 고정 머리(체크 · 제목 · 일정 · PARA) + 탭 3개(하위 할 일 `2/4` · 회고 개수 · 메모·URL 점) + 고정 바닥.
       탭 본문 높이 300px 고정. **완료된 할 일은 회고 탭으로 열림**(완료 시 "한 줄 회고?"를 묻는 대신). 노트는 탭 없음.
@@ -484,7 +490,7 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     - `useDismiss`가 Esc를 `preventDefault()`로 표시하고 상세 팝업은 `defaultPrevented`면 안 닫힘 — 팝업 안 메뉴에서 Esc를 누르면 메뉴만 닫힘.
     - **확인**: tsc · eslint · build + 가짜 Supabase(auth/rest 목 서버)에 붙인 실제 앱을 Playwright로 클릭 확인(탭 · 드롭다운 ·
       추가 · 할 일로 · 노트 편집기 열기 · 삭제 시 회고 제거 · 모바일). 실제 Supabase(RLS · Realtime) · Drive 저장은 확인 못 함.
-    - `supabase/migrations/20260928_todo_reflections.sql`은 사용자가 실행 완료 → `main`에 머지.
+    - `supabase/migrations/applied/20260928_todo_reflections.sql`은 사용자가 실행 완료 → `main`에 머지.
 
 29. **(2026-09-28 추가) 완료된 할 일은 캘린더에서 끌어서 옮길 수 없게**: 사용자 요청. `calendar-block.tsx`의
     `useDraggable`을 `todo.completed`면 `disabled` — 끝난 일정이 실수로 다른 날로 밀리지 않게. 완료를 풀면 다시 옮길 수 있다.
@@ -565,7 +571,7 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     (https://claude.ai/artifact/JfkwtcvcU885kzNkdJGV7Q) 컨펌 + 추천안 두 가지 컨펌(프로젝트 전체 회고 = 노트, 회고 테이블 삭제).
     - 사용자가 하나뿐이던 회고를 직접 메모로 옮겨 `todo_reflections`는 0건 → 옮기기 스크립트 없이 **회고 코드 · 스토어 · 테이블을 없앰**
       (`components/reflection/*`, `lib/reflection.ts`, `lib/supabase/reflections.ts`, `use-reflections`, `reflection-actions`, `Reflection` 타입).
-      테이블은 `supabase/migrations/20260930_drop_todo_reflections.sql`로 지움 — 새 코드 배포 뒤 실행 완료(2026-09-30).
+      테이블은 `supabase/migrations/applied/20260930_drop_todo_reflections.sql`로 지움 — 새 코드 배포 뒤 실행 완료(2026-09-30).
     - 할 일 팝업 탭 3개(하위 할 일 · 메모·URL · 사진), 완료된 할 일은 메모 탭으로. 빈 메모면 회고 버튼 3개로 한 줄 유도,
       표시만 치고 안 적은 줄은 저장하지 않음(`commitMemo`).
     - 프로젝트 회고 탭은 `lib/retro.ts` 순수 함수로 메모 줄을 모음. 프로젝트 전체 회고는 "〈프로젝트〉 회고" 노트 메모에 줄로(DB 변경 없음),
@@ -681,7 +687,8 @@ DESIGN.md                      디자인 가이드 — 컬러 토큰/radius/레�
 
 supabase/schema.sql            todos + projects/areas/resources 테이블 + RLS 정책 + realtime publication (Supabase SQL Editor에서 1회 실행,
                                 재실행해도 안전)
-supabase/migrations/            2026-09-28 이후 DB 변경. 날짜별 파일, 기존 프로젝트는 새 파일만 SQL Editor에서 실행
+supabase/migrations/            2026-09-28 이후 DB 변경. 날짜별 파일, 기존 프로젝트는 새 파일만 SQL Editor에서 실행.
+                                실행이 끝난 파일은 applied/로 옮긴다(2026-10-01~) — 맨 위에 남은 파일 = 아직 실행할 것
 .env.local.example             필요한 환경변수 템플릿 (진짜 키는 절대 커밋 안 함)
 
 src/app/(app)/layout.tsx        로그인 후 화면 공통 레이아웃 — user · Drive 연결 1회 조회 → AppDataProvider → DndProvider → AppShell (25번)
@@ -804,10 +811,13 @@ src/components/ui/*.tsx         shadcn/ui 기본 컴포넌트 (button/card/check
    `duration_minutes`, 그리고 이번에 추가된 `url`/`memo`)을 쓰려면 **`supabase/schema.sql`을
    SQL Editor에서 다시 한 번 실행**해야 함 (전체 스크립트가 재실행해도 안전하도록 작성돼 있음).
    **2026-09-28부터 schema.sql은 더 늘리지 않는다**(SQL Editor가 약 249줄까지만 붙여넣기됨). 이후 DB 변경은
-   `supabase/migrations/YYYYMMDD_이름.sql`로 따로 만들고, 기존 프로젝트는 **그 파일만** 실행.
-   새 프로젝트는 schema.sql → migrations/ 파일을 날짜순으로 실행.
+   `supabase/migrations/YYYYMMDD_이름.sql`로 따로 만들고, 기존 프로젝트는 **그 파일만** 실행. **실행이 끝나면 `migrations/applied/`로 옮긴다**
+   (2026-10-01 사용자 요청 — `migrations/` 맨 위에 남은 파일 = 아직 실행할 것). 지우지 않는 이유: 새 프로젝트를 만들 때 필요하다.
+   새 프로젝트는 schema.sql → `migrations/applied/` → `migrations/` 파일을 날짜순으로 실행
+   (`todo_reflections`는 만들었다가 `drop_todo_reflections`로 지운 것이라 새 프로젝트에선 둘 다 건너뛰어도 된다).
+   아래는 모두 실행 완료 → `applied/`로 옮김(2026-10-01):
    - `20260928_todo_subtasks.sql` — 하위 할 일 테이블 (SUBTASKS-PLAN.md 1단계) 실행 완료
-   - `20260928_webapp_push.sql` — 컨텍스트 · 웹 푸시 테이블 (WEBAPP-PLAN.md 3단계) **실행 필요**
+   - `20260928_webapp_push.sql` — 컨텍스트 · 웹 푸시 테이블 (WEBAPP-PLAN.md 3단계) 실행 완료(목록에 "실행 필요"로 남아 있었지만, 이 테이블을 바꾸는 `20261001_context_balance.sql`이 실행됐으므로 실행된 것)
    - `20260928_todo_reflections.sql` — 회고 테이블 (REFLECTIONS-PLAN.md) 실행 완료
    - `20260929_subtask_carried_at.sql` — 하위 할 일 넘김 (CARRY-OVER-PLAN.md) 실행 완료
    - `20260929_weekly_goals.sql` — 주간 목표 테이블 + `todos.goal_id` (GOALS-PLAN.md) 실행 완료

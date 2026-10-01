@@ -30,7 +30,7 @@
 
 ## 3. 구현
 
-- DB: `todo_subtasks.carried_at timestamptz null` — `supabase/migrations/20260929_subtask_carried_at.sql`.
+- DB: `todo_subtasks.carried_at timestamptz null` — `supabase/migrations/applied/20260929_subtask_carried_at.sql`.
   사용자가 SQL Editor에서 실행 완료 (2026-09-29).
 - 규칙(순수 함수): `src/lib/carry-over.ts` — `nextWeekday` · `findCarryTarget` · 날짜 라벨.
 - 동작: `useTodoActions().carryOver(id)` — 대상 찾기/만들기 → 하위 할 일 복사(성공한 것만) → 넘김 표시 → 완료.
