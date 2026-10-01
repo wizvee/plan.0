@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, Copy, DotsThree, X } from "@/components/icons";
+import { Check, Copy, DotsThree, Moon, X } from "@/components/icons";
 
 import { cn } from "@/lib/utils";
+import { CONTEXT_COLORS, CONTEXT_COLOR_LABEL, contextColor } from "@/lib/context-color";
 import type { Context } from "@/lib/types";
 import { useDismiss } from "@/lib/use-dismiss";
 import { useShellUI } from "@/lib/shell-ui";
@@ -70,7 +71,7 @@ export function ContextManager() {
         </div>
         <p className="text-[13px] leading-relaxed text-muted-foreground">
           PARA마다 컨텍스트를 고르면, 지금 컨텍스트에 속한 할 일만 배지와 알림에 뜹니다. 고르지 않은 PARA와 PARA 없는 할 일은{" "}
-          <b className="font-semibold text-foreground">기본</b> 컨텍스트예요.
+          <b className="font-semibold text-foreground">기본</b> 컨텍스트예요. 색과 수면 표시는 목표 화면의 시간 균형에 쓰여요.
         </p>
 
         <div className="overflow-visible rounded-xl border border-border">
@@ -130,7 +131,10 @@ export function ContextManager() {
             <span className="text-muted-foreground">집중 모드 켜질 때</span>
             <code className="font-mono text-[12px]">{`{"context": "<키>"}`}</code>
             <span className="text-muted-foreground">꺼질 때</span>
-            <code className="font-mono text-[12px]">{`{"context": "default"}`}</code>
+            <span>
+              <code className="font-mono text-[12px]">{`{"context": "all"}`}</code>
+              <span className="text-muted-foreground"> → 전부</span>
+            </span>
           </div>
           <span className="text-[12px] text-muted-foreground">비밀 키 헤더와 단축어 만드는 법은 README의 &quot;컨텍스트 단축어&quot; 참고</span>
         </div>
@@ -141,7 +145,7 @@ export function ContextManager() {
 }
 
 function ContextRow({ context, count, isCurrent }: { context: Context; count: number; isCurrent: boolean }) {
-  const { renameContext, setDefaultContext, removeContext } = useContexts();
+  const { renameContext, setDefaultContext, setContextColor, setSleepContext, removeContext } = useContexts();
   const [menuOpen, setMenuOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [draft, setDraft] = useState(context.name);
@@ -164,7 +168,15 @@ function ContextRow({ context, count, isCurrent }: { context: Context; count: nu
     .join(" · ");
 
   return (
-    <div className="flex min-h-[52px] items-center gap-2.5 border-b border-border pl-3.5 pr-2.5">
+    <div className="flex min-h-[52px] items-center gap-2 border-b border-border pl-2 pr-2.5">
+      <button
+        type="button"
+        onClick={() => setMenuOpen(true)}
+        aria-label={`${context.name} 색 바꾸기 — 지금 ${CONTEXT_COLOR_LABEL[context.color]}`}
+        className="flex size-7 shrink-0 items-center justify-center rounded-full hover:bg-black/5"
+      >
+        <span className="size-3 rounded-full" style={{ backgroundColor: contextColor(context.color) }} />
+      </button>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5 py-1.5">
         {renaming ? (
           <input
@@ -187,6 +199,15 @@ function ContextRow({ context, count, isCurrent }: { context: Context; count: nu
             {context.name}
             {context.isDefault ? (
               <span className="rounded-[5px] bg-accent px-1.5 py-px text-[11px] font-semibold text-accent-foreground">기본</span>
+            ) : null}
+            {context.isSleep ? (
+              <span
+                className="flex items-center gap-[3px] rounded-[5px] px-1.5 py-px text-[11px] font-semibold"
+                style={{ backgroundColor: "var(--ctx-indigo-tint)", color: "var(--ctx-indigo)" }}
+              >
+                <Moon weight="bold" className="size-[11px]" aria-hidden="true" />
+                수면으로 세기
+              </span>
             ) : null}
           </span>
         )}
@@ -215,8 +236,55 @@ function ContextRow({ context, count, isCurrent }: { context: Context; count: nu
         {menuOpen ? (
           <div
             role="menu"
-            className="absolute right-0 top-[calc(100%+4px)] z-10 w-[160px] rounded-[10px] border border-black/10 bg-popover/95 p-[5px] shadow-[0_12px_32px_rgba(0,0,0,0.16),0_2px_6px_rgba(0,0,0,0.06)] backdrop-blur"
+            className="absolute right-0 top-[calc(100%+4px)] z-10 w-[236px] rounded-[10px] border border-black/10 bg-popover/95 p-[5px] shadow-[0_12px_32px_rgba(0,0,0,0.16),0_2px_6px_rgba(0,0,0,0.06)] backdrop-blur"
           >
+            <span className="block px-2 pb-1 pt-1.5 text-[11.5px] font-semibold text-muted-foreground">색</span>
+            <div className="grid grid-cols-8 gap-1 px-1.5 pb-2">
+              {CONTEXT_COLORS.map((color) => {
+                const selected = context.color === color;
+                return (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => {
+                      if (!selected) void setContextColor(context.id, color);
+                    }}
+                    aria-label={CONTEXT_COLOR_LABEL[color]}
+                    aria-pressed={selected}
+                    className="size-[22px] rounded-full"
+                    style={{
+                      backgroundColor: contextColor(color),
+                      // 고른 색 — 흰 틈 + 같은 색 링 (시안 ⑤)
+                      boxShadow: selected ? `0 0 0 2px var(--popover), 0 0 0 4px ${contextColor(color)}` : undefined,
+                    }}
+                  />
+                );
+              })}
+            </div>
+            <div className="mx-1.5 mb-[5px] h-px bg-border" />
+            {!context.isDefault ? (
+              // 기본(기타)은 매핑 없는 할 일까지 받으므로 수면이 될 수 없다
+              <button
+                type="button"
+                role="menuitemcheckbox"
+                aria-checked={context.isSleep}
+                onClick={() => {
+                  setMenuOpen(false);
+                  void setSleepContext(context.id, !context.isSleep);
+                }}
+                className="group flex w-full items-start gap-2 rounded-md px-2 py-[7px] text-left hover:bg-primary hover:text-primary-foreground"
+              >
+                <span className="flex w-[13px] shrink-0 justify-center pt-[3px]">
+                  {context.isSleep ? <Check weight="bold" className="size-[13px]" /> : null}
+                </span>
+                <span className="flex flex-col gap-px">
+                  <span className="text-[13.5px]">수면으로 세기</span>
+                  <span className="text-[11.5px] text-muted-foreground group-hover:text-primary-foreground/85">
+                    깨어 있는 시간에서 빼요 · 하나만
+                  </span>
+                </span>
+              </button>
+            ) : null}
             <MenuItem
               onClick={() => {
                 setMenuOpen(false);
@@ -227,14 +295,17 @@ function ContextRow({ context, count, isCurrent }: { context: Context; count: nu
             </MenuItem>
             {!context.isDefault ? (
               <>
-                <MenuItem
-                  onClick={() => {
-                    setMenuOpen(false);
-                    void setDefaultContext(context.id);
-                  }}
-                >
-                  기본으로 지정
-                </MenuItem>
+                {context.isSleep ? null : (
+                  // 수면은 기본이 될 수 없다 — 매핑 없는 할 일이 전부 수면으로 세지게 된다
+                  <MenuItem
+                    onClick={() => {
+                      setMenuOpen(false);
+                      void setDefaultContext(context.id);
+                    }}
+                  >
+                    기본으로 지정
+                  </MenuItem>
+                )}
                 <MenuItem
                   destructive
                   onClick={() => {
@@ -262,7 +333,7 @@ function MenuItem({ onClick, destructive, children }: { onClick: () => void; des
       role="menuitem"
       onClick={onClick}
       className={cn(
-        "flex h-8 w-full items-center rounded-md px-2.5 text-left text-[13.5px] hover:bg-primary hover:text-primary-foreground",
+        "flex h-8 w-full items-center rounded-md py-0 pl-[29px] pr-2 text-left text-[13.5px] hover:bg-primary hover:text-primary-foreground",
         destructive && "text-destructive"
       )}
     >

@@ -47,6 +47,10 @@ export function useTodoActions() {
       resize(id: string, durationMinutes: number) {
         void updateTodo(id, { durationMinutes });
       },
+      /** 상세 팝업의 시작 · 끝 편집 — 길이가 (24시 − 시작)보다 길면 자정을 넘는 블록 (BALANCE-PLAN.md 6번) */
+      setTime(id: string, startMinutes: number, durationMinutes: number) {
+        void updateTodo(id, { startMinutes, durationMinutes });
+      },
       /** 하위 할 일은 DB에서 cascade로 지워지고, 로컬 상태에서도 바로 뺀다. */
       remove(id: string) {
         dropSubtasksOf(id);

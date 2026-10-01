@@ -33,7 +33,9 @@ export function DndProvider({ children }: { children: ReactNode }) {
   const subtaskActions = useSubtaskActions();
   const goalActions = useGoalActions();
   const [active, setActive] = useState<
-    { kind: "todo"; id: string; source: DraggedTodoData["source"] } | { kind: "subtask"; id: string } | null
+    | { kind: "todo"; id: string; source: DraggedTodoData["source"]; offsetMinutes: number }
+    | { kind: "subtask"; id: string }
+    | null
   >(null);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
@@ -42,7 +44,7 @@ export function DndProvider({ children }: { children: ReactNode }) {
     const data = event.active.data.current as ActiveData | undefined;
     const id = String(event.active.id);
     if (data?.type === "subtask") setActive({ kind: "subtask", id });
-    else setActive({ kind: "todo", id, source: data?.source ?? "inbox" });
+    else setActive({ kind: "todo", id: data?.todoId ?? id, source: data?.source ?? "inbox", offsetMinutes: data?.offsetMinutes ?? 0 });
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -74,7 +76,7 @@ export function DndProvider({ children }: { children: ReactNode }) {
       <DragOverlay>
         {activeTodo ? (
           active?.kind === "todo" && active.source === "calendar" ? (
-            <CalendarBlock todo={activeTodo} overlay />
+            <CalendarBlock todo={activeTodo} overlay overlayOffsetMinutes={active.offsetMinutes} />
           ) : (
             <TodoCard todo={activeTodo} overlay />
           )

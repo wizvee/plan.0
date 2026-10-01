@@ -5,7 +5,8 @@ import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/client";
 import { fetchAllRows } from "@/lib/supabase/fetch-all";
-import type { Context } from "@/lib/types";
+import { nextUnusedColor } from "@/lib/context-color";
+import type { Context, ContextColor } from "@/lib/types";
 
 interface ContextRow {
   id: string;
@@ -14,6 +15,8 @@ interface ContextRow {
   key: string;
   position: number;
   is_default: boolean;
+  color: ContextColor;
+  is_sleep: boolean;
 }
 
 interface UserContextRow {
@@ -24,7 +27,16 @@ interface UserContextRow {
 }
 
 function fromRow(row: ContextRow): Context {
-  return { id: row.id, name: row.name, key: row.key, position: row.position, isDefault: row.is_default };
+  return {
+    id: row.id,
+    name: row.name,
+    key: row.key,
+    position: row.position,
+    isDefault: row.is_default,
+    // 마이그레이션(20261001_context_balance.sql) 전이면 컬럼이 없다 — 회색 · 수면 아님
+    color: row.color ?? "gray",
+    isSleep: row.is_sleep ?? false,
+  };
 }
 
 /** 현재 컨텍스트 — 단축어(집중 모드)가 바꾼다. 행이 없거나 contextId가 null이면 "전부". */
@@ -38,6 +50,9 @@ const EMPTY_CURRENT: CurrentContext = { contextId: null, notifyOnChange: true, c
 
 /** 단축어 키 규칙 (DB check와 같음) */
 export const CONTEXT_KEY_PATTERN = /^[a-z0-9_-]{1,32}$/;
+
+/** `/api/context`가 따로 쓰는 값 — 전부(`all`) · 기본(`default`). 컨텍스트 키로 쓰면 그 컨텍스트로 못 바꾼다 */
+const RESERVED_CONTEXT_KEYS = ["all", "default"];
 
 /**
  * 컨텍스트 목록(`contexts`) + 현재 컨텍스트(`user_context`) 조회 · Realtime · 수정 (WEBAPP-PLAN.md).
@@ -104,12 +119,14 @@ export function useSupabaseContexts(userId: string) {
       const trimmedKey = key.trim().toLowerCase();
       if (!trimmedName) return "이름을 입력하세요";
       if (!CONTEXT_KEY_PATTERN.test(trimmedKey)) return "키는 영문 소문자 · 숫자 · - · _ 만 (32자 이하)";
+      if (RESERVED_CONTEXT_KEYS.includes(trimmedKey)) return `"${trimmedKey}"는 단축어용으로 예약된 키예요`;
 
       const position = contexts.length === 0 ? 0 : Math.max(...contexts.map((c) => c.position)) + 1;
+      const color = nextUnusedColor(contexts.map((c) => c.color));
 
       const { data, error } = await supabase
         .from("contexts")
-        .insert({ user_id: userId, name: trimmedName, key: trimmedKey, position })
+        .insert({ user_id: userId, name: trimmedName, key: trimmedKey, position, color })
         .select()
         .single();
       if (error || !data) return error?.code === "23505" ? "같은 키가 이미 있어요" : "추가하지 못했어요";
@@ -140,6 +157,29 @@ export function useSupabaseContexts(userId: string) {
     [supabase, userId]
   );
 
+  const setContextColor = useCallback(
+    async (id: string, color: ContextColor) => {
+      setContexts((prev) => prev.map((c) => (c.id === id ? { ...c, color } : c)));
+      await supabase.from("contexts").update({ color }).eq("id", id);
+    },
+    [supabase]
+  );
+
+  /**
+   * 수면으로 세기 켜기 · 끄기 — 사용자당 하나(부분 unique 인덱스)라 켤 때는 다른 수면 표시를 먼저 끈다.
+   * (BALANCE-PLAN.md 4번)
+   */
+  const setSleepContext = useCallback(
+    async (id: string, isSleep: boolean) => {
+      setContexts((prev) => prev.map((c) => ({ ...c, isSleep: c.id === id ? isSleep : isSleep ? false : c.isSleep })));
+      if (isSleep) {
+        await supabase.from("contexts").update({ is_sleep: false }).eq("user_id", userId).eq("is_sleep", true);
+      }
+      await supabase.from("contexts").update({ is_sleep: isSleep }).eq("id", id);
+    },
+    [supabase, userId]
+  );
+
   /** 삭제 — 이 컨텍스트를 고른 PARA와 현재 컨텍스트는 DB에서 null(기본 / 전부)로 돌아간다. 기본은 못 지운다. */
   const removeContext = useCallback(
     async (id: string) => {
@@ -158,5 +198,15 @@ export function useSupabaseContexts(userId: string) {
     [supabase, userId]
   );
 
-  return { contexts, current, addContext, renameContext, setDefaultContext, removeContext, setNotifyOnChange };
+  return {
+    contexts,
+    current,
+    addContext,
+    renameContext,
+    setDefaultContext,
+    setContextColor,
+    setSleepContext,
+    removeContext,
+    setNotifyOnChange,
+  };
 }

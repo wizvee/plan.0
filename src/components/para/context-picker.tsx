@@ -6,6 +6,7 @@ import { CaretUpDown, Check, Plus } from "@/components/icons";
 import { useDismiss } from "@/lib/use-dismiss";
 import { useShellUI } from "@/lib/shell-ui";
 import { useContexts } from "@/lib/app-data/use-contexts";
+import { contextColor } from "@/lib/context-color";
 
 /**
  * PARA 상세 Overview의 "컨텍스트" 선택 — 회사 / 개인 / … 중 하나. 기본 컨텍스트를 고르면 null로 저장한다
@@ -29,6 +30,9 @@ export function ContextPicker({ contextId, onChange }: { contextId: string | nul
         aria-expanded={open}
         className="flex h-[30px] items-center gap-1.5 rounded-[7px] bg-black/[0.06] pl-2.5 pr-2 text-[13.5px] font-semibold hover:bg-black/10"
       >
+        {selected ? (
+          <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: contextColor(selected.color) }} />
+        ) : null}
         {selected?.name ?? "—"}
         <CaretUpDown weight="bold" className="size-3 text-muted-foreground" aria-hidden="true" />
       </button>
@@ -55,6 +59,10 @@ export function ContextPicker({ contextId, onChange }: { contextId: string | nul
                 <span className="flex w-[13px] justify-center">
                   {checked ? <Check weight="bold" className="size-[13px]" /> : null}
                 </span>
+                <span
+                  className="size-2 shrink-0 rounded-full group-hover:shadow-[0_0_0_1.5px_white]"
+                  style={{ backgroundColor: contextColor(context.color) }}
+                />
                 <span className="flex-1">
                   {context.name}
                   {context.isDefault ? (

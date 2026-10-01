@@ -12,6 +12,7 @@ import { SubtaskList } from "@/components/subtask/subtask-list";
 import { MovedTodoList } from "@/components/subtask/moved-todo-list";
 import { ParaMenu } from "@/components/para/para-menu";
 import { PhotoTab } from "@/components/photo/photo-tab";
+import { TodoTimeEditor } from "@/components/todo-time-editor";
 import { InlineText } from "@/components/inline-text";
 import { MemoEditor } from "@/components/memo/memo-editor";
 import { MemoView } from "@/components/memo/memo-view";
@@ -22,7 +23,13 @@ import { hasMemoLinks, movedTodosOf, resolveLink } from "@/lib/memo-links";
 import { hasRetroLines, RETRO_KINDS, RETRO_STATE, type RetroKind } from "@/lib/retro";
 import { cn } from "@/lib/utils";
 import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR, getParaCategory } from "@/lib/category";
-import { formatClock, MINUTES_PER_DAY } from "@/lib/time";
+import {
+  DEFAULT_DURATION_MINUTES,
+  DEFAULT_START_MINUTES,
+  endMinutesOf,
+  formatClock,
+  isOvernight,
+} from "@/lib/time";
 import { isSubtaskPending, type Area, type ParaKind, type Project, type Resource, type Todo, type TodoKind } from "@/lib/types";
 import { carryDateLabel, findCarryTarget, isCarryDue, nextWeekday } from "@/lib/carry-over";
 import { useNow } from "@/lib/use-today";
@@ -43,13 +50,15 @@ const KIND_LABEL: Record<ParaKind, string> = {
   resource: "리소스",
 };
 
-/** "9월 28일 (월) · 오전 9시 – 오전 11시". 캘린더에 배치되지 않았으면 null. */
+/** "9월 28일 (월) · 오전 9시 – 오전 11시", 자정을 넘으면 "… 오후 11:45 – 다음 날 오전 7:15". 캘린더에 배치되지 않았으면 null. */
 function scheduleLabel(todo: Todo): string | null {
   if (!todo.scheduledDate) return null;
   const day = format(parseISO(todo.scheduledDate), "M월 d일 (EEE)", { locale: ko });
   if (todo.startMinutes === null) return day;
-  const end = Math.min(todo.startMinutes + (todo.durationMinutes ?? 0), MINUTES_PER_DAY);
-  return `${day} · ${formatClock(todo.startMinutes)} – ${formatClock(end)}`;
+  const duration = todo.durationMinutes ?? DEFAULT_DURATION_MINUTES;
+  const end = endMinutesOf(todo.startMinutes, duration);
+  const nextDay = isOvernight(todo.startMinutes, duration) ? "다음 날 " : "";
+  return `${day} · ${formatClock(todo.startMinutes)} – ${nextDay}${formatClock(end)}`;
 }
 
 export type DetailTab = "subtasks" | "memo" | "photos";
@@ -102,7 +111,9 @@ export function TodoDetailModal({
   const [url, setUrl] = useState(todo.url ?? "");
   const [paraOpen, setParaOpen] = useState(false);
   const paraRef = useRef<HTMLDivElement>(null);
-  const { toggle, carryOver } = useTodoActions();
+  const { toggle, carryOver, setTime } = useTodoActions();
+  // 일정 줄을 누르면 시작 · 끝 편집이 열린다 (BALANCE-PLAN.md 6번)
+  const [editingTime, setEditingTime] = useState(false);
   const { todos } = useTodos();
   const { subtasksOf, progressOf } = useSubtasks();
   const [carrying, setCarrying] = useState(false);
@@ -391,10 +402,28 @@ export function TodoDetailModal({
               </button>
             )}
             {schedule ? (
-              <span className="flex items-center gap-[5px] text-[12.5px] text-muted-foreground">
-                <Clock className="size-[13px] shrink-0" aria-hidden="true" />
-                {schedule}
-              </span>
+              isTask ? (
+                <button
+                  type="button"
+                  onClick={() => setEditingTime((v) => !v)}
+                  aria-expanded={editingTime}
+                  aria-label={`${schedule} — 눌러서 시간 수정`}
+                  className="flex w-fit items-center gap-[5px] rounded-[5px] text-left text-[12.5px] text-muted-foreground hover:text-foreground"
+                >
+                  <Clock className="size-[13px] shrink-0" aria-hidden="true" />
+                  {schedule}
+                  <CaretDown
+                    weight="bold"
+                    className={cn("size-[11px] shrink-0 transition-transform", editingTime && "rotate-180")}
+                    aria-hidden="true"
+                  />
+                </button>
+              ) : (
+                <span className="flex items-center gap-[5px] text-[12.5px] text-muted-foreground">
+                  <Clock className="size-[13px] shrink-0" aria-hidden="true" />
+                  {schedule}
+                </span>
+              )
             ) : null}
           </div>
           <button
@@ -406,6 +435,14 @@ export function TodoDetailModal({
             <X className="size-4" />
           </button>
         </div>
+
+        {editingTime && isTask && todo.scheduledDate ? (
+          <TodoTimeEditor
+            startMinutes={todo.startMinutes ?? DEFAULT_START_MINUTES}
+            durationMinutes={todo.durationMinutes ?? DEFAULT_DURATION_MINUTES}
+            onChange={(start, duration) => setTime(todo.id, start, duration)}
+          />
+        ) : null}
 
         <div ref={paraRef} className="relative mt-2.5">
           <button

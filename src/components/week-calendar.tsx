@@ -6,10 +6,10 @@ import { useDroppable } from "@dnd-kit/core";
 
 import { CalendarBlock } from "@/components/calendar-block";
 import { cn } from "@/lib/utils";
-import { layoutDayBlocks } from "@/lib/calendar-layout";
+import { layoutDayBlocks, type DaySegment } from "@/lib/calendar-layout";
 import type { DropTargetData } from "@/lib/dnd/drop-targets";
 import { useTodayKey } from "@/lib/use-today";
-import { DAY_KEYS, DAY_LABELS_KO, type Area, type DayKey, type Project, type Resource, type Todo } from "@/lib/types";
+import { DAY_KEYS, DAY_LABELS_KO, type Area, type DayKey, type Project, type Resource } from "@/lib/types";
 import {
   GUTTER_WIDTH,
   HOURS_IN_DAY,
@@ -23,7 +23,7 @@ import {
 interface WeekCalendarProps {
   monday: Date;
   mobileDay: DayKey;
-  itemsByDay: Record<DayKey, Todo[]>;
+  itemsByDay: Record<DayKey, DaySegment[]>;
   projects: Project[];
   areas: Area[];
   resources: Resource[];
@@ -84,7 +84,7 @@ function DayGridColumn({
   day: DayKey;
   /** 이 칸의 실제 날짜 (yyyy-MM-dd) — 드롭하면 이 날짜로 배치된다 */
   date: string;
-  items: Todo[];
+  items: DaySegment[];
   isToday: boolean;
   projects: Project[];
   areas: Area[];
@@ -116,11 +116,12 @@ function DayGridColumn({
         <div key={hour} className="border-t border-black/[0.07]" style={{ height: HOUR_HEIGHT }} />
       ))}
       {isToday ? <CurrentTimeLine /> : null}
-      {layoutDayBlocks(items).map(({ todo, left, width, nested }) => (
+      {layoutDayBlocks(items).map(({ segment, top, left, width, nested }) => (
         <CalendarBlock
-          key={todo.id}
-          todo={todo}
-          placement={{ left, width, nested }}
+          key={segment.todo.id}
+          todo={segment.todo}
+          segment={segment}
+          placement={{ top, left, width, nested }}
           projects={projects}
           areas={areas}
           resources={resources}

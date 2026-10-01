@@ -9,7 +9,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
  *   POST /api/context
  *   Authorization: Bearer <CONTEXT_API_SECRET>
  *   { "context": "work" }      ← 컨텍스트 키 (앱의 컨텍스트 관리에 보이는 값)
- *   { "context": "default" }   ← 기본 컨텍스트로 (집중 모드 꺼질 때)
+ *   { "context": "all" }       ← 전부 (집중 모드 꺼질 때 — 영역별 집중 모드를 쓰므로, BALANCE-PLAN.md)
+ *   { "context": "default" }   ← 기본 컨텍스트로
  *
  * 로그인 세션 없이 호출되므로 `/api/clip`과 같은 방식(비밀 키 + 단일 사용자 `CLIP_USER_ID`)으로 인증하고,
  * secret 키 클라이언트로 `user_context`를 갱신한다. 열린 앱은 Realtime으로 바로 반영된다.
@@ -44,10 +45,20 @@ export async function POST(request: NextRequest) {
 
   const requested = typeof body.context === "string" ? body.context.trim().toLowerCase() : "";
   if (!requested) {
-    return NextResponse.json({ error: 'context 값이 필요합니다. 예: {"context": "work"} 또는 {"context": "default"}' }, { status: 400 });
+    return NextResponse.json({ error: 'context 값이 필요합니다. 예: {"context": "work"} 또는 {"context": "all"}' }, { status: 400 });
   }
 
   const supabase = createAdminClient();
+
+  // 전부 — 현재 컨텍스트 없음(null). 모든 컨텍스트의 할 일이 배지 · 알림에 들어간다
+  if (requested === "all") {
+    const { error } = await supabase
+      .from("user_context")
+      .upsert({ user_id: userId, context_id: null, changed_at: new Date().toISOString() }, { onConflict: "user_id" });
+    if (error) return NextResponse.json({ error: "컨텍스트를 바꾸지 못했습니다." }, { status: 500 });
+    return NextResponse.json({ ok: true, context: null });
+  }
+
   const query = supabase.from("contexts").select("id, name, key").eq("user_id", userId);
   const { data: context, error: lookupError } = await (requested === "default"
     ? query.eq("is_default", true)
@@ -60,8 +71,8 @@ export async function POST(request: NextRequest) {
   if (!context) {
     // 단축어에 오타가 있으면 조용히 넘어가지 않고 알려준다
     const { data: all } = await supabase.from("contexts").select("key").eq("user_id", userId);
-    const keys = (all ?? []).map((c) => c.key).join(", ");
-    return NextResponse.json({ error: `"${requested}" 컨텍스트가 없습니다. 사용 가능: ${keys}, default` }, { status: 400 });
+    const keys = [...(all ?? []).map((c) => c.key), "all", "default"].join(", ");
+    return NextResponse.json({ error: `"${requested}" 컨텍스트가 없습니다. 사용 가능: ${keys}` }, { status: 400 });
   }
 
   const { error: updateError } = await supabase

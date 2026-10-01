@@ -18,6 +18,13 @@ export type DragSource =
 export interface DraggedTodoData {
   type: "todo";
   source: DragSource;
+  /**
+   * 끄는 할 일의 id — 드래그 id와 다를 때만. 자정을 넘는 블록의 다음 날 조각은 드래그 id가 `<id>:tail`이다
+   * (한 할 일이 두 조각이라 dnd-kit id가 겹치지 않게).
+   */
+  todoId?: string;
+  /** 끄는 조각이 블록 시작에서 몇 분 뒤에서 시작하는지 — 다음 날 조각이면 (24시 − 시작). 놓을 때 블록 시작을 되돌려 계산 */
+  offsetMinutes?: number;
 }
 
 /**

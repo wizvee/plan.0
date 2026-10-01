@@ -18,6 +18,8 @@
 | A4 | **Google Drive 연결** — 미연결이면 아바타에 주황 점, 계정 메뉴의 "연결" · PARA 자료 탭 안내의 "Google Drive 연결". 연결 후 누른 화면으로 복귀 | `shell/account-menu.tsx`, `para/container-detail-screen.tsx`, `api/auth/google` |
 | A5 | **Google Drive 연결 상태 + 재연결** — 계정 메뉴에 "연결됨" + 재연결 버튼 | `shell/account-menu.tsx` |
 | A6 | Drive 연결 결과 배너 — 연결됨 / refresh token 없음 / 실패, 닫기 가능 (어느 화면이든 본문 상단) | `shell/drive-status-banner.tsx` |
+| A7 | **컨텍스트 관리** — 계정 메뉴 → 컨텍스트: 이름 · 단축어 키(복사) · PARA 개수, 이름 바꾸기 · 기본으로 지정 · 삭제 · 추가. 행 앞 **색 점**(누르면 `···` 메뉴) — 메뉴 위에 색 8개, **수면으로 세기**(사용자당 하나, 기본 · 수면은 서로 될 수 없음). 새 컨텍스트는 안 쓰는 첫 색. 단축어 안내: 꺼질 때 `all` | `shell/context-manager.tsx`, `lib/supabase/contexts.ts`, `lib/context-color.ts` |
+| A8 | 컨텍스트 고르기 — PARA 개요 탭 드롭다운 · PARA 목록 카드 칩에 색 점 | `para/context-picker.tsx`, `para/container-card.tsx` |
 
 ## 2. 내비게이션 · 레이아웃
 
@@ -69,6 +71,7 @@
 | W11 | 블록 **하위 할 일** — 제목 옆 `2/4`, 44px 이상이면 바닥 진행률 바, 남는 높이만큼 하위 목록(작은 원으로 바로 체크, 넘긴 항목은 화살표, 넘치면 "외 N개") | `calendar-block.tsx` |
 | W12 | 겹치는 블록 — 애플 캘린더 방식: 안 겹치면 전체 너비, 아래 블록의 제목 · 시간 줄(≈40분)을 지나서 시작하면 안쪽에 쏙(왼쪽 9 · 오른쪽 7px, 흰 테두리), 그 안에서 시작하면 나란히 같은 너비. 블록 사이 3px | `lib/calendar-layout.ts`, `week-calendar.tsx` |
 | W13 | 대표 사진 — 1시간 30분 이상 블록이면 사진 배경 + 흰 글씨(하위 목록 · 진행률 바 숨김), 짧으면 오른쪽 위 썸네일, 한 줄 블록엔 없음 | `calendar-block.tsx` |
+| W14 | **자정을 넘는 블록** — 시작한 날 조각(~24시) + 다음 날 조각(0시~)으로 그림(이어지는 쪽 모서리 각지게). 두 조각 모두 체크 · 팝업, 크기 조절은 끝이 있는 다음 날 조각에서(블록 길이 24시간까지). 어느 조각을 끌어도 블록 전체가 움직임. 자정을 안 넘던 블록은 끌어서 넘기지 않음(팝업에서 시간 편집). 월요일 칸엔 지난 일요일 밤 블록의 나머지 | `calendar-block.tsx`, `lib/calendar-layout.ts` `daySegmentsOf` · `droppedSchedule`, `week-board.tsx` |
 
 ## 5. 캘린더 — 월 보기
 
@@ -102,6 +105,7 @@
 | D14 | **하위 할 일 "나중에"** — 안 끝난 하위 할 일을 부모와 같은 PARA의 날짜 없는 할 일로 옮김(메모에 원래 할 일 링크 `- [[L사 업무(9/30)]]에서 옮김`, 넘김 기록 안 남김), 화면 아래 되돌리기 알림 5초 | `subtask/subtask-list.tsx`, `lib/app-data/todo-actions.ts` |
 | D15 | **메모 줄 표시** — `- [ ]` 확인 · `- [?]` 질문 · `- [p]` 잘한 점 · `- [c]` 아쉬운 점 · `- [I]` 다음엔(예전 `☐` · `☑`도 읽음). 편집 칸 위 툴바 5개(커서 줄 · 선택한 줄들에 붙이기 · 바꾸기 · 같은 버튼으로 떼기), 표시 줄 끝 Enter로 같은 표시 이어 쓰기(빈 표시 줄에서 Enter면 떼기), ⌘Z 됨. 보기 모드에선 18px 아이콘 — 체크박스 누르면 `[x]`, `?` 누르면 답 입력칸(Enter → `[i]` + `→ 답`), `i` 누르면 질문으로 되돌리기. 줄을 누르면 그 줄 끝에서 원문 편집. 표시가 없는 메모는 전처럼 보임 | `memo/memo-editor.tsx`, `memo/memo-toolbar.tsx`, `memo/memo-view.tsx`, `lib/memo-marks.ts` |
 | D16 | **메모 링크** — 메모의 `[[이름(10/1)]]`(옵시디언 내부 링크)을 파란 링크로, 누르면 그 할 일 팝업이 위에 겹쳐 열림(못 찾으면 회색 점선). 예전 "…(9/30)에서 옮김" 줄도 링크로 읽음. 원래 할 일 하위 할 일 탭 아래 "나중에로 옮긴 할 일" 목록(역링크). 할 일 이름 · 날짜가 바뀌면 다른 메모의 링크도 자동으로 고침 | `memo/memo-link.tsx`, `subtask/moved-todo-list.tsx`, `lib/memo-links.ts`, `lib/supabase/todos.ts` |
+| D17 | **시간 편집** — 일정 줄(`오후 11:45 – 다음 날 오전 7:15`)을 누르면 시작 · 끝 칸(15분 단위, 모바일은 시간 휠). 시작을 바꾸면 길이 유지, 끝이 시작보다 이르거나 같으면 다음 날(`다음 날` 칩) + 길이 표시 | `todo-time-editor.tsx`, `todo-detail-modal.tsx`, `todo-actions.ts` `setTime` |
 
 ## 7. PARA 목록
 
@@ -161,6 +165,8 @@
 | G6 | "이번 주 할 일 연결" — 그 주 캘린더 할 일을 요일별로 체크(검색, 다른 목표 것은 옮겨짐, 같은 이름 3일 이상 · 노트 제외) | `goals/goal-link-popover.tsx`, `lib/goals.ts` |
 | G7 | Inbox 항목을 목표 카드로 끌어다 놓으면 연결(할 일에 PARA가 없으면 목표의 PARA로) | `lib/dnd/handle-drop.ts` |
 | G8 | "목표 추가" — 3개 이하 권장 안내(막지 않음). 목표가 없는 주는 목표 적기 + 좋은 목표 확인 질문 3개 + 지난주 요약 | `goals/goals-screen.tsx` |
+| G9 | **시간 균형**(BALANCE-PLAN.md) — 목표 카드 아래(목표가 없는 주에도). 체크한 캘린더 블록을 컨텍스트(영역)별로: 머리 `깨어 있는 N 중 M 기록 %` + 지난주 이맘때 대비 공백, 요일별 누적 막대(맨 위 공백 빗금, 눈금 6시간, 오늘 빨강, 남은 날은 바닥 선) — 막대에 올리거나 누르면 그날 내역 | `goals/balance-section.tsx`, `lib/balance.ts`, `app-data/use-balance.ts` |
+| G10 | 시간 균형 목록 — 영역 행(색 점 · 이름 · 지난주 대비 · 비율 · 시간, 0분도 표시, 기타는 맨 뒤) + 공백 행. 행을 누르면 막대에서 그 영역만 진하게 + PARA별 시간(5개 + 외 N개). 아래 수면 줄(하루 평균 · 합계), 수면 컨텍스트가 없으면 컨텍스트 관리로 안내. 모바일은 비율 · 대비가 이름 아래 | `goals/balance-section.tsx` |
 
 ---
 
