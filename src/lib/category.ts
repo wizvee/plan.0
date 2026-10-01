@@ -8,15 +8,5 @@ export function getParaCategory(todo: Pick<Todo, "projectId" | "areaId" | "resou
   return null;
 }
 
-/** 캘린더 블록 등에서 카테고리별 색/틴트를 칠할 때 쓰는 CSS 변수 이름 */
-export const CATEGORY_COLOR_VAR: Record<ParaKind, string> = {
-  project: "--primary",
-  area: "--category-area",
-  resource: "--category-resource",
-};
-
-export const CATEGORY_TINT_VAR: Record<ParaKind, string> = {
-  project: "--accent",
-  area: "--category-area-tint",
-  resource: "--category-resource-tint",
-};
+// PARA 종류별 색(CATEGORY_COLOR_VAR · CATEGORY_TINT_VAR)은 2026-10-01에 없앴다 — 색은 이제 영역(컨텍스트) 색이다.
+// 할 일 · PARA · 목표의 색은 `useParaColor()`(`lib/app-data/use-para-color.ts`)로 읽는다. 종류는 탭 · 그룹 순서 · 아이콘이 말한다.

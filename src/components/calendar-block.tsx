@@ -17,7 +17,6 @@ import { TodoDetailModal } from "@/components/todo-detail-modal";
 import { InlineText } from "@/components/inline-text";
 import { cn } from "@/lib/utils";
 import { blockHeightPx, segmentHeightPx, type DaySegment } from "@/lib/calendar-layout";
-import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR, getParaCategory } from "@/lib/category";
 import {
   DEFAULT_DURATION_MINUTES,
   DEFAULT_START_MINUTES,
@@ -38,6 +37,7 @@ import { useSubtaskActions } from "@/lib/app-data/subtask-actions";
 import { usePhotos } from "@/lib/app-data/use-photos";
 import { useSession } from "@/lib/app-data/app-data-provider";
 import { photoUrl } from "@/lib/photos";
+import { useParaColor } from "@/lib/app-data/use-para-color";
 
 /** 블록 안 하위 할 일 목록 배치 — 머리(패딩 · 제목 · 시간) 아래, 진행률 바 위에 들어갈 줄 수를 계산할 때 쓴다. */
 const SUBTASK_HEAD_PX = 40;
@@ -101,6 +101,7 @@ export function CalendarBlock({
   const subtaskActions = useSubtaskActions();
   const { coverOf } = usePhotos();
   const { googleConnected } = useSession();
+  const paraColor = useParaColor();
   // Drive 연결이 끊겼거나 파일이 없어서 못 불러온 사진 — 평소 모양으로 돌아간다
   const [failedPhotoId, setFailedPhotoId] = useState<string | null>(null);
 
@@ -179,10 +180,8 @@ export function CalendarBlock({
     : segmentHeightPx(segmentMinutes, continuesAfter);
   const compact = renderedHeight <= 34;
 
-  const category = getParaCategory(todo);
-  // 완료돼도 카테고리 색은 유지하고 블록 전체를 흐리게(애플 캘린더 방식). 매핑 없으면 회색.
-  const colorVar = category ? `var(${CATEGORY_COLOR_VAR[category]})` : "var(--muted-foreground)";
-  const tintVar = category ? `var(${CATEGORY_TINT_VAR[category]})` : "var(--secondary)";
+  // 색 = 영역(컨텍스트) 색. 완료돼도 색은 유지하고 블록 전체를 흐리게(애플 캘린더 방식). PARA 없음 = 기본(기타) 색.
+  const { color: colorVar, tint: tintVar } = paraColor.ofMapping(todo);
 
   // 하위 할 일: 제목 옆 개수 · 바닥 진행률 바 · 블록이 크면 앞에서부터 목록 (노트는 없음)
   const subtasks = todo.kind === "task" ? subtasksOf(todo.id) : [];

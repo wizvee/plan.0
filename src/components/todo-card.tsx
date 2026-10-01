@@ -14,9 +14,9 @@ import { SubtaskProgress } from "@/components/subtask/subtask-progress";
 import { SubtaskList } from "@/components/subtask/subtask-list";
 import { cn } from "@/lib/utils";
 import type { DragSource, DraggedTodoData } from "@/lib/dnd/drop-targets";
-import { CATEGORY_COLOR_VAR, getParaCategory } from "@/lib/category";
 import type { Area, Project, Resource, Todo, TodoKind } from "@/lib/types";
 import { useSubtasks } from "@/lib/app-data/use-subtasks";
+import { useParaColor } from "@/lib/app-data/use-para-color";
 
 function scheduledDateOf(todo: Todo): Date | null {
   return todo.scheduledDate ? new Date(`${todo.scheduledDate}T00:00:00`) : null;
@@ -68,7 +68,7 @@ export function TodoCard({
 }: TodoCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const category = getParaCategory(todo);
+  const paraColor = useParaColor();
   const scheduledDate = scheduledDateOf(todo);
   const isOverdue = scheduledDate ? !todo.completed && isBefore(scheduledDate, startOfDay(new Date())) : false;
   const { progressOf } = useSubtasks();
@@ -85,7 +85,9 @@ export function TodoCard({
     ? undefined
     : { transform: CSS.Transform.toString(transform), transition };
 
-  const categoryColor = category ? `var(${CATEGORY_COLOR_VAR[category]})` : "var(--muted-foreground)";
+  // 색 = 영역(컨텍스트) 색 — PARA 없음은 기본(기타) 색
+  const categoryColor = paraColor.ofMapping(todo).color;
+  const mapped = Boolean(todo.projectId ?? todo.areaId ?? todo.resourceId);
   const showExpander = expandable && !overlay && todo.kind === "task";
   const isExpanded = showExpander && expanded && progress.total > 0;
 
@@ -168,10 +170,10 @@ export function TodoCard({
                 ) : null}
                 {badge ? (
                   <span className="flex min-w-0 items-center gap-1.5">
-                    {category ? (
+                    {mapped ? (
                       <span
                         className="size-[7px] shrink-0 rounded-full"
-                        style={{ backgroundColor: `var(${CATEGORY_COLOR_VAR[category]})` }}
+                        style={{ backgroundColor: categoryColor }}
                         aria-hidden="true"
                       />
                     ) : null}

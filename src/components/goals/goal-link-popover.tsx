@@ -6,7 +6,6 @@ import { ko } from "date-fns/locale";
 import { MagnifyingGlass } from "@/components/icons";
 
 import { InlineText } from "@/components/inline-text";
-import { CATEGORY_COLOR_VAR, getParaCategory } from "@/lib/category";
 import { formatClock } from "@/lib/time";
 import { linkCandidates } from "@/lib/goals";
 import { useDismiss } from "@/lib/use-dismiss";
@@ -14,6 +13,7 @@ import type { Todo, WeeklyGoal } from "@/lib/types";
 import { useGoals } from "@/lib/app-data/use-goals";
 import { useGoalActions } from "@/lib/app-data/goal-actions";
 import { useTodos } from "@/lib/app-data/use-todos";
+import { useParaColor } from "@/lib/app-data/use-para-color";
 
 /**
  * "이번 주 할 일 연결" 팝오버 (GOALS-PLAN.md · 시안 ③) — 그 주 캘린더 할 일을 요일별로 보여주고 체크해서 연결한다.
@@ -46,6 +46,7 @@ function LinkPanel({ goal, weekDays, onClose }: { goal: WeeklyGoal; weekDays: st
   const { todos } = useTodos();
   const { goals } = useGoals();
   const goalActions = useGoalActions();
+  const paraColor = useParaColor();
   const [query, setQuery] = useState("");
 
   const candidates = useMemo(() => linkCandidates(todos, weekDays), [todos, weekDays]);
@@ -113,7 +114,6 @@ function LinkPanel({ goal, weekDays, onClose }: { goal: WeeklyGoal; weekDays: st
                 {format(parseISO(date), "EEE · M월 d일", { locale: ko })}
               </div>
               {list.map((t) => {
-                const category = getParaCategory(t);
                 const otherGoal = t.goalId && t.goalId !== goal.id ? goals.find((g) => g.id === t.goalId) : null;
                 return (
                   <label
@@ -129,7 +129,7 @@ function LinkPanel({ goal, weekDays, onClose }: { goal: WeeklyGoal; weekDays: st
                     <span
                       className="size-[7px] shrink-0 rounded-full"
                       style={{
-                        backgroundColor: category ? `var(${CATEGORY_COLOR_VAR[category]})` : "var(--muted-foreground)",
+                        backgroundColor: paraColor.ofMapping(t).color,
                       }}
                     />
                     <span className="flex min-w-0 flex-1 flex-col gap-px">

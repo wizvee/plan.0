@@ -55,19 +55,26 @@
 새 카테고리 색이 필요하면 애플 시스템 컬러 계열에서 고르고, 틴트는 라이트 `L≈94%`, 다크 `L≈25%` 정도로 파생하세요.
 (앱에 다크 모드를 실제로 켜는 로직은 아직 없음 — 토큰만 준비돼 있음.)
 
-## 3. 카테고리 색상 코딩
+## 3. 색 = 영역(컨텍스트) — 2026-10-01부터
 
-`src/lib/category.ts`의 `getParaCategory(todo)` · `CATEGORY_COLOR_VAR` · `CATEGORY_TINT_VAR`를 재사용하세요.
-색을 `bg-blue-500`처럼 하드코딩하지 말고 `style={{ backgroundColor: `var(${CATEGORY_TINT_VAR[category]})` }}` 형태로.
+**할 일 · PARA · 주간 목표의 색은 그 영역(컨텍스트)의 색입니다.** PARA 종류(Project / Area / Resource)는 색이 아니라 탭 · 그룹 순서 ·
+아이콘(`Target` · `Compass` · `BookmarkSimple`)이 말합니다(시안 https://claude.ai/artifact/9V2Fz7bEfE3DhEqha5kyPg 컨펌, BALANCE-PLAN.md).
+할 일은 매핑된 PARA의 컨텍스트, PARA가 없으면 기본(기타) 컨텍스트 색. 컨텍스트가 하나도 없으면(마이그레이션 전) 예전 회색.
+
+`useParaColor()`(`src/lib/app-data/use-para-color.ts`)로 읽으세요 — `ofMapping(todo 또는 goal)` · `ofContainer(kind, id)` · `ofContextId(contextId)`가
+`{ color, tint, context }`를 돌려줍니다. 색 이름 → CSS 변수는 `lib/context-color.ts`(`contextColor` · `contextTint`).
+색을 `bg-blue-500`처럼 하드코딩하지 말고 `style={{ backgroundColor: tint }}` 형태로. PARA 종류별 색 상수(`CATEGORY_COLOR_VAR`)는 없앴습니다.
 
 적용된 곳:
-- `calendar-block.tsx` — 틴트 배경(모서리 4px) + 왼쪽 카테고리 선(위 · 아래 · 왼쪽 3px 띄운 3px 막대, 끝 살짝 둥글게 — 애플 캘린더 방식, `CategoryBar`) + 카테고리 색 작은 원형 체크. 완료되면 색은 유지하고 블록 전체를 50%로 흐리게. 매핑 없으면 회색.
-- `month-calendar.tsx` — 일정 한 줄 = 카테고리 색 점 + 제목 + 시작 시각.
-- `todo-card.tsx` — 소속 이름(`badge`) 앞에 카테고리 점. Inbox는 PARA별 그룹 머리(카테고리 점 + 이름)가 이름을 대신해 줄마다 붙이지 않는다.
-- `container-card.tsx` — 모서리 4px 흰 카드 + 왼쪽 카테고리 막대(위 · 아래 · 왼쪽 3px 띄운 3px 세로 막대, 끝 살짝 둥글게 — 캘린더 블록 `CategoryBar`와 같은 모양, 완료 · 보관이면 회색), 상태 칩 배경, 진행률 바가 종류별 색.
-- PARA 상세 — 상태 칩 배경, 진행률 바, 아이콘 타일이 종류별 색.
-- 하위 할 일 진행률 — 링 · 바 · 하위 체크박스는 할 일의 카테고리 색(매핑 없으면 회색), 트랙은
-  `color-mix(in srgb, <색> 16~20%, transparent)`. **`2/4` 숫자는 카테고리 색 대신 보조 텍스트 색**(작은 글씨라 초록 등은 대비 부족).
+- `calendar-block.tsx` — 틴트 배경(모서리 4px) + 왼쪽 색 막대(위 · 아래 · 왼쪽 3px 띄운 3px 막대, 끝 살짝 둥글게 — 애플 캘린더 방식, `CategoryBar`) + 같은 색 작은 원형 체크. 완료되면 색은 유지하고 블록 전체를 50%로 흐리게.
+- `month-calendar.tsx` — 일정 한 줄 = 영역 색 점 + 제목 + 시작 시각.
+- `todo-card.tsx` — 소속 이름(`badge`) 앞에 영역 색 점. Inbox는 PARA별 그룹 머리(영역 색 점 + 이름)가 이름을 대신해 줄마다 붙이지 않는다. **그룹 머리는 점 그대로**(종류 아이콘으로 바꾸지 않음 — 사용자 결정).
+- `container-card.tsx` — 모서리 4px 흰 카드 + 왼쪽 막대(완료 · 보관이면 회색), 상태 칩 배경, 진행률 바가 영역 색. 기본(기타)이 아닌 영역이면 이름 옆에 색 점 + 영역 이름 칩.
+- PARA 상세 — 아이콘 타일(종류 아이콘 + 영역 틴트), 상태 칩, 진행률 바가 영역 색. PARA 목록 세그먼트의 종류 아이콘은 선택되면 primary.
+- 할 일 상세 팝업 — PARA 줄 타일 · 체크가 영역 색, 라벨은 `프로젝트 · 생활`처럼 종류 + 영역 이름.
+- PARA 고르기 메뉴(`ParaMenu`) · 검색 결과 · 주간 목표 카드 링 · 목표 연결 팝오버 · 나중에로 옮긴 할 일 목록 — 모두 영역 색 점.
+- 하위 할 일 진행률 — 링 · 바 · 하위 체크박스는 할 일의 영역 색, 트랙은
+  `color-mix(in srgb, <색> 16~20%, transparent)`. **`2/4` 숫자는 영역 색 대신 보조 텍스트 색**(작은 글씨라 초록 · 주황 등은 대비 부족).
 
 ## 4. Radius
 
@@ -123,9 +130,9 @@ AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBann
   같은 시각에 시작한 긴 업무 블록은 하루 종일 반 폭이 된다(애플도 같음). 블록 사이는 3px(`BLOCK_GAP`), 최소 높이는 30분 칸(26px)이라
   30분 블록끼리 붙어도 틈이 보이고 30분 이하는 한 줄(시간 없음). 계산은 `lib/calendar-layout.ts`의 `layoutDayBlocks` · `blockHeightPx` 한 곳.
 - **Inbox PARA 그룹**(INBOX-GROUPS-PLAN.md, 시안 https://claude.ai/artifact/NagRGwGtAevetvXLLSrr2p ① · ④): TickTick식 섹션 머리 —
-  34px 줄에 `CaretDown`(접으면 -90°) + 8px 카테고리 점(미분류는 회색 빈 원) + 13px 굵은 이름 + 오른쪽 개수(보조 텍스트). 흰 카드로 감싸지 않는다(B안 안 씀).
-  미분류 맨 위 → P → A → R, 완료 · 보관은 맨 아래. 다른 그룹으로 끌 때 그 그룹 전체를 카테고리 틴트로(미분류는 `bg-black/[0.04]`),
-  개수 자리에 "여기로 옮기기"(카테고리 색 75% + 검정 — 틴트 위 작은 글씨 대비), 펼친 그룹이면 끝에 카테고리 색 2px 선. 다른 그룹 카드는 비키지 않는다.
+  34px 줄에 `CaretDown`(접으면 -90°) + 8px 영역 색 점(미분류는 회색 빈 원) + 13px 굵은 이름 + 오른쪽 개수(보조 텍스트). 흰 카드로 감싸지 않는다(B안 안 씀).
+  미분류 맨 위 → P → A → R, 완료 · 보관은 맨 아래. 다른 그룹으로 끌 때 그 그룹 전체를 영역 틴트로(미분류는 `bg-black/[0.04]`),
+  개수 자리에 "여기로 옮기기"(영역 색 75% + 검정 — 틴트 위 작은 글씨 대비), 펼친 그룹이면 끝에 영역 색 2px 선. 다른 그룹 카드는 비키지 않는다.
 - **PARA 목록**: 제목 + 설명, 오른쪽 Project/Area/Resource 세그먼트, 카드 그리드. 카드는 완료 · 보관을 맨 뒤로 보내고, 그 안에서 시작일 순(이른 것 먼저, Area/Resource는 만든 날 순).
   Project 카드는 이름 아래 `9월 1일 – 10월 15일`(올해가 아니면 연도 붙임, 마감일이 없으면 `–` 뒤 공란).
 - **PARA 상세**: `‹ Project` 뒤로가기(파란 텍스트), 카테고리 아이콘 타일 + 이름(클릭해서 수정), 회색 요약 줄
@@ -144,7 +151,7 @@ AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBann
   넘기기 버튼은 할 일이 끝나기 전엔 푸터 왼쪽 작은 회색 텍스트 버튼, 끝난 뒤엔 하위 할 일 탭 아래 accent 카드(때 맞춰 유도).
 - **컨텍스트 색**(BALANCE-PLAN.md 4번, 시안 https://claude.ai/artifact/DfzCfv9eci2fj5k5F6mXXc ⑤ ⑥): 애플 시스템 컬러 8개 이름으로 저장
   (`lib/context-color.ts` — `contextColor(color)`, 파랑 · 초록 · 보라는 `--primary` · `--category-area` · `--category-resource` 재사용, 나머지는 `--ctx-*`).
-  빨강 · 노랑은 없다. **아직은 컨텍스트 고르는 곳(관리 팝업 · 고르기 메뉴 · PARA 카드 칩)과 시간 균형에만** — 캘린더 블록 · PARA 색은 그대로.
+  빨강 · 노랑은 없다. **2026-10-01부터 앱 전체의 색** — 캘린더 블록 · Inbox · PARA · 팝업 · 목표까지(위 3번).
   고른 색 = 흰 2px 틈 + 같은 색 2px 링. 수면 컨텍스트 칩 = 남색 틴트 + `Moon`.
 - **자정을 넘는 블록**(BALANCE-PLAN.md 5번, 시안 https://claude.ai/artifact/DfzCfv9eci2fj5k5F6mXXc ③): 애플 캘린더처럼 두 날에 두 조각 —
   이어지는 쪽은 모서리 각지게 + 색 막대도 끝까지. 두 조각 모두 제목 · 시간(`오후 11:45 - 오전 7:15`) · 체크박스, 크기 조절 손잡이는 끝이 있는
@@ -183,9 +190,9 @@ AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBann
   데스크톱 = 왼쪽 차트 카드(500px) + 오른쪽 목록 카드, 모바일 = 위아래. 차트: 요일별 누적 세로 막대(폭 30 · 모바일 24px, 위 끝만 4px 둥글게,
   조각 사이 2px 틈, 컨텍스트 순서대로 아래부터 · 맨 위 공백 = 회색 빗금), 오른쪽 눈금(6시간 단위, 최소 18시간), 오늘 요일 빨강, 남은 날은 바닥 선만.
   막대 hover/누르기 = 그날 내역 툴팁(팝오버 모양). 목록: 흰 카드 헤어라인 행 — 색 점 · 이름 · 대비(`↑ 2시간 30분`, ±15분 미만 `–`) · 비율 · 시간 · `›`,
-  누른 행 = `bg-primary/[0.06]` + 막대에서 그 영역만 진하게(나머지 28%) + PARA별(PARA 종류 점). 공백 행은 `bg-panel` + 빗금 칸.
+  누른 행 = `bg-primary/[0.06]` + 막대에서 그 영역만 진하게(나머지 28%) + PARA별(같은 영역 색 점). 공백 행은 `bg-panel` + 빗금 칸.
   수면은 막대에 그리지 않고 목록 아래 회색 줄(달 아이콘 = 수면 컨텍스트 색). 값은 늘 글자로도 보인다(주황 · 청록은 흰 배경 대비가 3:1 미만이라).
-- **주간 목표**(GOALS-PLAN.md): 진행률 링은 `GoalRing` 하나를 레일 · 목표 카드가 같이 쓴다(없음 = 점선, 목표 카드는 PARA 색, 레일은 primary).
+- **주간 목표**(GOALS-PLAN.md): 진행률 링은 `GoalRing` 하나를 레일 · 목표 카드가 같이 쓴다(없음 = 점선, 목표 카드는 영역 색, 레일은 primary).
   목표 카드 = 흰 카드 + 링 · 제목 · PARA 칩 · `···` + 헤어라인 할 일 목록 + 파란 텍스트 버튼 2개. 캘린더 본문에는 목표를 그리지 않는다(정보량).
   PARA 고르기 드롭다운은 `ParaMenu`(`components/para/para-menu.tsx`) 하나만 쓴다.
 
@@ -212,7 +219,7 @@ AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBann
 
 1. 레이아웃이 걸린 작업이면 먼저 캔버스(위 링크)에 시안을 그려 컨펌받기 — 코드부터 짜지 않기.
 2. `src/app/(app)/<경로>/page.tsx`에 **본문만**. 셸(레일 · Inbox · 계정)은 건드리지 않기(ESLint가 막음).
-3. 색은 2번 표의 시맨틱 토큰만. PARA 관련 색은 `lib/category.ts` 재사용.
+3. 색은 2번 표의 시맨틱 토큰만. 할 일 · PARA 색은 `useParaColor()`(영역 색, 위 3번).
 4. radius는 4번 기준(`rounded-2xl` 금지, 원형 요소는 예외).
 5. 드롭 영역이 필요하면 `data`로 선언하고 `handle-drop.ts`에 처리 추가.
 6. 아이콘은 `@/components/icons`(Phosphor), 이모지 금지.

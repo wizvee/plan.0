@@ -11,7 +11,6 @@ import { useContainers } from "@/lib/app-data/use-containers";
 import { useTodoActions } from "@/lib/app-data/todo-actions";
 import type { DropTargetData } from "@/lib/dnd/drop-targets";
 import { cn } from "@/lib/utils";
-import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR } from "@/lib/category";
 import { useSession } from "@/lib/app-data/app-data-provider";
 import {
   PARA_KIND_LABELS,
@@ -33,6 +32,7 @@ import type { DriveFile } from "@/lib/google-drive";
 import { classifyDriveFile } from "@/lib/drive-file";
 import { parseNoteContent, serializeNoteContent, type NoteProperty } from "@/lib/frontmatter";
 import { pickDriveFiles } from "@/lib/google-picker";
+import { useParaColor } from "@/lib/app-data/use-para-color";
 
 const KIND_ICON: Record<ParaKind, typeof Target> = {
   project: Target,
@@ -104,6 +104,7 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
     id: `para:${kind}:${id}`,
     data: { type: "para-container", kind, id } satisfies DropTargetData,
   });
+  const paraColor = useParaColor();
 
   const project = kind === "project" ? projects.find((p) => p.id === id) : undefined;
   const container =
@@ -443,8 +444,8 @@ export function ContainerDetailScreen({ kind, id }: ContainerDetailScreenProps) 
     }
   }
 
-  const kindColor = `var(${CATEGORY_COLOR_VAR[kind]})`;
-  const kindTint = `var(${CATEGORY_TINT_VAR[kind]})`;
+  // 아이콘 타일 · 상태 칩 · 진행률 = 영역(컨텍스트) 색. 종류는 아이콘이 말한다
+  const { color: kindColor, tint: kindTint } = paraColor.ofContextId(container.contextId);
   const summaryFacts =
     kind === "project"
       ? [{ label: "마감일", value: project!.dueDate ? formatDateLabel(project!.dueDate) : "미설정" }]

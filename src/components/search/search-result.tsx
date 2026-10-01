@@ -6,7 +6,6 @@ import { ko } from "date-fns/locale";
 import { ArrowRight, BookmarkSimple, CaretRight, Check, Compass, LinkSimple, Note, QuestionMark, Target } from "@/components/icons";
 
 import { cn } from "@/lib/utils";
-import { CATEGORY_COLOR_VAR, CATEGORY_TINT_VAR, getParaCategory } from "@/lib/category";
 import { INLINE_CODE_CLASS, splitInlineCode } from "@/components/inline-text";
 import { MARK_BOX, InfoGlyph, MarkIcon } from "@/components/memo/memo-view";
 import { parseMemoLine, reopenQuestion, resolveQuestion, splitAnswer, toggleDone } from "@/lib/memo-marks";
@@ -21,6 +20,7 @@ import {
   type TodoHit,
 } from "@/lib/search";
 import type { ParaKind, Subtask, Todo } from "@/lib/types";
+import { useParaColor } from "@/lib/app-data/use-para-color";
 
 const KIND_ICON: Record<ParaKind, typeof Target> = { project: Target, area: Compass, resource: BookmarkSimple };
 const KIND_LABEL: Record<ParaKind, string> = { project: "프로젝트", area: "영역", resource: "리소스" };
@@ -82,9 +82,10 @@ function domainOf(url: string): string {
 }
 
 function ParaLabel({ para, words }: { para: SearchPara; words: string[] }) {
+  const color = useParaColor().ofContainer(para.kind, para.id).color;
   return (
     <span className="inline-flex min-w-0 items-center gap-1">
-      <span className="size-[7px] shrink-0 rounded-full" style={{ backgroundColor: `var(${CATEGORY_COLOR_VAR[para.kind]})` }} />
+      <span className="size-[7px] shrink-0 rounded-full" style={{ backgroundColor: color }} />
       <span className="truncate">
         <HighlightText text={para.name} words={words} />
       </span>
@@ -111,11 +112,6 @@ function ContextRow({ parts, source }: { parts: ReactNode[]; source: string }) {
 }
 
 // ---------- 할 일 카드 ----------
-
-function categoryColor(todo: Todo): string {
-  const category = getParaCategory(todo);
-  return category ? `var(${CATEGORY_COLOR_VAR[category]})` : "var(--muted-foreground)";
-}
 
 /** 할 일 · 하위 할 일의 작은 원형 체크(누를 수 없음) — 완료 = 채운 원, 넘김 = 회색 화살표 */
 function StatusDot({ color, completed, carried }: { color: string; completed: boolean; carried?: boolean }) {
@@ -239,7 +235,7 @@ export function TodoResultCard({
   onHover: () => void;
 }) {
   const { todo } = hit;
-  const color = categoryColor(todo);
+  const color = useParaColor().ofMapping(todo).color;
   // 하위 할 일로 찾았으면 하위 할 일이 주인공 — 부모 할 일 이름은 맥락 줄로
   const subtaskFirst = hit.bestSource === "subtask";
   const context: ReactNode[] = [resultDateLabel(todo)];
@@ -323,6 +319,7 @@ export function ParaResultCard({
   onHover: () => void;
 }) {
   const Icon = KIND_ICON[hit.kind];
+  const { color, tint } = useParaColor().ofContainer(hit.kind, hit.id);
   return (
     <div
       id={id}
@@ -335,7 +332,7 @@ export function ParaResultCard({
       <div className="flex items-center gap-2.5">
         <span
           className="flex size-[30px] shrink-0 items-center justify-center rounded-lg"
-          style={{ backgroundColor: `var(${CATEGORY_TINT_VAR[hit.kind]})`, color: `var(${CATEGORY_COLOR_VAR[hit.kind]})` }}
+          style={{ backgroundColor: tint, color }}
         >
           <Icon weight="bold" className="size-[17px]" aria-hidden="true" />
         </span>
