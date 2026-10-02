@@ -10,6 +10,7 @@ import { INLINE_CODE_CLASS, splitInlineCode } from "@/components/inline-text";
 import { MARK_BOX, InfoGlyph, MarkIcon } from "@/components/memo/memo-view";
 import { parseMemoLine, reopenQuestion, resolveQuestion, splitAnswer, toggleDone } from "@/lib/memo-marks";
 import { stripLinks } from "@/lib/memo-links";
+import { stripWebLinks } from "@/lib/web-links";
 import {
   highlightRanges,
   splitMemoMark,
@@ -148,12 +149,12 @@ function SubtaskLine({ match, color, words }: { match: MatchedLine; color: strin
             carried && "text-muted-foreground"
           )}
         >
-          <HighlightText text={done} words={words} />
+          <HighlightText text={stripWebLinks(done)} words={words} />
         </div>
         {/* 📝 뒤 = 찾던 답 — 크게 (SEARCH-PLAN.md 3-5) */}
         {memo ? (
           <div className="mt-0.5 break-words text-[17px] font-semibold leading-snug tracking-[-0.2px]">
-            <HighlightText text={memo} words={words} />
+            <HighlightText text={stripWebLinks(memo)} words={words} />
           </div>
         ) : null}
       </div>
@@ -170,7 +171,7 @@ function AnswerPart({ answer, known, words }: { answer: string; known: boolean; 
     <>
       <span className="font-normal text-muted-foreground">{"  → "}</span>
       <span className={known ? "font-semibold text-foreground" : "font-normal text-muted-foreground"}>
-        <HighlightText text={answer} words={words} />
+        <HighlightText text={stripWebLinks(answer)} words={words} />
       </span>
     </>
   );
@@ -206,7 +207,7 @@ function MemoSnippetBlock({ hit, words }: { hit: TodoHit; words: string[] }) {
               </span>
             )}
             <span className={cn("min-w-0 flex-1 break-words", checked && "text-muted-foreground line-through")}>
-              <HighlightText text={stripLinks(question)} words={words} />
+              <HighlightText text={stripWebLinks(stripLinks(question))} words={words} />
               {answer !== null ? <AnswerPart answer={answer} known={parsed.state === "i"} words={words} /> : null}
             </span>
           </div>
@@ -372,6 +373,8 @@ export function EmojiLineRow({
   onHover: () => void;
 }) {
   const { done, memo } = splitMemoMark(hit.text);
+  // 메모 · 하위 할 일 줄의 바깥 링크는 이름만 (제목 · URL 칸은 원문 그대로)
+  const linked = hit.source === "memo" || hit.source === "subtask";
   const date = hit.todo.scheduledDate ? format(parseISO(hit.todo.scheduledDate), "M/d") : "–";
   return (
     <div
@@ -389,13 +392,13 @@ export function EmojiLineRow({
       <span className="w-[34px] shrink-0 pt-0.5 text-[12.5px] tabular-nums text-muted-foreground">{date}</span>
       <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
         <span className="break-words text-[14px] leading-[1.45]">
-          <HighlightText text={done} words={words} />
+          <HighlightText text={linked ? stripWebLinks(done) : done} words={words} />
           {memo !== null ? (
             <>
               {" "}
               <mark className="rounded-[3px] bg-warning/25 px-px text-inherit">📝</mark>{" "}
               <span className="font-semibold">
-                <HighlightText text={memo} words={words} />
+                <HighlightText text={linked ? stripWebLinks(memo) : memo} words={words} />
               </span>
             </>
           ) : null}
@@ -521,7 +524,7 @@ export function MarkLineRow({
             state === "x" && "text-muted-foreground line-through"
           )}
         >
-          <HighlightText text={stripLinks(question)} words={words} />
+          <HighlightText text={stripWebLinks(stripLinks(question))} words={words} />
           {saved !== null ? <AnswerPart answer={saved} known={state === "i"} words={words} /> : null}
         </span>
         <CaretRight weight="bold" className="mt-[3px] size-3.5 shrink-0 text-black/25" aria-hidden="true" />

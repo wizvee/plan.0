@@ -10,6 +10,7 @@ export { Archive } from "@phosphor-icons/react/dist/csr/Archive";
 export { ArrowCounterClockwise } from "@phosphor-icons/react/dist/csr/ArrowCounterClockwise";
 export { ArrowRight } from "@phosphor-icons/react/dist/csr/ArrowRight";
 export { ArrowSquareOut } from "@phosphor-icons/react/dist/csr/ArrowSquareOut";
+export { ArrowUpRight } from "@phosphor-icons/react/dist/csr/ArrowUpRight";
 export { ArrowsClockwise } from "@phosphor-icons/react/dist/csr/ArrowsClockwise";
 export { Bell } from "@phosphor-icons/react/dist/csr/Bell";
 export { BellSlash } from "@phosphor-icons/react/dist/csr/BellSlash";

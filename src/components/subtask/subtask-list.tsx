@@ -9,6 +9,8 @@ import { ArrowRight, DotsSixVertical, FolderSimplePlus, Plus, X } from "@/compon
 import { Checkbox } from "@/components/ui/checkbox";
 import { InlineText } from "@/components/inline-text";
 import { cn } from "@/lib/utils";
+import { hasWebLinks } from "@/lib/web-links";
+import { pasteAsLink } from "@/lib/paste-link";
 import type { Subtask } from "@/lib/types";
 import type { DraggedSubtaskData } from "@/lib/dnd/drop-targets";
 import { carryShortDateLabel, nextWeekday } from "@/lib/carry-over";
@@ -87,6 +89,7 @@ export function SubtaskList({ todoId, color, className }: { todoId: string; colo
           type="text"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
+          onPaste={pasteAsLink}
           onKeyDown={(e) => {
             if (isCommitEnter(e)) {
               e.preventDefault();
@@ -125,7 +128,7 @@ function LaterToast({ message, onUndo }: { message: string; onUndo: () => void }
     >
       <FolderSimplePlus className="size-4 shrink-0" aria-hidden="true" />
       <span className="min-w-0 truncate">
-        <InlineText text={message} />
+        <InlineText text={message} links="label" />
       </span>
       <button type="button" onClick={onUndo} className="shrink-0 font-bold text-accent hover:opacity-80">
         되돌리기
@@ -178,7 +181,7 @@ function SubtaskRow({
           <ArrowRight weight="bold" className="size-3" aria-hidden="true" />
         </span>
         <span className="min-w-0 flex-1 break-words py-2.5 text-[14px] text-muted-foreground">
-          <InlineText text={subtask.content} />
+          <InlineText text={subtask.content} links="open" />
         </span>
         <span className="shrink-0 text-[12px] text-muted-foreground">{carriedLabel}</span>
       </div>
@@ -222,6 +225,7 @@ function SubtaskRow({
           autoFocus
           value={text}
           onChange={(e) => setText(e.target.value)}
+          onPaste={pasteAsLink}
           onBlur={commit}
           onKeyDown={(e) => {
             if (isCommitEnter(e)) {
@@ -235,6 +239,26 @@ function SubtaskRow({
             subtask.completed && "text-muted-foreground line-through"
           )}
         />
+      ) : hasWebLinks(subtask.content) ? (
+        // 링크가 든 줄 — 버튼 안에 링크(<a>)를 넣을 수 없어서 메모 보기처럼 누르면 편집되는 묶음으로 (링크는 클릭을 위로 안 올림)
+        <div
+          role="group"
+          tabIndex={0}
+          onClick={() => setEditing(true)}
+          onKeyDown={(e) => {
+            if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+              e.preventDefault();
+              setEditing(true);
+            }
+          }}
+          aria-label="하위 할 일 — 링크 밖을 누르면 수정"
+          className={cn(
+            "min-w-0 flex-1 cursor-text break-words py-2.5 text-left text-[14px] outline-none focus-visible:rounded-[4px] focus-visible:ring-2 focus-visible:ring-primary/40",
+            subtask.completed && "text-muted-foreground line-through"
+          )}
+        >
+          <InlineText text={subtask.content} links="open" />
+        </div>
       ) : (
         <button
           type="button"
@@ -284,7 +308,7 @@ export function SubtaskDragPreview({ subtask }: { subtask: Subtask }) {
         )}
       />
       <span className={cn("truncate", subtask.completed && "text-muted-foreground line-through")}>
-        <InlineText text={subtask.content} />
+        <InlineText text={subtask.content} links="label" />
       </span>
     </div>
   );

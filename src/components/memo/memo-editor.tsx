@@ -5,6 +5,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { applyMark, commonKind, continueOnEnter, lineRangeAt, type MarkKind } from "@/lib/memo-marks";
 import { MemoToolbar } from "@/components/memo/memo-toolbar";
+import { pasteAsLink } from "@/lib/paste-link";
 
 /**
  * 메모 원문 편집 — 줄 표시 툴바 + 입력칸 (MEMO-MARKS-PLAN.md 3번).
@@ -141,6 +142,7 @@ export function MemoEditor({
           syncSelection();
         }}
         onSelect={syncSelection}
+        onPaste={pasteAsLink}
         onKeyDown={handleKeyDown}
         onBlur={(e) => {
           // 툴바 버튼을 누르는 중이면 편집을 끝내지 않는다(터치 기기는 relatedTarget이 비어 올 수 있어 플래그도 본다)
@@ -156,7 +158,7 @@ export function MemoEditor({
         )}
       />
       <p className="shrink-0 px-0.5 text-[12px] text-muted-foreground">
-        커서가 있는 줄에 붙어요 · 같은 버튼을 다시 누르면 떼요 · Enter로 같은 표시 이어 쓰기
+        커서가 있는 줄에 붙어요 · 같은 버튼을 다시 누르면 떼요 · Enter로 같은 표시 이어 쓰기 · 글자를 고르고 주소를 붙여넣으면 링크
       </p>
     </div>
   );

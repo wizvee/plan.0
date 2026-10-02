@@ -180,7 +180,7 @@ function RetroRow({
         className="flex min-w-0 flex-1 flex-col gap-[3px] text-left"
       >
         <span className="break-words text-[14px] leading-[1.45]">
-          <InlineText text={item.text} />
+          <InlineText text={item.text} links="label" />
         </span>
         <span className="truncate text-[12px] text-muted-foreground">
           {item.projectWide ? (
