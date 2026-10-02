@@ -637,6 +637,13 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     - **확인**: tsc · eslint · 4개 스크립트 · build + **가짜 Supabase(auth/rest 목)에 붙인 실제 앱** 스크린샷 — 주 · 월 보기, Inbox 그룹, PARA 목록 · 상세,
       할 일 팝업, 목표 화면 시간 균형(43번 화면도 처음으로 실제 앱에서 확인). 목 서버는 커밋하지 않음 — 다시 만드는 법은 맨 아래 "가짜 Supabase로 실제 앱 띄우기".
     - `main` 머지 완료(`6c880bf`). 같은 날 43번 머지(`13eb938`) · HANDOFF 정리 머지(`0bba8db`)도 있음.
+45. **(2026-10-02 추가) 메모 · 하위 할 일 바깥 링크**: [WEB-LINKS-PLAN.md](./WEB-LINKS-PLAN.md). 메모 줄에 SAP 노트를 `[이름](https://…)`로 적는데
+    글자로만 보여서 → 마크다운 링크 · 그냥 주소를 파란 글자 + `↗`(시안 https://claude.ai/artifact/PTUfxPwAQ2usF9UeeRaCdj **A안** 컨펌).
+    **할 일 제목은 빼기로**(사용자 결정). 팝업 메모 보기 · 하위 할 일 목록에서만 누를 수 있고(새 탭), 캘린더 블록 · 검색 · 남은 것 · 회고는 이름만.
+    글자를 고르고 주소를 붙여넣으면 `[글자](주소)`. 같은 날 "확인 줄에도 답 달기"는 하지 않기로 함(MEMO-MARKS-PLAN.md 10번).
+    - **확인**: tsc(`next typegen` 뒤) · eslint · `scripts/check-web-links.ts` · check-links · check-search + 임시 페이지(`/login/…`, 지움)에서 Playwright —
+      `MemoView` 링크 모양 · 색(완료 줄 회색) · 새 탭 · 링크 클릭은 편집 안 들어감 · 줄 클릭은 편집 · 붙여넣기 변환 + 스크린샷.
+      하위 할 일 목록 · 검색 결과는 실제 앱(가짜 Supabase)으로는 못 봄.
 
 ## 지금 구현된 것 (기능 목록)
 

@@ -19,12 +19,12 @@ export interface MemoLinks {
  * `links`가 없으면 괄호만 떼고 글자로 보여준다.
  */
 export function LinkedText({ text, links, legacy = false }: { text: string; links?: MemoLinks; legacy?: boolean }) {
-  if (!links) return <InlineText text={stripLinks(text)} />;
+  if (!links) return <InlineText text={stripLinks(text)} links="label" />;
   const parts = splitLinks(text, { legacy });
-  if (parts.length === 1 && parts[0].kind === "text") return <InlineText text={text} />;
+  if (parts.length === 1 && parts[0].kind === "text") return <InlineText text={text} links="open" />;
 
   return parts.map((part, i) => {
-    if (part.kind === "text") return <InlineText key={i} text={part.text} />;
+    if (part.kind === "text") return <InlineText key={i} text={part.text} links="open" />;
     const todo = links.resolve(part.target);
     if (!todo) {
       if (part.legacy) return <InlineText key={i} text={part.label} />;

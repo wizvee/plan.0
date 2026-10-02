@@ -356,7 +356,7 @@ export function CalendarBlock({
                     subtask.completed ? "text-foreground/50 line-through" : "text-foreground"
                   )}
                 >
-                  <InlineText text={subtask.content} />
+                  <InlineText text={subtask.content} links="label" />
                 </span>
               </span>
             ))}
