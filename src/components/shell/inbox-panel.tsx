@@ -69,8 +69,9 @@ export function InboxPanel() {
         ref={panelRef}
         aria-label="Inbox"
         className={cn(
-          "fixed bottom-[var(--tabbar-h)] left-0 right-0 z-40 flex h-[62vh] flex-col rounded-t-xl border border-border bg-panel shadow-lg",
-          "sm:sticky sm:top-0 sm:bottom-auto sm:right-auto sm:z-auto sm:h-screen sm:w-[320px] sm:shrink-0 sm:rounded-none sm:border-0 sm:border-r sm:shadow-none"
+          // 모바일 바텀시트는 내용만큼(그룹이 기본 접힘이라 보통 낮다), 펼쳐도 화면 절반까지 — 위로 캘린더가 보여야 끌어 놓을 수 있다
+          "fixed bottom-[var(--tabbar-h)] left-0 right-0 z-40 flex max-h-[50dvh] flex-col rounded-t-xl border border-border bg-panel shadow-lg",
+          "sm:sticky sm:top-0 sm:bottom-auto sm:right-auto sm:z-auto sm:h-screen sm:max-h-none sm:w-[320px] sm:shrink-0 sm:rounded-none sm:border-0 sm:border-r sm:shadow-none"
         )}
       >
         <div className="flex justify-center pt-2 sm:hidden">

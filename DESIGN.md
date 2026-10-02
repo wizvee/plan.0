@@ -99,7 +99,7 @@ AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBann
 - **`AppRail`**(`components/shell/app-rail.tsx`) — 데스크톱은 왼쪽 76px 세로 레일, 모바일(`sm:` 미만)은 하단 탭바.
   한 컴포넌트가 반응형으로 모양만 바꿈. 항목: 목표(이번 주 진행률 링) · 캘린더 · PARA · 검색(⌘K) · Inbox(열기/닫기, 개수 배지) · 계정(아바타, Drive 미연결이면 주황 점).
   모바일 탭바는 6칸(2026-09-30 검색 시안 ⑦A).
-- **`InboxPanel`** — 데스크톱은 레일 옆 320px 패널이 **본문을 밀어냄**(sticky, 팝업 아님), 모바일은 하단 탭 위 바텀시트.
+- **`InboxPanel`** — 데스크톱은 레일 옆 320px 패널이 **본문을 밀어냄**(sticky, 팝업 아님), 모바일은 하단 탭 위 바텀시트(내용 높이, 최대 화면 절반 `max-h-[50dvh]` — 위로 캘린더가 보여야 끌어 놓을 수 있다).
   보관함 드롭 영역 · 보관함 카드의 `SortableContext`(PARA 그룹마다 하나)는 앱에 한 벌만 있어야 하므로 이 컴포넌트가 유일한 보관함입니다.
   열림 여부는 `localStorage`에 기억(`src/lib/shell-ui.tsx`). 항목은 PARA별 그룹(아래 6번 "Inbox PARA 그룹").
 - **`AccountMenu`** — 이메일 · Google Drive 연결됨/재연결 또는 연결 · 로그아웃. Drive 링크는 지금 화면으로 돌아오도록 `next`를 붙임.
