@@ -22,7 +22,7 @@ Inbox가 PARA 구분 없이 만든 순서로만 쌓여서 난잡하다. TickTick
 | 그룹 안 순서 | 지금처럼 `position`(만든 순 + 끌어서 바꾼 순서) |
 | 빈 그룹 | 숨김 |
 | 소속 이름 | 그룹 머리와 겹치므로 줄마다 붙던 PARA 이름(`badge`)은 Inbox에서 더 안 보인다 |
-| 접힘 기억 | 그룹별로 이 브라우저 `localStorage`(`plan0.inboxCollapsed`)에 — Inbox 열림 상태와 같은 방식 |
+| 접힘 기억 | **기본은 접힘**, 펼친 그룹만 이 브라우저 `localStorage`(`plan0.inboxExpanded`)에 기억 — Inbox 열림 상태와 같은 방식. (2026-10-02 바꿈: 처음엔 기본 펼침 + 접은 그룹을 기억했는데, 새 그룹이 생길 때마다 펼쳐져 계속 접어야 했음) |
 | 새로 적기 | Inbox 입력창으로 추가하면 미분류에 들어간다. 미분류가 접혀 있으면 펼친다(방금 쓴 게 안 보이지 않게) |
 
 ### 2-1. 다른 그룹으로 끌어 놓기 (시안 ④)
@@ -42,7 +42,7 @@ Inbox가 PARA 구분 없이 만든 순서로만 쌓여서 난잡하다. TickTick
 DB 변경 없음.
 
 1. `src/lib/inbox-groups.ts` — `groupInboxItems()`(묶기 · 순서), `inboxGroupKey()`, `mappingOfGroup()`,
-   접힘 상태 `useInboxCollapsed()`(localStorage).
+   펼침 상태 `useInboxExpanded()`(localStorage, 기본 접힘).
 2. `src/lib/dnd/drop-targets.ts` — 드롭 대상 `{ type: "inbox-group"; kind; id }` 추가.
 3. `src/lib/dnd/collision.ts` — 카드와 그룹이 겹치면 카드 우선.
 4. `src/lib/dnd/handle-drop.ts` — Inbox · PARA 상세 카드를 Inbox 그룹(머리 · 다른 그룹 카드)에 놓으면 매핑 + 맨 끝.

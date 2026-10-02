@@ -131,21 +131,23 @@ export function groupInboxItems(
   });
 }
 
-// --- 접힘 상태: 이 브라우저의 localStorage에 그룹 key 목록으로 (shell-ui.tsx의 Inbox 열림 상태와 같은 방식) ---
+// --- 펼침 상태: 이 브라우저의 localStorage에 펼친 그룹 key 목록으로 (shell-ui.tsx의 Inbox 열림 상태와 같은 방식) ---
+// 그룹은 기본으로 접혀 있고 펼친 것만 기억한다(2026-10-02 — 처음엔 다 펼쳐져 매번 접어야 해서 바꿈).
+// 예전 키(`plan0.inboxCollapsed`, 접은 그룹 목록)는 읽지 않는다 — 한 번 전부 접힌 상태로 시작.
 
-const STORAGE_KEY = "plan0.inboxCollapsed";
-const CHANGE_EVENT = "plan0:inbox-collapsed-change";
-let memoryCollapsed = "[]";
+const STORAGE_KEY = "plan0.inboxExpanded";
+const CHANGE_EVENT = "plan0:inbox-expanded-change";
+let memoryExpanded = "[]";
 
-function readCollapsed(): string {
+function readExpanded(): string {
   try {
-    return window.localStorage.getItem(STORAGE_KEY) ?? memoryCollapsed;
+    return window.localStorage.getItem(STORAGE_KEY) ?? memoryExpanded;
   } catch {
-    return memoryCollapsed;
+    return memoryExpanded;
   }
 }
 
-function subscribeCollapsed(onChange: () => void) {
+function subscribeExpanded(onChange: () => void) {
   window.addEventListener("storage", onChange);
   window.addEventListener(CHANGE_EVENT, onChange);
   return () => {
@@ -163,23 +165,23 @@ function parseKeys(raw: string): Set<string> {
   }
 }
 
-/** 접힌 그룹 key 목록과 접기/펼치기. 서버 렌더에선 전부 펼침. */
-export function useInboxCollapsed() {
-  const raw = useSyncExternalStore(subscribeCollapsed, readCollapsed, () => "[]");
-  const collapsed = useMemo(() => parseKeys(raw), [raw]);
+/** 펼친 그룹 key 목록과 펼치기/접기. 목록에 없는 그룹은 접힘(서버 렌더에선 전부 접힘). */
+export function useInboxExpanded() {
+  const raw = useSyncExternalStore(subscribeExpanded, readExpanded, () => "[]");
+  const expanded = useMemo(() => parseKeys(raw), [raw]);
 
-  const setCollapsed = useCallback((key: string, value: boolean) => {
-    const next = parseKeys(readCollapsed());
+  const setExpanded = useCallback((key: string, value: boolean) => {
+    const next = parseKeys(readExpanded());
     if (value) next.add(key);
     else next.delete(key);
-    memoryCollapsed = JSON.stringify([...next]);
+    memoryExpanded = JSON.stringify([...next]);
     try {
-      window.localStorage.setItem(STORAGE_KEY, memoryCollapsed);
+      window.localStorage.setItem(STORAGE_KEY, memoryExpanded);
     } catch {
       // 저장 못 해도 메모리 값으로 이번 방문 동안은 동작한다
     }
     window.dispatchEvent(new Event(CHANGE_EVENT));
   }, []);
 
-  return { collapsed, setCollapsed };
+  return { expanded, setExpanded };
 }

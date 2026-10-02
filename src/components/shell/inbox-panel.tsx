@@ -16,7 +16,7 @@ import {
   groupInboxItems,
   inboxGroupKey,
   mappingOfGroup,
-  useInboxCollapsed,
+  useInboxExpanded,
   type InboxGroup,
 } from "@/lib/inbox-groups";
 import { useTodos } from "@/lib/app-data/use-todos";
@@ -30,7 +30,7 @@ import { useParaColor } from "@/lib/app-data/use-para-color";
  * 모바일은 하단 탭 위로 올라오는 바텀시트. 앱에 하나만 마운트된다(보관함 드롭 영역 · 보관함 카드의
  * SortableContext가 둘 이상이면 안 되므로).
  *
- * 항목은 PARA별 그룹으로 묶어 접을 수 있다(INBOX-GROUPS-PLAN.md). 카드를 다른 그룹에 놓으면 그 PARA가 된다.
+ * 항목은 PARA별 그룹으로 묶는다(INBOX-GROUPS-PLAN.md) — 기본은 접힘, 펼친 그룹만 기억. 카드를 다른 그룹에 놓으면 그 PARA가 된다.
  * 할 일 상세 팝업은 패널이 연다 — 팝업에서 PARA를 바꾸면 카드가 다른 그룹으로 옮겨 다시 마운트되기 때문.
  */
 export function InboxPanel() {
@@ -42,14 +42,14 @@ export function InboxPanel() {
   const panelRef = useRef<HTMLElement>(null);
   const handledFocusRequest = useRef(0);
   const groups = useMemo(() => groupInboxItems(items, projects, areas, resources), [items, projects, areas, resources]);
-  const { collapsed, setCollapsed } = useInboxCollapsed();
+  const { expanded, setExpanded } = useInboxExpanded();
   const dropGroupKey = useDropGroupKey(todos);
   const [detailTodoId, setDetailTodoId] = useState<string | null>(null);
   const closeDetail = useCallback(() => setDetailTodoId(null), []);
 
   function addToInbox(...args: Parameters<typeof actions.addToInbox>) {
     // 새 항목은 미분류에 들어간다 — 접혀 있으면 방금 쓴 게 안 보이니 펼친다
-    setCollapsed(UNSORTED_GROUP_KEY, false);
+    setExpanded(UNSORTED_GROUP_KEY, true);
     actions.addToInbox(...args);
   }
 
@@ -99,14 +99,14 @@ export function InboxPanel() {
           className={cn("min-h-0 flex-1 overflow-y-auto pt-1 transition-colors", isOver && "bg-accent/40")}
         >
           {groups.map((group) => {
-            const open = !collapsed.has(group.key);
+            const open = expanded.has(group.key);
             return (
               <InboxGroupSection
                 key={group.key}
                 group={group}
                 open={open}
                 dropping={dropGroupKey === group.key}
-                onToggle={() => setCollapsed(group.key, open)}
+                onToggle={() => setExpanded(group.key, !open)}
               >
                 {group.items.map((todo) => (
                   <TodoCard
