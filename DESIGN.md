@@ -182,7 +182,7 @@ AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBann
   색은 `--mark-*` 토큰으로 **아이콘에만**(텍스트는 기본 전경색). 종류 선택은 `RetroKindSelect` 드롭다운(macOS 메뉴) 하나만 쓴다.
   프로젝트 회고 탭 = 3열(열 머리 22px 아이콘 + 이름 + 개수) + 흰 카드 헤어라인 목록(줄 · 출처 12px), "다음엔"엔 파란 "+ 할 일로".
 - **메모 줄 표시**(MEMO-MARKS-PLAN.md): 보기 모드 표시는 모두 체크박스와 같은 **18px 둥근 사각형(모서리 5px)** — 확인은 빈 칸 / 파란 체크 + 취소선,
-  나머지는 `--mark-*` 틴트 칸 + bold 12px 아이콘(`?` · `i`는 원 없이 글자만). 줄 글자는 기본 전경색(답 `→ …`만 보조 텍스트 색), 불릿 줄은 회색 4px 점.
+  나머지는 `--mark-*` 틴트 칸 + bold 12px 아이콘(`?` · `i`는 원 없이 글자만). 줄 글자는 기본 전경색(답 `→ …`만 보조 텍스트 색), 불릿 줄은 회색 4px 점(표시 · 링크가 없어도 `- ` · `1. ` 목록 줄이 있으면 보기 모드로 그린다 — `hasMemoBullets`).
   편집 칸 위 툴바 5개(`MemoToolbar`, 눌린 버튼 = 틴트 배경 + 종류 색 테두리). 메모를 다른 곳에 그릴 때도 `MemoView` · `MemoEditor`를 재사용한다.
 - **검색 패널**(SEARCH-PLAN.md, 시안 https://claude.ai/artifact/EXRxgXo2Cpn1oNFvj9DBCx): 데스크톱 = **가운데 팝업**(위에서 72px · 폭 640px ·
   모서리 14px · 흰 반투명 + blur + 큰 그림자, 뒤는 `bg-black/30`), 모바일 = 전체 화면(위 회색 입력칸 + 파란 "취소"). z-index 55 —

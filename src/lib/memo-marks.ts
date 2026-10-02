@@ -84,6 +84,11 @@ export function hasMemoMarks(text: string | null | undefined): boolean {
   return Boolean(text) && parseMemoLines(text!).some((line) => line.state !== null);
 }
 
+/** 목록 줄(`- ` · `* ` · `• ` · `1. `)이 있는지 — 표시가 없어도 보기 모드로 회색 점 · 번호를 그린다 */
+export function hasMemoBullets(text: string | null | undefined): boolean {
+  return Boolean(text) && parseMemoLines(text!).some((line) => line.bullet !== null);
+}
+
 /** 표시가 붙은 한 줄 원문. 불릿이 없던 줄엔 `-`를 붙인다. */
 function formatMarkLine(indent: string, bullet: string | null, state: MarkState, text: string): string {
   return `${indent}${bullet ?? "-"} [${state}] ${text}`;
