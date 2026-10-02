@@ -18,7 +18,7 @@ import { MemoEditor } from "@/components/memo/memo-editor";
 import { MemoView } from "@/components/memo/memo-view";
 import type { MemoLinks } from "@/components/memo/memo-link";
 import { MARK_META } from "@/components/memo/mark-meta";
-import { hasMemoMarks, parseMemoLines } from "@/lib/memo-marks";
+import { hasMemoBullets, hasMemoMarks, parseMemoLines } from "@/lib/memo-marks";
 import { hasMemoLinks, movedTodosOf, resolveLink } from "@/lib/memo-links";
 import { hasWebLinks } from "@/lib/web-links";
 import { hasRetroLines, RETRO_KINDS, RETRO_STATE, type RetroKind } from "@/lib/retro";
@@ -282,7 +282,7 @@ export function TodoDetailModal({
         />
       ) : isTask && todo.completed && !memo.trim() ? (
         <RetroPrompt onPick={startRetro} onPlain={() => editMemo(null)} />
-      ) : hasMemoMarks(memo) || hasMemoLinks(memo) || hasWebLinks(memo) ? (
+      ) : hasMemoMarks(memo) || hasMemoBullets(memo) || hasMemoLinks(memo) || hasWebLinks(memo) ? (
         <MemoView
           text={memo}
           onChange={saveMemo}
