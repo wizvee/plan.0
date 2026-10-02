@@ -33,6 +33,14 @@
   npm install
   ```
 
+## 문서 구조 (2026-10-02 정리)
+
+- **루트** — 늘 보는 문서만: README(설정 · 실행) · PLANNING(기획서) · HANDOFF(이 문서) · FEATURES(기능 목록) · DESIGN(디자인 규칙) · CLAUDE / AGENTS.
+- **`docs/plans/`** — 진행 중인 기능 계획(지금: WEBAPP-PLAN — 푸시 발송 6~8단계가 남음, 미머지 브랜치 `claude/new-ui-design-p4e912`).
+- **`docs/plans/done/`** — 구현이 끝난 계획(결정 이력 · 시안 링크 참고용). REFLECTIONS-PLAN은 메모 회고로 대체된 것.
+- 새 기능 계획은 `docs/plans/<이름>-PLAN.md`로 만들고, 구현이 끝나면 `done/`으로 옮긴다. 다른 문서 · 코드 주석은 파일 이름(`GOALS-PLAN.md`)으로
+  가리키니 찾을 땐 이름으로 검색. SQL도 같은 규칙 — 실행한 마이그레이션은 `supabase/migrations/applied/`.
+
 ## 프로젝트가 무엇인지 (한 줄 요약)
 
 개인용 주간 할 일 관리 웹앱. Todo 목록에 할 일을 적어두고, 드래그 앤 드롭으로 Mon~Sun 요일에 배치.
@@ -434,7 +442,7 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
 
 25. **(2026-09-27~28 추가) 공통 앱 셸 리팩토링 + 애플 스타일 리디자인**: 23번에서 미뤄둔 "사이드바를 화면마다
     배선하는 구조"를 사용자가 직접 지적 — "사이드바는 모든 화면 공통인데 왜 화면별로 따로 그리려 하냐,
-    화면별로 달라질 수 있는 코드라면 리팩토링하라". 계획은 [REFACTORING-PLAN.md](./REFACTORING-PLAN.md)
+    화면별로 달라질 수 있는 코드라면 리팩토링하라". 계획은 [REFACTORING-PLAN.md](./docs/plans/done/REFACTORING-PLAN.md)
     (단계별 진행 상황 · 코드 대조 결과 포함), 시안은 https://claude.ai/artifact/EAnz3ttkMqj676NhTXjP7b.
     - **1단계 데이터 단일화** `src/lib/app-data/` — `AppDataProvider` + `useTodos`/`useContainers`/`useTodoActions`/`useSession`.
     - **2단계** `src/app/(app)/layout.tsx` 라우트 그룹 — 사용자 · Drive 연결 조회와 데이터 구독을 한 번만(화면 이동 시 재조회 없음).
@@ -463,7 +471,7 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     팝업이 캘린더 뒤에 깔려 클릭 · 수정이 안 된다고 제보 — 팝업이 sticky인 Inbox 패널(자체 쌓임 맥락) 안에서 그려져
     캘린더의 현재 시각 선 · 블록이 위로 올라온 것. `createPortal`로 `document.body`에 띄워 해결. 이어서 요구: "업무" 같은 할 일
     아래 체크박스로 하위 할 일을 관리하고 진행률을 할 일에 표시. 시안 https://claude.ai/artifact/7Wfuo8WtjAY2TQrgX5GavY 컨펌 →
-    계획 [SUBTASKS-PLAN.md](./SUBTASKS-PLAN.md) → 1~8단계 구현.
+    계획 [SUBTASKS-PLAN.md](./docs/plans/done/SUBTASKS-PLAN.md) → 1~8단계 구현.
     - **합의 규칙**: 한 단계만, 하위는 내용 · 완료 · 순서만(날짜/PARA 없음), 완료 자동 연동 없음, 노트엔 UI 없음(데이터는 유지),
       PARA 진행률은 할 일 개수 기준 그대로.
     - **DB**: `todo_subtasks` 별도 테이블(jsonb 컬럼이면 두 기기 동시 체크 시 덮어씀) + RLS(부모 할 일도 내 것인지 확인) + cascade + Realtime.
@@ -477,7 +485,7 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
 28. **(2026-09-28 추가) 회고(잘한 점 · 아쉬운 점 · 다음엔) + 할 일 상세 팝업 탭 구조**: 사용자 요청 — 할 일에 👍/👎를 가끔
     남기고, 나중에 프로젝트 단위로 모아 전체 회고에 쓰고 싶다(메모에 섞으면 모을 수 없음). 개념 합의 → 시안
     https://claude.ai/artifact/6vXMvW1raTc9Dhx9j25yNq (사용자 제안으로 종류 선택은 토글 → 드롭다운, 상세 팝업은 탭으로) 컨펌 →
-    계획 [REFLECTIONS-PLAN.md](./REFLECTIONS-PLAN.md) → 구현.
+    계획 [REFLECTIONS-PLAN.md](./docs/plans/done/REFLECTIONS-PLAN.md) → 구현.
     - **합의 규칙**: 종류는 KPT 3개(keep/problem/try), 할 일에 여러 개 또는 **프로젝트에 직접**(할 일 없이), 노트/스크랩엔 없음
       (할 일 → 노트 전환 시 숨기기만), 할 일 삭제 시 회고도 삭제. Area/Resource에는 회고 탭 없음(1차).
     - **DB**: `todo_reflections`(todo_id 또는 project_id 정확히 하나, `converted_todo_id`) — `supabase/migrations/applied/20260928_todo_reflections.sql`.
@@ -500,7 +508,7 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     고른 요일은 그 주에만 유효, 미니 캘린더/월 보기에서 날짜를 누르면 그 요일, `오늘` 버튼은 오늘로(`week-board.tsx`).
 
 31. **(2026-09-29 추가) PARA 삭제 · 상세에서 할 일 추가**: 사용자 요청 — 한 번 만든 PARA를 지울 수 없고, 상세에서 할 일을
-    못 만들어 불편. 시안 https://claude.ai/artifact/EWAVSDna7Zty2FzGLD2Azb 2차 컨펌 → 계획 [PARA-MANAGE-PLAN.md](./PARA-MANAGE-PLAN.md) → 구현.
+    못 만들어 불편. 시안 https://claude.ai/artifact/EWAVSDna7Zty2FzGLD2Azb 2차 컨펌 → 계획 [PARA-MANAGE-PLAN.md](./docs/plans/done/PARA-MANAGE-PLAN.md) → 구현.
     - **합의 규칙**: 추가 줄은 할 일 목록 **맨 위**(미완료는 최신순으로 바뀜). 삭제 입구는 **상세 `···` 메뉴에만**. 삭제 기본값은
       **함께 삭제** — 매핑된 할 일 · 스크랩(하위 · 회고 cascade) + **Drive 폴더를 Drive 휴지통으로**(30일 복구 가능). "연결만 끊기"를
       고르면 할 일 · 스크랩 · Drive 폴더가 남는다. 프로젝트 회고는 어느 쪽이든 삭제.
@@ -514,7 +522,7 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
 
 32. **(2026-09-29 추가) 할 일 사진**: 사용자 요청 — 약속 · 여행 같은 일정도 기록하고 싶은데 사진이 있으면 추억 · 다이어리 꾸미기가 된다.
     시안 https://claude.ai/artifact/4pamL9JChaBcYvJZXvfe2c 컨펌(월 보기 full · 주 보기 bg, 여러 날 일정은 이번엔 뺌) → 계획
-    [PHOTOS-PLAN.md](./PHOTOS-PLAN.md) → 구현.
+    [PHOTOS-PLAN.md](./docs/plans/done/PHOTOS-PLAN.md) → 구현.
     - **저장은 Google Drive**(`PLAN.0/사진/<날짜> <이름>`, 썸네일은 `PLAN.0/사진/.thumbs`). DB `todo_photos`엔 Drive 파일 id · 폴더 id · 대표 여부만.
       화면엔 `GET /api/photos/<id>?size=thumb|full`이 Drive에서 읽어 내려준다(파일 id는 서버가 행에서 읽음, 1년 캐시).
     - 할 일을 지우면 행만 지워지고 **Drive 사진은 남는다**. 사진 삭제는 Drive 휴지통(30일 복구).
@@ -532,7 +540,7 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
 
 34. **(2026-09-30 추가) 하위 할 일 "나중에(프로젝트로)"**: 사용자 질문 — 업무 하위 할 일에 "시간 될 때" 하는 롱텀 업무가 섞여 매일 넘김으로
     쌓인다. 롱텀 업무는 프로젝트의 날짜 없는 할 일로 분리하기로 하고, 그 입구로 "나중에" 버튼. 시안 https://claude.ai/artifact/4ydwEuprX4JdD8yDsEc9G5
-    컨펌(글자 + 아이콘, 옮김 표시 남김) → 계획 [LATER-PLAN.md](./LATER-PLAN.md) → 구현. DB 변경 없음.
+    컨펌(글자 + 아이콘, 옮김 표시 남김) → 계획 [LATER-PLAN.md](./docs/plans/done/LATER-PLAN.md) → 구현. DB 변경 없음.
     - **확인**: tsc · eslint + 가짜 Supabase에 붙인 실제 앱에서 16개 항목(버튼 hover · 완료 항목엔 없음 · 만든 할 일의 이름 · 날짜 없음 · 프로젝트 ·
       메모, 하위 삭제, 알림 문구, 되돌리기로 새 할 일 삭제 + 같은 순서로 복구, 5초 뒤 알림 닫힘, Inbox에 보임). 알림은 시안(팝업 안)과 달리
       화면 아래 가운데 — PARA 상세 펼침에서도 같은 알림을 쓰려고.
@@ -544,7 +552,7 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     - 이름은 Phosphor 이름 그대로(ChevronLeft → `CaretLeft`, Trash2 → `Trash`, Inbox → `Tray`, Search → `MagnifyingGlass` 등).
       굵기: lucide `strokeWidth` ≥ 2.2이거나 14px 이하 아이콘은 `weight="bold"`, `fill-current`였던 ★는 `weight="fill"`, 나머지 기본 regular.
     - **확인**: tsc · eslint, 가짜 Supabase 앱에서 캘린더 · Inbox · 할 일 팝업(하위 할 일 · 회고 · 사진) · PARA 화면 스크린샷.
-36. **(2026-09-30 추가) 메모 줄 표시 1단계(표시 · 툴바 · 보기 모드)**: [MEMO-MARKS-PLAN.md](./MEMO-MARKS-PLAN.md) 2~4번을 구현.
+36. **(2026-09-30 추가) 메모 줄 표시 1단계(표시 · 툴바 · 보기 모드)**: [MEMO-MARKS-PLAN.md](./docs/plans/done/MEMO-MARKS-PLAN.md) 2~4번을 구현.
     시안 https://claude.ai/artifact/JfkwtcvcU885kzNkdJGV7Q ①②③ 그대로. 저장은 메모 원문(DB 변경 없음).
     - 글자 고치기는 전부 `lib/memo-marks.ts` 순수 함수(`parseMemoLines` · `applyMark` · `toggleDone` · `resolveQuestion` · `reopenQuestion` ·
       `continueOnEnter`). 편집 칸 글자는 `execCommand("insertText")`로 넣어 브라우저 되돌리기가 그대로 된다(안 되면 `setRangeText`로 대체).
@@ -555,7 +563,7 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     - **확인**: tsc · eslint, 순수 함수 단위 확인(인식 규칙 · 툴바 붙이기/바꾸기/떼기 · 여러 줄 · 예전 표시 · Enter), 임시 페이지에서 Playwright로
       체크 · 질문 해결(Enter/Esc) · 되돌리기 · 줄 눌러 편집(커서 줄) · 툴바 · Enter 이어 쓰기 · ⌘Z · 여러 줄 선택 확인 + 스크린샷.
       로그인이 필요한 실제 할 일 팝업 안에서는 아직 못 봄.
-37. **(2026-09-30 추가) 검색**: [SEARCH-PLAN.md](./SEARCH-PLAN.md) 1~5단계. 시안 https://claude.ai/artifact/EXRxgXo2Cpn1oNFvj9DBCx 컨펌
+37. **(2026-09-30 추가) 검색**: [SEARCH-PLAN.md](./docs/plans/done/SEARCH-PLAN.md) 1~5단계. 시안 https://claude.ai/artifact/EXRxgXo2Cpn1oNFvj9DBCx 컨펌
     (가운데 ⌘K 팝업, 모바일은 **탭바 6칸 A안** + 전체 화면). **키워드 검색만** — 벡터 · AI는 케이스가 쌓이면(SEARCH-PLAN.md 7번).
     - 서버 · DB 변경 없음: 이미 다 불러와 있는 할 일 · 하위 할 일 · PARA로 브라우저에서 색인(`lib/search.ts` 순수 함수, `use-search`가 `useMemo`).
       규칙은 SEARCH-PLAN.md 3번(조사 떼기 · 하이픈 무시 · 절반 이상 일치 · 줄 ×3 / 제목 ×2 / PARA ×1). `scripts/check-search.ts`(`npx tsx`)로 기준 케이스 확인.
@@ -567,7 +575,7 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     - **확인**: tsc · eslint · build · check-search 13개 + 가짜 Supabase(auth/rest 메모리 목 — 로그인 쿠키 `sb-127-auth-token`에 가짜 세션)에 붙인
       실제 앱을 Playwright로(기준 케이스 · 📝 · 결과 없음 · ↑↓ · 칩 체크/해결 → 메모 저장 · 결과 열기 탭 · Esc 복귀 · PARA 이동 · 모바일 탭바 6칸).
       목 서버는 저장소에 넣지 않았다 — 필요하면 `/auth/v1/user` + `/rest/v1/<table>`(GET은 `content-range` 헤더) 정도로 다시 만들면 된다.
-38. **(2026-09-30 추가) 회고 → 메모 줄(회고 탭 정리)**: [MEMO-MARKS-PLAN.md](./MEMO-MARKS-PLAN.md) 7번(2단계). 시안 ⑦⑧⑨
+38. **(2026-09-30 추가) 회고 → 메모 줄(회고 탭 정리)**: [MEMO-MARKS-PLAN.md](./docs/plans/done/MEMO-MARKS-PLAN.md) 7번(2단계). 시안 ⑦⑧⑨
     (https://claude.ai/artifact/JfkwtcvcU885kzNkdJGV7Q) 컨펌 + 추천안 두 가지 컨펌(프로젝트 전체 회고 = 노트, 회고 테이블 삭제).
     - 사용자가 하나뿐이던 회고를 직접 메모로 옮겨 `todo_reflections`는 0건 → 옮기기 스크립트 없이 **회고 코드 · 스토어 · 테이블을 없앰**
       (`components/reflection/*`, `lib/reflection.ts`, `lib/supabase/reflections.ts`, `use-reflections`, `reflection-actions`, `Reflection` 타입).
@@ -587,7 +595,7 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
 40. **(2026-09-30 추가) 메모 탭 남은 개수 뱃지**: 할 일 팝업 "메모 · URL" 탭에 열린 `[?]` + `[ ]` 합계를 회색 알약으로(MEMO-MARKS-PLAN.md 9번).
     시안 ⑬~⑯에서 종류별 표시(질문 · 확인 칸 따로)를 그렸다가 "탭이 좁다, 뱃지 하나로"(⑰ D안) 컨펌. 탭 이름은 "메모 · URL" 유지.
     - **확인**: tsc · eslint · build + 가짜 Supabase 앱에서 데스크톱 · 모바일 폭 한 줄, 해결 · 체크하면 2 → 1 → 점.
-41. **(2026-10-01 추가) 메모 링크 — "나중에" 원래 할 일 연결**: [LINKS-PLAN.md](./LINKS-PLAN.md). 사용자가 회의에서 나온 할 일을 회의의 하위 할 일로
+41. **(2026-10-01 추가) 메모 링크 — "나중에" 원래 할 일 연결**: [LINKS-PLAN.md](./docs/plans/done/LINKS-PLAN.md). 사용자가 회의에서 나온 할 일을 회의의 하위 할 일로
     적고 "나중에"를 눌러 출처를 남기는 식으로 쓰고 있어서, 메모를 옵시디언 내부 링크 `- [[이름(10/1)]]에서 옮김`으로 바꾸자는 제안.
     시안(https://claude.ai/artifact/24GBhW8d4UHbpprCRwPXtv) + 추천안 4개 컨펌: 형식(`에서 옮김`은 괄호 밖) · 원래 할 일에 "나중에로 옮긴 할 일" 목록 ·
     이름 · 날짜 바뀌면 링크 자동 고침 · 예전 메모는 원문 그대로 두고 링크로 읽기.
@@ -597,7 +605,7 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
       임시 페이지에서 링크 · 예전 줄 · 끊긴 링크 · 옮긴 할 일 목록 스크린샷. 실제 앱(로그인) 확인은 못 함 — 이 세션에 Supabase 키가 없었음.
 42. **(2026-10-01 추가) Inbox PARA 그룹**: "Inbox가 구분 없이 만든 순으로 쌓여 난잡하다, TickTick 인박스처럼 PARA별 아코디언 + 개수".
     시안 https://claude.ai/artifact/NagRGwGtAevetvXLLSrr2p 에서 A안(섹션 머리) · B안(흰 카드) · C안(종류로만 묶기)을 비교 → **A안 + ④ 다른 그룹으로 끌어 놓기** 컨펌.
-    계획 · 규칙은 [INBOX-GROUPS-PLAN.md](./INBOX-GROUPS-PLAN.md). 완료 · 보관 그룹 위치는 답이 없어 제안대로 맨 아래.
+    계획 · 규칙은 [INBOX-GROUPS-PLAN.md](./docs/plans/done/INBOX-GROUPS-PLAN.md). 완료 · 보관 그룹 위치는 답이 없어 제안대로 맨 아래.
     - `lib/inbox-groups.ts`(묶기 · 순서 · 접힘 localStorage), 드롭 대상 `inbox-group`, 그룹별 `SortableContext`(다른 그룹 카드는 비키지 않는 전략),
       `handle-drop.ts`에 그룹 매핑. Inbox 카드에 PARA 이름(`badge`)은 더 안 붙인다.
     - 할 일 상세 팝업은 Inbox 패널이 연다(`TodoCard` `onOpenDetail` → `TodoDetailById`) — 팝업에서 PARA를 바꾸면 카드가 다른 그룹으로 옮겨
@@ -606,7 +614,7 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
       접힌 그룹 / 미분류로 끌기 · 같은 그룹 순서 변경 · 미분류 접고 새로 적기 → 펼침 · 캘린더 블록은 PARA 유지 · PARA 상세 카드 → 그룹 ·
       팝업에서 PARA 바꿔도 팝업 유지 · 모바일 바텀시트) + 스크린샷.
 
-43. **(2026-10-01 추가) 시간 균형 — 영역별 한 주 시간**: [BALANCE-PLAN.md](./BALANCE-PLAN.md). 사용자가 예전에 쓴 종이 **타임트래커**(퇴사한 이형)에서
+43. **(2026-10-01 추가) 시간 균형 — 영역별 한 주 시간**: [BALANCE-PLAN.md](./docs/plans/done/BALANCE-PLAN.md). 사용자가 예전에 쓴 종이 **타임트래커**(퇴사한 이형)에서
     손 기록은 안 맞았지만 "영적 · 지적 · 사회적 · 신체적 · 기타로 일주일 시간을 보는 것"은 좋았다 → plan.0에 도입. 개념부터 여러 번 논의해서 합의:
     - **영역 = 컨텍스트**(새 개념 안 만듦). **건강 · 지적 · 업무 · 관계 · 기타(기본)** + **수면**(따로) + **공백**(기록 없는 깨어 있는 시간, 안 나눔).
       영적은 종교가 아니라 성찰이라는 설명 뒤 "마음 vs 관계" 고민 → 업무에 밀리는 축을 보려고 **관계**. "사회"는 두 글자 맞춰 **업무**로.
@@ -644,7 +652,7 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     펼치니까 좀 더 낮춰줘". 고정 `h-[62vh]` → **내용 높이 + 최대 `50dvh`**(그룹이 기본 접힘이라 보통 훨씬 낮음, 펼치면 절반까지 늘고 그 안에서 스크롤).
     - **확인**: 가짜 Supabase 앱 390px — 그룹 3개 접힘이면 시트 268px(위로 캘린더 오전 7시~오후 1시가 보임), 많이 펼치면 422px(50dvh)에서 멈추고 목록 스크롤,
       시트의 카드 → 캘린더로 끌어 배치.
-47. **(2026-10-02 추가) 메모 · 하위 할 일 바깥 링크**: [WEB-LINKS-PLAN.md](./WEB-LINKS-PLAN.md). 메모 줄에 SAP 노트를 `[이름](https://…)`로 적는데
+47. **(2026-10-02 추가) 메모 · 하위 할 일 바깥 링크**: [WEB-LINKS-PLAN.md](./docs/plans/done/WEB-LINKS-PLAN.md). 메모 줄에 SAP 노트를 `[이름](https://…)`로 적는데
     글자로만 보여서 → 마크다운 링크 · 그냥 주소를 파란 글자 + `↗`(시안 https://claude.ai/artifact/PTUfxPwAQ2usF9UeeRaCdj **A안** 컨펌).
     **할 일 제목은 빼기로**(사용자 결정). 팝업 메모 보기 · 하위 할 일 목록에서만 누를 수 있고(새 탭), 캘린더 블록 · 검색 · 남은 것 · 회고는 이름만.
     글자를 고르고 주소를 붙여넣으면 `[글자](주소)`. 같은 날 "확인 줄에도 답 달기"는 하지 않기로 함(MEMO-MARKS-PLAN.md 10번).
