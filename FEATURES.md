@@ -51,7 +51,7 @@
 | I13 | 예약 날짜 표시, 지난 날짜면 빨간색 (PARA Tasks 탭 등) | `todo-card.tsx` |
 | I14 | 항목 텍스트 클릭 → 할 일 상세 팝업 (6번) | `todo-card.tsx` |
 | I15 | **하위 할 일 진행률** — 원형 링 + `2/4` (하위가 있는 할 일만, 노트 제외) | `todo-card.tsx`, `subtask/subtask-progress.tsx` |
-| I16 | **PARA별 그룹** — 미분류 → Project → Area → Resource(완료 · 보관은 맨 아래), 머리 = `⌄` + 영역 색 점 + 이름 + 개수, 눌러서 접기(이 브라우저에 기억). 새로 적으면 미분류를 펼침 | `shell/inbox-panel.tsx`, `lib/inbox-groups.ts` |
+| I16 | **PARA별 그룹** — 미분류 → Project → Area → Resource(완료 · 보관은 맨 아래), 머리 = `⌄` + 영역 색 점 + 이름 + 개수, 기본 접힘 · 눌러서 펼치기(펼친 그룹을 이 브라우저에 기억). 새로 적으면 미분류를 펼침 | `shell/inbox-panel.tsx`, `lib/inbox-groups.ts` |
 | I17 | **다른 그룹으로 끌어 놓기** — Inbox · PARA 상세 카드를 그룹 머리나 그 그룹 카드 위에 놓으면 그 PARA로 매핑 + 맨 끝(미분류 = 매핑 해제). 놓을 그룹 틴트 + "여기로 옮기기" + 끝 선. 캘린더 블록은 PARA를 안 바꿈 | `lib/dnd/handle-drop.ts`, `shell/inbox-panel.tsx` |
 
 ## 4. 캘린더 — 주 보기

@@ -637,6 +637,9 @@ Apple 미리알림(Reminders) 느낌의 UI. Supabase로 로그인 + 여러 기�
     - **확인**: tsc · eslint · 4개 스크립트 · build + **가짜 Supabase(auth/rest 목)에 붙인 실제 앱** 스크린샷 — 주 · 월 보기, Inbox 그룹, PARA 목록 · 상세,
       할 일 팝업, 목표 화면 시간 균형(43번 화면도 처음으로 실제 앱에서 확인). 목 서버는 커밋하지 않음 — 다시 만드는 법은 맨 아래 "가짜 Supabase로 실제 앱 띄우기".
     - `main` 머지 완료(`6c880bf`). 같은 날 43번 머지(`13eb938`) · HANDOFF 정리 머지(`0bba8db`)도 있음.
+45. **(2026-10-02 추가) Inbox 그룹 기본 접힘**: "무조건 펼쳐지니까 계속 접어야 해서 귀찮다, 디폴트를 접은 상태로". 42번은 기본 펼침 + 접은 그룹을
+    기억했는데, 이제 **기본 접힘 + 펼친 그룹만 기억**(`useInboxExpanded`, 키 `plan0.inboxExpanded`). 예전 키는 안 읽어서 배포 후 한 번 전부 접힌 채 시작.
+    Inbox 입력창으로 새로 적으면 미분류는 지금처럼 펼친다(방금 쓴 게 보이게).
 
 ## 지금 구현된 것 (기능 목록)
 
@@ -723,7 +726,7 @@ src/lib/reflection.ts           회고 종류별 라벨 · 아이콘 · 색 변�
 src/lib/dnd/                    DndProvider(앱에 1개), handle-drop.ts(드롭 처리 단일 구현), drop-targets.ts(드롭 data 타입),
                                 collision.ts(preferSpecificTargetCollision — 보관함과 다른 드롭 영역이 겹칠 때 우선순위)
 src/lib/shell-ui.tsx            셸 UI 상태(Inbox 열림 · localStorage 기억, "+"로 열고 입력창 포커스)
-src/lib/inbox-groups.ts         Inbox PARA 그룹 — 묶기 · 그룹 순서 · 접힘 상태(localStorage) (42번, INBOX-GROUPS-PLAN.md)
+src/lib/inbox-groups.ts         Inbox PARA 그룹 — 묶기 · 그룹 순서 · 펼침 상태(localStorage, 기본 접힘) (42 · 45번, INBOX-GROUPS-PLAN.md)
 src/lib/use-dismiss.ts          팝오버 바깥 클릭 / Esc로 닫기
 src/lib/week.ts                 주차 계산(월요일 시작, ISO 주차, 오늘 여부 등)
 src/lib/time.ts                 시간 캘린더 계산(시간→px 변환, 스냅, 시간 라벨 포맷, BLOCK_GAP, 끝 · 자정 넘김 · 길이 · 시간 칸 값 등)

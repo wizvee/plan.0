@@ -130,7 +130,7 @@ AppShell          = [AppRail] [InboxPanel(열렸을 때)] [main: DriveStatusBann
   같은 시각에 시작한 긴 업무 블록은 하루 종일 반 폭이 된다(애플도 같음). 블록 사이는 3px(`BLOCK_GAP`), 최소 높이는 30분 칸(26px)이라
   30분 블록끼리 붙어도 틈이 보이고 30분 이하는 한 줄(시간 없음). 계산은 `lib/calendar-layout.ts`의 `layoutDayBlocks` · `blockHeightPx` 한 곳.
 - **Inbox PARA 그룹**(INBOX-GROUPS-PLAN.md, 시안 https://claude.ai/artifact/NagRGwGtAevetvXLLSrr2p ① · ④): TickTick식 섹션 머리 —
-  34px 줄에 `CaretDown`(접으면 -90°) + 8px 영역 색 점(미분류는 회색 빈 원) + 13px 굵은 이름 + 오른쪽 개수(보조 텍스트). 흰 카드로 감싸지 않는다(B안 안 씀).
+  기본은 접힘(펼친 그룹만 기억). 34px 줄에 `CaretDown`(접으면 -90°) + 8px 영역 색 점(미분류는 회색 빈 원) + 13px 굵은 이름 + 오른쪽 개수(보조 텍스트). 흰 카드로 감싸지 않는다(B안 안 씀).
   미분류 맨 위 → P → A → R, 완료 · 보관은 맨 아래. 다른 그룹으로 끌 때 그 그룹 전체를 영역 틴트로(미분류는 `bg-black/[0.04]`),
   개수 자리에 "여기로 옮기기"(영역 색 75% + 검정 — 틴트 위 작은 글씨 대비), 펼친 그룹이면 끝에 영역 색 2px 선. 다른 그룹 카드는 비키지 않는다.
 - **PARA 목록**: 제목 + 설명, 오른쪽 Project/Area/Resource 세그먼트, 카드 그리드. 카드는 완료 · 보관을 맨 뒤로 보내고, 그 안에서 시작일 순(이른 것 먼저, Area/Resource는 만든 날 순).
