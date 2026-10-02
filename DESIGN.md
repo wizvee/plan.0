@@ -4,7 +4,7 @@
 정한 디자인 맥락을 정리한 문서입니다. 새 세션에서 화면/컴포넌트를 추가하거나 수정할 때는 **이 문서를 먼저 읽고
 아래 방향을 그대로 따라주세요.** 개념/기능 기획은 [PLANNING.md](./PLANNING.md), 작업 이력은
 [HANDOFF.md](./HANDOFF.md), 현재 기능 목록은 [FEATURES.md](./FEATURES.md), 셸 구조를 바꾼 이유는
-[REFACTORING-PLAN.md](./REFACTORING-PLAN.md) 참고.
+[REFACTORING-PLAN.md](./docs/plans/done/REFACTORING-PLAN.md) 참고.
 
 > 원본 목업(Claude Design 캔버스): https://claude.ai/artifact/EAnz3ttkMqj676NhTXjP7b
 > 주 보기 · Inbox 열림 · 미니 캘린더 · 월 보기 드롭다운 · 계정 메뉴(Drive 연결/미연결) · PARA 목록 ·

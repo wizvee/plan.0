@@ -63,7 +63,7 @@ Todo List 보관함에 새 항목이 생깁니다(제목 + 원본 링크 임베�
 ## 컨텍스트 단축어 — 아이폰 집중 모드로 회사 / 개인 전환 (선택)
 
 PARA마다 컨텍스트(회사 · 개인 · …)를 고르면, **지금 컨텍스트에 속한 할 일만** 앱 배지와 알림에 뜹니다
-([WEBAPP-PLAN.md](./WEBAPP-PLAN.md)). 지금 컨텍스트는 iOS 단축어 자동화가 집중 모드에 맞춰 `/api/context`로 바꿉니다.
+([WEBAPP-PLAN.md](./docs/plans/WEBAPP-PLAN.md)). 지금 컨텍스트는 iOS 단축어 자동화가 집중 모드에 맞춰 `/api/context`로 바꿉니다.
 
 1. `.env.local`과 Vercel Environment Variables에 추가 (위 스크랩과 같은 `SUPABASE_SECRET_KEY` · `CLIP_USER_ID`도 필요):
    - `CONTEXT_API_SECRET`: 아무 긴 임의 문자열(예: `openssl rand -hex 32`). 스크랩용 `CLIP_API_SECRET`과 **다른 값**으로.
@@ -82,7 +82,7 @@ PARA마다 컨텍스트(회사 · 개인 · …)를 고르면, **지금 컨텍�
 **영역(건강 · 지적 · 업무 · 관계 · 수면 …)을 추가할 때**: 앱의 컨텍스트 관리에서 이름 + 키(예: 건강 / `health`) 추가 →
 PARA에서 그 컨텍스트 고르기 → 위 3 · 4를 그 영역의 집중 모드(피트니스 · 독서 · 수면 …)로 복제하고 켜질 때 값만 그 키로.
 코드 · DB 변경은 필요 없습니다. `all` · `default`는 예약된 값이라 키로 쓸 수 없어요.
-컨텍스트의 색과 "수면으로 세기"(`···` 메뉴)는 목표 화면의 시간 균형에 쓰입니다([BALANCE-PLAN.md](./BALANCE-PLAN.md)).
+컨텍스트의 색과 "수면으로 세기"(`···` 메뉴)는 목표 화면의 시간 균형에 쓰입니다([BALANCE-PLAN.md](./docs/plans/done/BALANCE-PLAN.md)).
 
 ## Google Drive 연동 설정 (Project/Area/Resource별 노트·자료, 선택)
 
